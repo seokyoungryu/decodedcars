@@ -1,0 +1,34 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { VIN_LOOKUP, campaignUrl } from '@/config/site';
+import { comp, date, href, n, rankings, updatedLabel } from '@/lib/data';
+const list = rankings().recentRecalls;
+---
+
+<Base title="New Car Recalls (Last 45 Days)" description="The latest vehicle recall campaigns filed with NHTSA in the last 45 days, with affected models, component and number of vehicles." section="recalls">
+  <h1>New car recalls</h1>
+  <p class="lead">Vehicle recall campaigns NHTSA received in the last 45 days. {updatedLabel()}</p>
+  <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">Check your VIN at NHTSA ↗</a>
+  <div class="table-wrap section">
+    <table>
+      <thead><tr><th>Date</th><th>Affected models</th><th>Component</th><th class="num">Vehicles</th><th>Campaign</th></tr></thead>
+      <tbody>
+        {
+          list.map((r) => (
+            <tr>
+              <td style="white-space:nowrap">{date(r.date)}</td>
+              <td>{r.models.map((m, i) => <>{i > 0 && ', '}<a href={href(m, m.year)}>{m.year} {m.make} {m.model}</a></>)} {r.doNotDrive && <span class="badge bad">Do not drive</span>}</td>
+              <td>{comp(r.comp)}</td>
+              <td class="num">{n(r.units)}</td>
+              <td><a href={campaignUrl(r.id)} target="_blank" rel="noopener">{r.id}</a></td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  {!list.length && <p class="muted">No new vehicle recalls in the last 45 days.</p>}
+  <Ad place="bottom" />
+  <p class="source">Source: NHTSA recalls database. Only models we track (U.S. cars, trucks and SUVs since 2005) are linked. Not affiliated with NHTSA.</p>
+</Base>

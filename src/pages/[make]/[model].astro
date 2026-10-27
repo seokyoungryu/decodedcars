@@ -1,0 +1,82 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import Stars from '@/components/Stars.astro';
+import Bars from '@/components/Bars.astro';
+import { VIN_LOOKUP } from '@/config/site';
+import { type Model, comp, href, makes, model as loadModel, n } from '@/lib/data';
+
+export function getStaticPaths() {
+  return makes().flatMap((mk) => mk.models.map((mm) => ({ params: { make: mk.slug, model: mm.slug }, props: { m: loadModel(mk.slug, mm.slug)! } })));
+}
+const { m } = Astro.props as { m: Model };
+const years = m.years.filter((y) => y.page);
+const recallIds = new Set(years.flatMap((y) => y.recalls));
+const totalComplaints = years.reduce((s, y) => s + y.complaints.total, 0);
+const worst = [...years].sort((a, b) => b.complaints.total - a.complaints.total)[0];
+const fewest = [...years].filter((y) => y.year <= new Date().getUTCFullYear() - 3).sort((a, b) => a.complaints.total + a.recalls.length * 20 - (b.complaints.total + b.recalls.length * 20))[0];
+// problem areas across all years
+const comps: Record<string, number> = {};
+for (const y of years) for (const [c, k] of y.complaints.comps) comps[c] = (comps[c] ?? 0) + k;
+const topComps = Object.entries(comps).sort((a, b) => b[1] - a[1]).slice(0, 8);
+const pop = m.popularity;
+const desc = `${m.make} ${m.model} recalls and problems by model year: ${recallIds.size} recall campaigns and ${n(totalComplaints)} owner complaints across ${years.length} years, plus MPG and NHTSA safety ratings. ${worst?.complaints.total ? `Most complaints: ${worst.year}.` : ''}`;
+---
+
+<Base title={`${m.make} ${m.model} Recalls & Problems by Year`} description={desc} section="makes">
+  <div class="crumbs"><a href="/makes">Makes</a>›<a href={`/${m.makeSlug}`}>{m.make}</a>›<span>{m.model}</span></div>
+  <h1>{m.make} {m.model}: problems, recalls &amp; MPG by year</h1>
+  <p class="lead">{years.length} model years ({Math.min(...years.map((y) => y.year))}–{Math.max(...years.map((y) => y.year))}) compared side by side.</p>
+
+  <div class="stats">
+    <div class="stat"><b>{recallIds.size}</b><span>Recall campaigns, all years</span></div>
+    <div class="stat"><b>{n(totalComplaints)}</b><span>Owner complaints since 2015</span></div>
+    {worst?.complaints.total ? <div class="stat"><b class="bad">{worst.year}</b><span>Most complaints ({n(worst.complaints.total)})</span></div> : null}
+    {fewest && fewest !== worst ? <div class="stat"><b class="good">{fewest.year}</b><span>Fewest problems (3+ years old)</span></div> : null}
+    {pop?.views30 ? <div class="stat"><b>{n(pop.views30)}</b><span>Wikipedia views, 30 days{pop.change !== undefined ? ` (${pop.change > 0 ? '+' : ''}${pop.change}% wk)` : ''}</span></div> : null}
+  </div>
+
+  <section class="section">
+    <div class="section-head"><h2>Every model year</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Year</th><th class="num">Recalls</th><th class="num">Complaints</th><th class="num">Crashes / fires</th><th class="num">Best MPG / range</th><th>Overall rating</th></tr></thead>
+        <tbody>
+          {
+            years.map((y) => (
+              <tr>
+                <td><a href={href(m, y.year)}>{y.year} {m.model}</a></td>
+                <td class="num">{y.recalls.length}</td>
+                <td class="num">{n(y.complaints.total)}</td>
+                <td class="num">{n(y.complaints.crash ?? 0)} / {n(y.complaints.fire ?? 0)}</td>
+                <td class="num">{y.mpg ? `${y.mpg.max} MPG` : y.range ? `${y.range} mi` : '–'}</td>
+                <td><Stars value={y.overall} /></td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <Bars data={[...years].reverse().map((y) => [String(y.year), y.complaints.total])} caption={`Owner complaints by model year — ${m.make} ${m.model}`} />
+
+  <Ad place="content" />
+
+  {
+    topComps.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Most common problem areas (all years)</h2></div>
+        <div class="card bars">
+          {topComps.map(([name, count]) => (
+            <div class="bar"><span>{comp(name)}</span><span class="muted">{n(count)}</span><i style={`width:${Math.max(2, (count / topComps[0][1]) * 100)}%`} /></div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">Check your VIN for open recalls ↗</a>
+  <Ad place="bottom" />
+  <p class="source">Sources: NHTSA recalls, consumer complaints and NCAP ratings; EPA fuel economy data; Wikipedia pageviews (popularity). Comparisons calculated by CarRadar. Not affiliated with NHTSA, EPA or {m.make}.</p>
+</Base>

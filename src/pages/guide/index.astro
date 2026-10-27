@@ -1,0 +1,18 @@
+---
+import Base from '@/layouts/Base.astro';
+import { GUIDES } from '@/lib/guides';
+---
+
+<Base title="Guides" description="How to check your car for open recalls and how to read complaint counts, MPG and crash-test ratings." section="guide">
+  <h1>Guides</h1>
+  <div class="grid section">
+    {
+      GUIDES.map((g) => (
+        <a class="card" href={`/guide/${g.slug}`}>
+          <h2 style="font-size:1.05rem">{g.title}</h2>
+          <p class="small muted" style="margin:8px 0 0">{g.description}</p>
+        </a>
+      ))
+    }
+  </div>
+</Base>

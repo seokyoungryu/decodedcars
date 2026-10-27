@@ -1,0 +1,8 @@
+---
+interface Props {
+  value?: number;
+}
+const v = Astro.props.value;
+---
+
+{v ? <span class="stars" aria-label={`${v} out of 5 stars`}>{'★'.repeat(v)}<span class="off">{'★'.repeat(5 - v)}</span></span> : <span class="muted">Not rated</span>}

@@ -1,0 +1,20 @@
+---
+import Base from '@/layouts/Base.astro';
+import { makes, n } from '@/lib/data';
+const all = makes();
+---
+
+<Base title="All Car Makes" description="Every car, truck and SUV brand sold in the U.S. since 2005 — recalls, complaints, MPG and safety ratings by model and year." section="makes">
+  <h1>All makes</h1>
+  <p class="lead">{all.length} brands, {n(all.reduce((s, m) => s + m.models.length, 0))} models.</p>
+  <div class="grid section">
+    {
+      all.map((mk) => (
+        <a class="card" href={`/${mk.slug}`}>
+          <h3>{mk.name}</h3>
+          <p class="small muted" style="margin:4px 0 0">{mk.models.length} models · {n(mk.models.reduce((s, m) => s + m.recalls, 0))} recalls</p>
+        </a>
+      ))
+    }
+  </div>
+</Base>

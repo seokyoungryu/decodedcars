@@ -1,0 +1,41 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { href, updatedLabel } from '@/lib/data';
+import { RANKINGS, type RankDef } from '@/lib/rankings';
+
+export function getStaticPaths() {
+  return RANKINGS.map((r) => ({ params: { slug: r.slug }, props: { r } }));
+}
+const { r } = Astro.props as { r: RankDef };
+const rows = r.rows();
+---
+
+<Base title={r.title} description={r.intro.slice(0, 155)} section="rankings" noindex={rows.length < 5}>
+  <div class="crumbs"><a href="/rankings">Rankings</a></div>
+  <h1>{r.title}</h1>
+  <p class="lead">{r.intro}</p>
+  <p class="small muted">{updatedLabel()}</p>
+  {
+    rows.length ? (
+      <div class="table-wrap section">
+        <table>
+          <thead><tr><th class="num">#</th><th>Model</th><th class="num">Value</th></tr></thead>
+          <tbody>
+            {rows.map((x, i) => (
+              <tr>
+                <td class="num">{i + 1}</td>
+                <td><a href={r.yearLink && x.year ? href(x, x.year) : href(x)}>{r.yearLink && x.year ? `${x.year} ` : ''}{x.make} {x.model}</a></td>
+                <td class="num">{r.value(x)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p class="muted section">No data for this ranking yet.</p>
+    )
+  }
+  <Ad place="bottom" />
+  <div class="chips section">{RANKINGS.filter((x) => x.slug !== r.slug).map((x) => <a href={`/rankings/${x.slug}`}>{x.short}</a>)}</div>
+</Base>

@@ -1,0 +1,30 @@
+---
+// Simple column chart for a series of [label, value] (gaps allowed)
+interface Props {
+  data: [string, number][];
+  caption: string;
+  fmt?: (v: number) => string;
+}
+const { data, caption, fmt = (v: number) => v.toLocaleString('en-US') } = Astro.props;
+const W = 640, H = 160, PAD = 4;
+const max = Math.max(1, ...data.map((d) => d[1]));
+const bw = (W - PAD * 2) / Math.max(1, data.length);
+const every = Math.ceil(data.length / 8);
+---
+
+{
+  data.length > 1 && (
+    <figure class="chart card" style="margin:14px 0 0">
+      <figcaption class="small muted">{caption}</figcaption>
+      <svg viewBox={`0 0 ${W} ${H + 22}`} role="img" aria-label={`${caption}. Peak ${fmt(max)}.`}>
+        {data.map(([label, v], i) => (
+          <rect x={PAD + i * bw + 1} y={H - (v / max) * (H - 14)} width={Math.max(1, bw - 2)} height={(v / max) * (H - 14)} rx="2" fill="var(--brand)" opacity="0.85">
+            <title>{label}: {fmt(v)}</title>
+          </rect>
+        ))}
+        {data.map(([label], i) => i % every === 0 && <text x={PAD + i * bw + bw / 2} y={H + 16} font-size="11" fill="var(--ink-mute)" text-anchor="middle">{label}</text>)}
+        <text x={W - PAD} y="11" font-size="11" fill="var(--ink-mute)" text-anchor="end">max {fmt(max)}</text>
+      </svg>
+    </figure>
+  )
+}

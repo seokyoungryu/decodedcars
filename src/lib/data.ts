@@ -1,0 +1,99 @@
+// Build-time readers for data/site (written by scripts/lib/aggregate.mjs)
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const DIR = join(process.cwd(), 'data', 'site');
+const cache = new Map<string, unknown>();
+function load<T>(name: string, fallback: T): T {
+  if (!cache.has(name)) {
+    try {
+      cache.set(name, JSON.parse(readFileSync(join(DIR, name), 'utf8')));
+    } catch {
+      cache.set(name, fallback);
+    }
+  }
+  return cache.get(name) as T;
+}
+
+export interface Variant {
+  name: string;
+  cls?: string;
+  drive?: string;
+  trans?: string;
+  cyl?: number;
+  displ?: number;
+  fuel?: string;
+  type?: string;
+  turbo?: boolean;
+  city?: number;
+  hwy?: number;
+  comb?: number;
+  cost?: number;
+  range?: number;
+  kwh?: number;
+  motor?: string;
+  vsClass?: number;
+}
+export interface Rating { desc: string; overall?: number; front?: number; side?: number; rollover?: number; rolloverRisk?: number }
+export interface Complaints { total: number; crash?: number; fire?: number; injured?: number; deaths?: number; comps: [string, number][]; miles?: number; months?: Record<string, number> }
+export interface Year {
+  year: number;
+  cls?: string;
+  variants: Variant[];
+  mpg?: { min: number; max: number; city: number; hwy: number };
+  range?: number;
+  cost?: number;
+  classAvg?: number;
+  recalls: string[];
+  complaints: Complaints;
+  rating?: Rating[];
+  overall?: number;
+  added?: string;
+  rich: boolean;
+  page: boolean;
+}
+export interface Model {
+  key: string;
+  make: string;
+  model: string;
+  makeSlug: string;
+  slug: string;
+  years: Year[];
+  popularity?: { title: string; views30: number; week: number; prevWeek: number; change?: number; series: number[]; shared?: boolean };
+  recent90: number;
+}
+export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
+export interface MakeEntry { slug: string; name: string; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number }[] }
+type Card = { make: string; model: string; makeSlug: string; slug: string; latest?: number; year?: number; [k: string]: unknown };
+export interface Rankings {
+  trending: Card[];
+  popular: Card[];
+  siteViews: Card[];
+  recentRecalls: { id: string; date: string; comp?: string; units?: number; doNotDrive?: boolean; models: Card[] }[];
+  complaints90: Card[];
+  year: number;
+  bestMpg: Card[];
+  longestRange: Card[];
+  cheapestFuel: Card[];
+  safest: Card[];
+  newModels: Card[];
+}
+
+export const meta = load('meta.json', { updated: '', date: '', models: 0, yearPages: 0 });
+export const makes = () => load('makes.json', [] as MakeEntry[]);
+export const model = (make: string, slug: string) => load<Model | null>(`models/${make}/${slug}.json`, null);
+export const campaigns = () => load('campaigns.json', {} as Record<string, Campaign>);
+export const rankings = () => load<Rankings>('rankings.json', { trending: [], popular: [], siteViews: [], recentRecalls: [], complaints90: [], year: 0, bestMpg: [], longestRange: [], cheapestFuel: [], safest: [], newModels: [] });
+export const noindex = () => new Set(load('noindex.json', [] as string[]));
+
+/* ── formatting ── */
+export const n = (x?: number) => (x == null ? '–' : x.toLocaleString('en-US'));
+export const usd = (x?: number) => (x == null ? '–' : `$${x.toLocaleString('en-US')}`);
+export const date = (d?: string) => (d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : '–');
+export const title = (s: string) => s.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
+export const href = (c: { makeSlug: string; slug: string }, year?: number) => `/${c.makeSlug}/${c.slug}${year ? `/${year}` : ''}`;
+export function updatedLabel() {
+  return meta.updated ? `Updated ${new Date(meta.updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}` : '';
+}
+/** "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP" → "Fuel System, Gasoline › Delivery › Fuel Pump" */
+export const comp = (s?: string) => (s ? title(s).replace(/:/g, ' › ') : '–');

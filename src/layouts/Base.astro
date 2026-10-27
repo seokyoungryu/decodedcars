@@ -1,0 +1,70 @@
+---
+import '@/styles/global.css';
+import { SITE_URL } from '@/config/site-url.mjs';
+import { ADSENSE_CLIENT, CONTACT_EMAIL, NOTICE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, VIN_LOOKUP } from '@/config/site';
+
+interface Props {
+  title: string;
+  description?: string;
+  noindex?: boolean;
+  section?: 'makes' | 'recalls' | 'rankings' | 'guide';
+  jsonLd?: Record<string, unknown>[];
+}
+const { title, description = SITE_DESCRIPTION, noindex = false, section, jsonLd = [] } = Astro.props;
+const path = Astro.url.pathname.replace(/\.html$/, '').replace(/\/(index)?$/, '') || '/';
+const fullTitle = path === '/' ? `${SITE_NAME} — ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
+const canonical = new URL(path, SITE_URL).href;
+const NAV = [
+  { href: '/makes', key: 'makes', label: 'All makes' },
+  { href: '/recalls', key: 'recalls', label: 'New recalls' },
+  { href: '/rankings', key: 'rankings', label: 'Rankings' },
+  { href: '/guide', key: 'guide', label: 'Guides' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {jsonLd.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
+    {ADSENSE_CLIENT && <meta name="google-adsense-account" content={ADSENSE_CLIENT} />}
+    {ADSENSE_CLIENT && !noindex && <script is:inline async src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`} crossorigin="anonymous" />}
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a href="/" class="logo"><img src="/favicon.svg" alt="" width="28" height="28" />{SITE_NAME}</a>
+        <nav class="nav" aria-label="Main">
+          {NAV.map((n) => <a href={n.href} aria-current={section === n.key ? 'page' : undefined}>{n.label}</a>)}
+        </nav>
+      </div>
+    </header>
+    <main><div class="wrap"><slot /></div></main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav>
+          <a href="/about">About</a>
+          <a href="/terms">Terms &amp; disclaimer</a>
+          <a href="/privacy">Privacy</a>
+          {CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>}
+          <a href={VIN_LOOKUP} rel="noopener" target="_blank">Check your VIN at NHTSA ↗</a>
+        </nav>
+        <p>{NOTICE}</p>
+        <p>Data: NHTSA recalls, consumer complaints and NCAP ratings; EPA fuel economy data; Wikipedia pageview statistics (CC0). Specs and MPG are EPA test values; your results will vary.</p>
+        <p>© {new Date().getFullYear()} {SITE_NAME}</p>
+      </div>
+    </footer>
+  </body>
+</html>

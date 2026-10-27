@@ -1,0 +1,46 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { type MakeEntry, makes, n } from '@/lib/data';
+
+export function getStaticPaths() {
+  return makes().map((mk) => ({ params: { make: mk.slug }, props: { mk } }));
+}
+const { mk } = Astro.props as { mk: MakeEntry };
+const recalls = mk.models.reduce((s, m) => s + m.recalls, 0);
+const current = mk.models.filter((m) => m.to >= new Date().getUTCFullYear() - 1);
+const past = mk.models.filter((m) => !current.includes(m));
+const table = (list: MakeEntry['models']) => list;
+---
+
+<Base title={`${mk.name} Recalls, Problems & MPG by Model`} description={`All ${mk.name} models since 2005: recalls, owner complaints, fuel economy and NHTSA safety ratings by model year.`} section="makes">
+  <div class="crumbs"><a href="/makes">Makes</a>›<span>{mk.name}</span></div>
+  <h1>{mk.name} recalls &amp; problems by model</h1>
+  <p class="lead">{mk.models.length} {mk.name} models since 2005 with {n(recalls)} recall campaigns on file. Pick a model to compare its years.</p>
+  {
+    [['Current models', current], ['Past models', past]].map(([label, list]) =>
+      (list as MakeEntry['models']).length ? (
+        <section class="section">
+          <div class="section-head"><h2>{label as string}</h2></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Model</th><th>Years</th><th class="num">Recalls</th><th class="num">Complaints</th><th class="num">Latest best MPG</th></tr></thead>
+              <tbody>
+                {table(list as MakeEntry['models']).map((m) => (
+                  <tr>
+                    <td><a href={`/${mk.slug}/${m.slug}`}>{mk.name} {m.name}</a></td>
+                    <td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td>
+                    <td class="num">{m.recalls}</td>
+                    <td class="num">{n(m.complaints)}</td>
+                    <td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null,
+    )
+  }
+  <Ad place="bottom" />
+</Base>

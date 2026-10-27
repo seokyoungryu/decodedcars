@@ -1,0 +1,91 @@
+# Daily at 10:30 UTC (NHTSA posts its bulk files in the early morning ET): collect → build → deploy to Cloudflare Pages.
+# Raw downloads and slow-changing API results live in the Actions cache, never in the repo.
+# If a source fails, the site is still built from what we have and the run is marked failed (GitHub emails the owner).
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   token with Account › Cloudflare Pages › Edit (+ Account Analytics › Read for site views)
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID
+#   SITE_CONTACT           URL or email put in our User-Agent (Wikimedia requires contact info)
+#   CF_SITE_TAG            (optional, after launch) Web Analytics site tag for "most viewed on CarRadar"
+name: Daily update
+
+on:
+  schedule:
+    - cron: '30 10 * * *'
+  workflow_dispatch:
+    inputs:
+      ratings:
+        description: 'Max NHTSA safety-rating API calls this run'
+        default: '2500'
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Restore data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/cache
+          key: data-${{ github.run_id }}
+          restore-keys: data-
+
+      - name: Collect
+        id: collect
+        continue-on-error: true
+        run: node scripts/collect.mjs --ratings=${{ inputs.ratings || '2500' }}
+        env:
+          SITE_CONTACT: ${{ secrets.SITE_CONTACT }}
+          CF_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_SITE_TAG: ${{ secrets.CF_SITE_TAG }}
+
+      - name: Save data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/cache
+          key: data-${{ github.run_id }}
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=carradar --branch=main
+
+      # GitHub disables scheduled workflows in public repos after 60 days without repository activity.
+      # The data is never committed, so commit a one-line heartbeat on the 1st of each month.
+      - name: Keep schedule alive
+        if: always()
+        run: |
+          if [ "$(date -u +%d)" = "01" ]; then
+            date -u +%F > .github/last-run
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/last-run
+            git commit -m "Monthly heartbeat $(date -u +%F)" && git push || true
+          fi
+
+      - name: Report collect failure
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo "One or more sources failed. See the Collect step log."
+          exit 1

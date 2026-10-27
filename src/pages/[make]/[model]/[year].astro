@@ -1,0 +1,207 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import Stars from '@/components/Stars.astro';
+import Bars from '@/components/Bars.astro';
+import { VIN_LOOKUP, campaignUrl } from '@/config/site';
+import { type Model, type Year, campaigns, comp, date, href, makes, model as loadModel, n, noindex, usd } from '@/lib/data';
+
+export function getStaticPaths() {
+  return makes().flatMap((mk) =>
+    mk.models.flatMap((mm) => {
+      const m = loadModel(mk.slug, mm.slug)!;
+      return m.years.filter((y) => y.page).map((y) => ({ params: { make: mk.slug, model: mm.slug, year: String(y.year) }, props: { m, y } }));
+    }),
+  );
+}
+
+const { m, y } = Astro.props as { m: Model; y: Year };
+const C = campaigns();
+const recalls = y.recalls.map((id) => C[id]).filter(Boolean);
+const name = `${y.year} ${m.make} ${m.model}`;
+const others = m.years.filter((x) => x.page && x.year !== y.year);
+const c = y.complaints;
+const worst = m.years.filter((x) => x.complaints.total > 0).sort((a, b) => b.complaints.total - a.complaints.total)[0];
+const months = Object.entries(c.months ?? {}).sort((a, b) => a[0].localeCompare(b[0])).slice(-24);
+const flags = recalls.filter((r) => r.doNotDrive || r.parkOutside);
+const best = y.variants.find((v) => v.comb && v.type !== 'EV');
+const ev = y.variants.find((v) => v.type === 'EV');
+const desc = `${name}: ${recalls.length} recall${recalls.length === 1 ? '' : 's'}, ${n(c.total)} owner complaints${y.mpg ? `, up to ${y.mpg.max} MPG combined` : ''}${y.range ? `, up to ${y.range} mi range` : ''}${y.overall ? `, ${y.overall}-star NHTSA overall rating` : ''}. Specs and problems by component.`;
+const pathNoindex = noindex().has(`/${m.makeSlug}/${m.slug}/${y.year}`);
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Car',
+    name,
+    brand: { '@type': 'Brand', name: m.make },
+    model: m.model,
+    vehicleModelDate: String(y.year),
+    ...(best?.comb && { fuelEfficiency: { '@type': 'QuantitativeValue', value: best.comb, unitText: 'MPG' } }),
+  },
+];
+---
+
+<Base title={`${name} Recalls, Problems, MPG & Safety Rating`} description={desc} section="makes" noindex={pathNoindex} jsonLd={jsonLd}>
+  <div class="crumbs"><a href="/makes">Makes</a>›<a href={`/${m.makeSlug}`}>{m.make}</a>›<a href={href(m)}>{m.model}</a>›<span>{y.year}</span></div>
+  <h1>{name}</h1>
+  <p class="lead">Recalls, owner-reported problems, fuel economy and crash-test results for the {name}{y.cls ? ` (${y.cls})` : ''}.</p>
+
+  <div class="stats">
+    <div class="stat"><b class={recalls.length ? 'bad' : 'good'}>{recalls.length}</b><span>Recall campaigns</span></div>
+    <div class="stat"><b>{n(c.total)}</b><span>Owner complaints to NHTSA</span></div>
+    <div class="stat"><b>{y.mpg ? `${y.mpg.max} MPG` : y.range ? `${y.range} mi` : '–'}</b><span>{y.mpg ? 'Best combined MPG (EPA)' : 'Best EPA range'}</span></div>
+    <div class="stat"><b><Stars value={y.overall} /></b><span>NHTSA overall rating</span></div>
+  </div>
+
+  {
+    flags.length > 0 && (
+      <div class="note" style="background:var(--bad-bg)">
+        <b>Safety advisory:</b> {flags.length} recall{flags.length > 1 ? 's' : ''} for this model year carry a {flags.some((f) => f.doNotDrive) ? '"Do Not Drive"' : ''}
+        {flags.some((f) => f.doNotDrive) && flags.some((f) => f.parkOutside) ? ' or ' : ''}
+        {flags.some((f) => f.parkOutside) ? '"Park Outside"' : ''} warning. Check your VIN now.
+      </div>
+    )
+  }
+  <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">Check your VIN for open recalls at NHTSA ↗</a>
+  <p class="small muted" style="margin:6px 0 0">Not every {name} is affected by every recall. Only a VIN check tells you whether your car has an open recall.</p>
+
+  <section class="section">
+    <div class="section-head"><h2>Recalls ({recalls.length})</h2></div>
+    {
+      recalls.length ? (
+        recalls.map((r) => (
+          <article class="card recall">
+            <h3>
+              {comp(r.comps[0])} {r.doNotDrive && <span class="badge bad">Do not drive</span>} {r.parkOutside && <span class="badge warn">Park outside</span>}
+            </h3>
+            <p class="small muted" style="margin:4px 0 0">
+              NHTSA campaign <a href={campaignUrl(r.id)} target="_blank" rel="noopener">{r.id}</a> · {date(r.date)}{r.units ? ` · ${n(r.units)} vehicles` : ''}
+            </p>
+            <dl>
+              {r.summary && (<><dt>Problem</dt><dd>{r.summary}</dd></>)}
+              {r.consequence && (<><dt>Risk</dt><dd>{r.consequence}</dd></>)}
+              {r.remedy && (<><dt>Fix</dt><dd>{r.remedy}</dd></>)}
+            </dl>
+          </article>
+        ))
+      ) : (
+        <p class="muted">No vehicle recalls on file with NHTSA for the {name}. Equipment or tire recalls are listed separately on nhtsa.gov.</p>
+      )
+    }
+  </section>
+
+  <Ad place="content" />
+
+  <section class="section">
+    <div class="section-head"><h2>Owner complaints</h2></div>
+    {
+      c.total ? (
+        <>
+          <div class="stats" style="margin-top:0">
+            <div class="stat"><b>{n(c.total)}</b><span>Complaints received{worst && worst.year !== y.year ? ` (worst year: ${worst.year}, ${n(worst.complaints.total)})` : ''}</span></div>
+            <div class="stat"><b>{n(c.crash)}</b><span>Involved a crash</span></div>
+            <div class="stat"><b>{n(c.fire)}</b><span>Involved a fire</span></div>
+            <div class="stat"><b>{n(c.injured)}</b><span>Injuries reported</span></div>
+            {c.miles && <div class="stat"><b>{n(c.miles)} mi</b><span>Typical mileage at failure</span></div>}
+          </div>
+          <h3 style="margin:20px 0 10px">Most-reported problem areas</h3>
+          <div class="card bars">
+            {c.comps.map(([name, count]) => (
+              <div class="bar">
+                <span>{comp(name)}</span>
+                <span class="muted">{n(count)}</span>
+                <i style={`width:${Math.max(2, (count / c.comps[0][1]) * 100)}%`} />
+              </div>
+            ))}
+          </div>
+          <Bars data={months.map(([k, v]) => [k.slice(2).replace('-', '/'), v])} caption="Complaints received per month (last 24 months with reports)" />
+          <p class="small muted">Complaints are unverified reports from owners to NHTSA (counted once per report). A high count can reflect how many cars were sold, not only reliability. Since 2015.</p>
+        </>
+      ) : (
+        <p class="muted">No owner complaints for the {name} in NHTSA's database since 2015.</p>
+      )
+    }
+  </section>
+
+  {
+    y.variants.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Engines, MPG &amp; fuel cost</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Version</th><th>Engine</th><th>Transmission</th><th>Drive</th><th class="num">City / Hwy / Comb</th><th class="num">vs. class avg</th><th class="num">Fuel / yr</th></tr></thead>
+            <tbody>
+              {y.variants.map((v) => (
+                <tr>
+                  <td>{v.name}{v.type && <> <span class="badge">{v.type}</span></>}</td>
+                  <td>{v.type === 'EV' ? v.motor ?? 'Electric' : `${v.displ ? `${v.displ}L ` : ''}${v.cyl ? `${v.cyl}-cyl` : ''}${v.turbo ? ' turbo' : ''}`}</td>
+                  <td>{v.trans ?? '–'}</td>
+                  <td>{v.drive ?? '–'}</td>
+                  <td class="num">{v.type === 'EV' ? `${v.range ?? '–'} mi range${v.kwh ? ` · ${v.kwh} kWh/100mi` : ''}` : `${v.city ?? '–'} / ${v.hwy ?? '–'} / ${v.comb ?? '–'}`}</td>
+                  <td class={`num ${v.vsClass && v.vsClass > 0 ? 'good' : v.vsClass && v.vsClass < 0 ? 'bad' : ''}`}>{v.vsClass === undefined ? '–' : `${v.vsClass > 0 ? '+' : ''}${v.vsClass}%`}</td>
+                  <td class="num">{usd(v.cost)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="small muted">EPA estimates. "vs. class avg" compares combined MPG with the average {y.year} {y.cls ?? 'vehicle in the same EPA class'}{y.classAvg ? ` (${y.classAvg} MPG)` : ''}. Annual fuel cost is EPA's estimate for 15,000 miles at current national fuel prices.</p>
+        {ev && !best && <p class="small muted">Electric vehicle range is EPA-rated; real range varies with temperature, speed and battery age.</p>}
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="section-head"><h2>NHTSA crash-test ratings</h2></div>
+    {
+      y.rating?.length ? (
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Version</th><th>Overall</th><th>Frontal</th><th>Side</th><th>Rollover</th><th class="num">Rollover risk</th></tr></thead>
+            <tbody>
+              {y.rating.map((r) => (
+                <tr>
+                  <td>{r.desc}</td>
+                  <td><Stars value={r.overall} /></td>
+                  <td><Stars value={r.front} /></td>
+                  <td><Stars value={r.side} /></td>
+                  <td><Stars value={r.rollover} /></td>
+                  <td class="num">{r.rolloverRisk ? `${r.rolloverRisk}%` : '–'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="muted">NHTSA has not published 5-Star ratings for the {name}{y.year < 2011 ? ' under the current (2011+) test program' : ''}.</p>
+      )
+    }
+  </section>
+
+  {
+    others.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Other {m.model} model years</h2><a href={href(m)}>Compare all years →</a></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Year</th><th class="num">Recalls</th><th class="num">Complaints</th><th class="num">Best MPG</th><th>Overall rating</th></tr></thead>
+            <tbody>
+              {others.slice(0, 12).map((o) => (
+                <tr>
+                  <td><a href={href(m, o.year)}>{o.year} {m.model}</a></td>
+                  <td class="num">{o.recalls.length}</td>
+                  <td class="num">{n(o.complaints.total)}</td>
+                  <td class="num">{o.mpg?.max ?? (o.range ? `${o.range} mi` : '–')}</td>
+                  <td><Stars value={o.overall} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+
+  <Ad place="bottom" />
+  <p class="source">Sources: NHTSA recalls, consumer complaints and NCAP 5-Star ratings; EPA fuel economy data. CarRadar is not affiliated with NHTSA, the EPA or {m.make}. Problem-area and comparison figures are calculated by CarRadar from these public records.</p>
+</Base>
