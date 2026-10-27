@@ -59,6 +59,14 @@ const power = (y) => {
   return 'Gas';
 };
 
+/** Largest body version of the newest year that has Transport Canada dimensions (for the garage-fit tool) */
+function dimsOf(m, y) {
+  const dy = [y, ...m.years].find((x) => x.dims?.some((d) => d.length && d.width && d.height));
+  if (!dy) return {};
+  const d = dy.dims.filter((x) => x.length && x.width && x.height).sort((a, b) => b.length - a.length)[0];
+  return { len: d.length, wd: d.width, ht: d.height, wb: d.wheelbase, dy: dy.year === y.year ? undefined : dy.year };
+}
+
 export async function buildBuyerData(live, log) {
   const latest = (m) => m.years.find((y) => y.page && y.year <= nowYear() + 1);
 
@@ -90,7 +98,7 @@ export async function buildBuyerData(live, log) {
       st: y.overall,
       rc: y.recalls.length,
       cp: y.complaints.total,
-      len: y.dims.find((d) => d.length)?.length,
+      ...dimsOf(m, y),
       pop: m.popularity?.views30 ?? 0,
       ph: m.photo?.file,
     });

@@ -101,6 +101,6 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
   </section>
 
   <Ad place="content" />
-  <p class="chips section"><a href={href(A, ya.year)}>Full {ya.year} {na} specs →</a><a href={href(B, yb.year)}>Full {yb.year} {nb} specs →</a><a href="/tools/fuel-cost">Compare fuel costs for your driving →</a></p>
+  <p class="chips section"><a href={href(A, ya.year)}>Full {ya.year} {na} specs →</a><a href={href(B, yb.year)}>Full {yb.year} {nb} specs →</a><a href={`/tools/fuel-cost?a=${encodeURIComponent(`${ya.year} ${na}`)}&b=${encodeURIComponent(`${yb.year} ${nb}`)}`}>Compare fuel costs for your driving →</a><a href={`/tools/garage-fit?a=${encodeURIComponent(na)}&b=${encodeURIComponent(nb)}`}>Compare size &amp; garage fit →</a></p>
   <Ad place="bottom" />
 </Base>

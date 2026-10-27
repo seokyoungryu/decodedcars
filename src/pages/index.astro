@@ -5,6 +5,7 @@ import ModelCard from '@/components/ModelCard.astro';
 import { VIN_LOOKUP } from '@/config/site';
 import { comp, date, href, makes, n, rankings, updatedLabel } from '@/lib/data';
 import { RANKINGS } from '@/lib/rankings';
+import { TOOLS } from '@/lib/tools';
 
 const R = rankings();
 const popularMakes = makes()
@@ -12,6 +13,8 @@ const popularMakes = makes()
   .sort((a, b) => b.v - a.v)
   .slice(0, 24);
 const sub = (x: { latest?: number; [k: string]: unknown }) => `${x.latest ?? ''}${x.views30 ? ` · ${n(x.views30 as number)} views/mo` : ''}`;
+const modelCount = makes().reduce((s, m) => s + m.models.length, 0);
+const yearCount = makes().reduce((s, m) => s + m.models.reduce((t, x) => t + (x.to - x.from + 1), 0), 0);
 const lists = [
   { r: RANKINGS.find((x) => x.slug === 'best-mpg')!, rows: R.bestMpg.slice(0, 6) },
   { r: RANKINGS.find((x) => x.slug === 'longest-range')!, rows: R.longestRange.slice(0, 6) },
@@ -20,16 +23,45 @@ const lists = [
 ---
 
 <Base title="Car specs, MPG, safety ratings and recalls">
-  <section>
-    <h1>Every car, compared year by year</h1>
-    <p class="lead">Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every U.S. car, truck and SUV since 2005. {updatedLabel()}</p>
-    <div class="grid" style="margin-top:16px">
-      <a class="card" href="/finder"><h2 style="font-size:1.05rem">🔎 Car finder</h2><p class="small muted" style="margin:4px 0 0">Filter by body, hybrid/EV, AWD, MPG, safety</p></a>
-      <a class="card" href="/compare"><h2 style="font-size:1.05rem">⚖️ Compare two cars</h2><p class="small muted" style="margin:4px 0 0">Civic vs Corolla, RAV4 vs CR-V…</p></a>
-      <a class="card" href="/tools/vin-decoder"><h2 style="font-size:1.05rem">🔢 VIN decoder</h2><p class="small muted" style="margin:4px 0 0">What exactly is this used car?</p></a>
-      <a class="card" href="/tools/fuel-cost"><h2 style="font-size:1.05rem">⛽ Fuel cost calculator</h2><p class="small muted" style="margin:4px 0 0">Gas vs hybrid vs EV for your driving</p></a>
+  <section class="band">
+   <div class="band-grid">
+   <div>
+    <span class="eyebrow">Independent car research · updated daily</span>
+    <h1 style="margin-top:10px">Know the car before you buy it</h1>
+    <p class="lead">Specs, size, real-world MPG, crash ratings, recalls and owner-reported problems for every U.S. car, truck and SUV since 2005 — plus the best and worst years to buy used.</p>
+    <div class="search" id="qs">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <input type="search" placeholder="Search any model — e.g. RAV4, F-150, Model 3" aria-label="Search models" autocomplete="off" />
+      <div class="search-results" hidden></div>
     </div>
-    <div class="chips" style="margin-top:14px">{popularMakes.map((m) => <a href={`/${m.slug}`}>{m.name}</a>)}<a href="/makes">All makes →</a></div>
+    <div class="hero-stats">
+      <span><b>{n(modelCount)}</b>models</span>
+      <span><b>{n(yearCount)}</b>model years</span>
+      <span><b>{n(makes().length)}</b>makes</span>
+      <span><b>{updatedLabel().replace(/^Updated /, '')}</b>last update</span>
+    </div>
+   </div>
+    <aside class="hot">
+      <span class="eyebrow">Most researched right now</span>
+      {R.popular.slice(0, 4).map((x, i) => (
+        <a href={href(x)}>
+          <b class="rank">{i + 1}</b>
+          {x.photo ? <img src={`/photos/${x.photo}`} alt="" width="96" height="60" loading="eager" /> : <i class="ph" />}
+          <span><strong>{x.make} {x.model}</strong><small>{x.views30 ? `${n(x.views30 as number)} views this month` : x.latest}</small></span>
+        </a>
+      ))}
+    </aside>
+   </div>
+    <div class="tool-cards" style="margin-top:34px">
+      {TOOLS.map((t) => (
+        <a href={t.href}><span class="ic" set:html={t.icon} /><h2>{t.title}</h2><p>{t.short}</p></a>
+      ))}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Browse by make</h2><a href="/makes">All makes →</a></div>
+    <div class="chips">{popularMakes.map((m) => <a href={`/${m.slug}`}>{m.name}</a>)}</div>
   </section>
 
   <section class="section">
@@ -102,3 +134,45 @@ const lists = [
     <div class="chips">{RANKINGS.map((r) => <a href={`/rankings/${r.slug}`}>{r.short}</a>)}</div>
   </section>
 </Base>
+
+<script>
+  // Instant model search over the finder index (same data as the car finder; loaded on first focus)
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; body: string; pop: number; ph?: string };
+  const box = document.getElementById('qs')!;
+  const input = box.querySelector('input')!;
+  const list = box.querySelector<HTMLElement>('.search-results')!;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  let rows: Row[] | null = null;
+  let hits: Row[] = [];
+  let on = 0;
+  const load = () => (rows ? Promise.resolve() : fetch('/finder-data.json').then((r) => r.json()).then((d) => void (rows = d.rows)));
+
+  function show() {
+    const q = norm(input.value);
+    if (!q || !rows) return void (list.hidden = true);
+    hits = rows
+      .map((r) => ({ r, k: norm(`${r.mk}${r.md}`), m: norm(r.md) }))
+      .filter((x) => x.k.includes(q) || x.m.startsWith(q))
+      .sort((a, b) => Number(b.m.startsWith(q)) - Number(a.m.startsWith(q)) || b.r.pop - a.r.pop)
+      .slice(0, 8)
+      .map((x) => x.r);
+    on = 0;
+    list.innerHTML = hits.length
+      ? hits.map((r, i) => `<a href="/${r.ms}/${r.s}"${i === 0 ? ' class="on"' : ''}>${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="" loading="lazy">` : '<i class="ph"></i>'}${esc(r.mk)} ${esc(r.md)}<span>${r.y} · ${esc(r.body)}</span></a>`).join('')
+      : '<a href="/finder">No match — open the car finder →</a>';
+    list.hidden = false;
+  }
+  input.addEventListener('focus', () => load().then(show));
+  input.addEventListener('input', () => load().then(show));
+  input.addEventListener('keydown', (e) => {
+    const links = [...list.querySelectorAll('a')];
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      on = (on + (e.key === 'ArrowDown' ? 1 : links.length - 1)) % Math.max(links.length, 1);
+      links.forEach((a, i) => a.classList.toggle('on', i === on));
+    } else if (e.key === 'Enter' && links[on]) location.href = links[on].href;
+    else if (e.key === 'Escape') list.hidden = true;
+  });
+  document.addEventListener('click', (e) => !box.contains(e.target as Node) && (list.hidden = true));
+</script>

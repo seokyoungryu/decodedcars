@@ -8,6 +8,7 @@ import UsedChecklist from '@/components/UsedChecklist.astro';
 import { VIN_LOOKUP, campaignUrl } from '@/config/site';
 import { type Model, type Year, campaigns, comp, date, href, makes, model as loadModel, n, noindex, usd } from '@/lib/data';
 import { bodyName, classNoun, describeYear } from '@/lib/describe';
+import { changesBetween, previousYear } from '@/lib/changes';
 
 export function getStaticPaths() {
   return makes().flatMap((mk) =>
@@ -36,6 +37,8 @@ const range = (vals: (number | undefined)[], unit: string, digits = 0) => {
 };
 const bodies = y.dims.map((d) => bodyName(d.name, m.model)).filter(Boolean);
 const summary = describeYear(m, y);
+const prevY = previousYear(m, y);
+const changes = prevY ? changesBetween(prevY, y) : [];
 const ratingTop = y.rating?.find((r) => r.overall === y.overall) ?? y.rating?.[0];
 const crashPics = (y.rating ?? []).flatMap((r) => [r.frontPic && { src: r.frontPic, cap: `Frontal crash test — ${r.desc}` }, r.sidePic && { src: r.sidePic, cap: `Side crash test — ${r.desc}` }]).filter(Boolean).slice(0, 2) as { src: string; cap: string }[];
 const desc = `${name} specs, dimensions and MPG${y.range ? `, ${y.range}-mile range` : ''}${y.overall ? `, ${y.overall}-star NHTSA rating` : ''}, plus ${recalls.length} recall${recalls.length === 1 ? '' : 's'} and ${n(c.total)} owner complaints. Compare with other years and similar cars.`;
@@ -78,13 +81,27 @@ const jsonLd = [
   </div>
 
   <nav class="tabs" aria-label="On this page">
-    <a href="#overview">Overview</a>{y.dims.length > 0 && <a href="#dimensions">Dimensions</a>}<a href="#engines">Engines &amp; MPG</a><a href="#safety">Safety</a>{(y.similar?.length ?? 0) > 0 && <a href="#similar">Similar cars</a>}<a href="#recalls">Recalls</a><a href="#problems">Problems</a>{y.year <= new Date().getUTCFullYear() - 1 && <a href="#checklist">Used buyer checklist</a>}
+    <a href="#overview">Overview</a>{prevY && <a href="#changes">What changed</a>}{y.dims.length > 0 && <a href="#dimensions">Dimensions</a>}<a href="#engines">Engines &amp; MPG</a><a href="#safety">Safety</a>{(y.similar?.length ?? 0) > 0 && <a href="#similar">Similar cars</a>}<a href="#recalls">Recalls</a><a href="#problems">Problems</a>{y.year <= new Date().getUTCFullYear() - 1 && <a href="#checklist">Used buyer checklist</a>}
   </nav>
 
   <section class="section overview" id="overview">
     <h2 style="margin-bottom:10px">Overview</h2>
     {summary.map((p) => <p>{p}</p>)}
   </section>
+
+  {
+    prevY && (
+      <section class="section" id="changes">
+        <div class="section-head"><h2>What changed for {y.year}</h2></div>
+        {changes.length ? (
+          <ul class="changes">{changes.map((c) => <li class={c.redesign ? 'big' : ''}>{c.text}</li>)}</ul>
+        ) : (
+          <p class="muted">No changes to engines, powertrains, drivetrains, size, EPA ratings or NHTSA crash rating compared with the {prevY.year} {m.model} — a carry-over year in the data.</p>
+        )}
+        <p class="small muted">Compared with the {prevY.year} model year, using EPA, Transport Canada and NHTSA data. Trim, feature and price changes are not covered.{prevY.page && <> <a href={href(m, prevY.year)}>See the {prevY.year} {m.model} →</a></>}</p>
+      </section>
+    )
+  }
 
   {
     y.dims.length > 0 && (
@@ -110,6 +127,7 @@ const jsonLd = [
           </table>
         </div>
         <p class="small muted">Source: Canadian Vehicle Specifications, Transport Canada. Contains information licensed under the Open Government Licence – Canada. Canadian-market measurements; U.S. versions are usually the same or very close.</p>
+        <a class="cta ghost" href={`/tools/garage-fit?a=${encodeURIComponent(`${m.make} ${m.model}`)}`}>Will it fit your garage? Check with your measurements →</a>
       </section>
     )
   }

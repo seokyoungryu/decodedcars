@@ -47,12 +47,17 @@ scripts/lib/buyer.mjs        best/worst years, finder rows, head-to-head pairs, 
 scripts/lib/analytics.mjs    Cloudflare Web Analytics (optional, after launch)
 scripts/lib/aggregate.mjs    NHTSA→EPA name matching, comparisons, rankings, noindex list → data/site
 src/pages/                   /, /makes, /[make], /[make]/[model], /[make]/[model]/[year], /recalls, /rankings/*, /guide/*,
-                             /finder, /compare/*, /tools/vin-decoder, /tools/fuel-cost
+                             /finder, /compare/*, /tools/vin-decoder, /tools/fuel-cost, /tools/car-loan, /tools/garage-fit
+src/lib/changes.ts           model-year changes (engines, powertrains, AWD, size, MPG, NCAP) from our own data
+src/lib/tools.ts             the tool list shown on the home page and /tools
 ```
 
 Buyer features:
 - **Best / worst year to buy** (model page): model years 2015 to two years ago; score = complaints + recalls×20 + crashes×3 + fires×10. A "year to avoid" is shown only when it is clearly worse (score ≥ 40 and ≥ 2× the best year). Counts are not adjusted for sales, which the page says.
 - **Rivals** ("similar cars", comparison pages): same model year, body style (from all versions of the year — EPA files some crossovers as station wagons) and market tier (mainstream / luxury / exotic), exterior length within 10 in (or the same EPA size class when length is unknown), and cylinder count within 3. Comparison pages only for cars on sale this or last model year, at most 1,500.
+- **What changed** (year page) and **changes by model year** (model page) compare each year with the previous one using EPA, CVS and NCAP data only. A body-length change of 2 in+ or wheelbase change of 1 in+ is flagged as a likely redesign. For next year's models (EPA list still filling in), nothing is reported as "dropped".
+- **Car loan calculator** is pure math in the browser; the APR is an editable example, not a market rate.
+- **Garage fit** uses CVS length/width/height of the largest body style from the newest year that has dimensions; widths exclude mirrors (+9 in assumed at the door).
 - **Photos** are reviewed by eye after changes to the photo rules (contact sheets of every photo); bad files, photo series and models without a correct photo go into `photo-blocklist.json`. Once chosen, a model's photo is kept on later re-checks (so reviewed photos don't silently change) unless it is blocklisted.
 
 Names are matched with a normalized key (`F-150` = `F150`, `CR-V` = `CRV`). If a NHTSA model has no exact EPA match, it falls back to the longest EPA model name it starts with (`SILVERADO 1500` → `Silverado`). Display names and URLs use NHTSA's punctuation (`/ford/f-150`).
@@ -93,4 +98,8 @@ npm run build && npm run preview
 
 - Horsepower/torque: no free official dataset found (EPA and NCAP don't publish it).
 - Choosing a final brand name and domain ("CarRadar" is a working name).
-- More buyer tools: loan/lease calculator, garage-fit size compare, recall RSS per model, what changed between model years.
+- More buyer tools: lease calculator, recall RSS per model.
+
+## Design
+
+Editorial automotive style: self-hosted variable fonts (Archivo for headings, Inter for text; both SIL OFL, no third-party font requests), near-black header/footer/hero bands, one orange accent, light and dark themes from `prefers-color-scheme`. All tokens are at the top of `src/styles/global.css`.

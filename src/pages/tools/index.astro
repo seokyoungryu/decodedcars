@@ -1,15 +1,13 @@
 ---
 import Base from '@/layouts/Base.astro';
-const TOOLS = [
-  { href: '/finder', title: 'Car finder', text: 'Filter every current model by body style, gas/hybrid/electric, AWD, MPG, EV range, safety and recalls.' },
-  { href: '/compare', title: 'Head-to-head comparisons', text: 'Popular rivals side by side: efficiency, size, crash ratings, recalls and the best years to buy used.' },
-  { href: '/tools/vin-decoder', title: 'VIN decoder', text: 'Turn a 17-character VIN into year, trim, engine, horsepower and factory — then check recalls.' },
-  { href: '/tools/fuel-cost', title: 'Fuel cost calculator', text: 'Gas vs hybrid vs electric: yearly and 5-year fuel cost for your mileage, plus payback time.' },
-];
+import { TOOLS } from '@/lib/tools';
 ---
 
-<Base title="Car Buying Tools" description="Free car buying tools: car finder, head-to-head comparisons, VIN decoder and a gas vs hybrid vs EV fuel cost calculator." section="tools">
-  <h1>Car buying tools</h1>
-  <p class="lead">Free tools for shortlisting, comparing and checking a car before you buy.</p>
-  <div class="grid section">{TOOLS.map((t) => <a class="card" href={t.href}><h2 style="font-size:1.05rem">{t.title}</h2><p class="small muted" style="margin:6px 0 0">{t.text}</p></a>)}</div>
+<Base title="Car Buying Tools" description="Free car buying tools: car finder, head-to-head comparisons, VIN decoder, fuel cost and car loan calculators, and a garage fit and size comparison tool." section="tools">
+  <section class="band">
+    <span class="eyebrow">Free · no sign-up</span>
+    <h1 style="margin-top:10px">Car buying tools</h1>
+    <p class="lead">Shortlist, compare, check and budget for a car before you buy — all running right in your browser.</p>
+  </section>
+  <div class="tool-cards section">{TOOLS.map((t) => <a href={t.href}><span class="ic" set:html={t.icon} /><h2>{t.title}</h2><p>{t.text}</p></a>)}</div>
 </Base>

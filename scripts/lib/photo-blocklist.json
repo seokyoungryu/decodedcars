@@ -26,7 +26,10 @@
     "Honda_INTEGRA_ZX_(DA7)_front.JPG",
     "Alfa_Romeo_Giulia_Super_(cropped).jpg",
     "Honda_Prelude_(14904412778).jpg",
-    "Infiniti_Q60_Project_Black_S,_Paris_Motor_Show_2018,_IMG_0319.jpg"
+    "Infiniti_Q60_Project_Black_S,_Paris_Motor_Show_2018,_IMG_0319.jpg",
+    "Honda_HRC_PRELUDE-GT_(1)_at_Osaka_Auto_Messe_2026_(cropped).jpg",
+    "Mercedes-Benz_G-Class_Prototyp_IAA_2023_1X7A0483.jpg",
+    "G-Class,_IAA_Open_Space_2023,_Munich_(P1120148).jpg"
   ],
   "_models": "Models that get no photo: EPA catch-all names (several different cars) or no correct photo on the article.",
   "models": [
@@ -36,6 +39,7 @@
   ],
   "_prefixes": "File-name prefixes of photo series that are mostly interior shots.",
   "prefixes": [
-    "2019_BMW_X3_xDrive_30i_Luxury_("
+    "2019_BMW_X3_xDrive_30i_Luxury_(",
+    "G-Class,_IAA_Open_Space_2023"
   ]
 }

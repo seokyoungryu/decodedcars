@@ -7,6 +7,7 @@ import CarPhoto from '@/components/CarPhoto.astro';
 import { VIN_LOOKUP } from '@/config/site';
 import VerdictCard from '@/components/VerdictCard.astro';
 import { type Model, comp, href, makes, model as loadModel, n, vsFor } from '@/lib/data';
+import { changeLog } from '@/lib/changes';
 
 export function getStaticPaths() {
   return makes().flatMap((mk) => mk.models.map((mm) => ({ params: { make: mk.slug, model: mm.slug }, props: { m: loadModel(mk.slug, mm.slug)! } })));
@@ -15,6 +16,7 @@ const { m } = Astro.props as { m: Model };
 const years = m.years.filter((y) => y.page);
 const latest = years[0];
 const first = years.at(-1)!;
+const log = changeLog(m).slice(0, 12);
 // alternatives from the newest year that has enough rivals (next-year models trickle in during the year)
 const alt = years.find((y) => y.year <= new Date().getFullYear() && (y.similar?.length ?? 0) >= 3) ?? latest;
 const recallIds = new Set(years.flatMap((y) => y.recalls));
@@ -81,6 +83,23 @@ const desc = `${title} by model year (${first.year}–${latest.year}): specs, si
       <section class="section">
         <div class="section-head"><h2>Compare head to head</h2></div>
         <div class="chips">{rivals.map((p) => <a href={`/compare/${p.id}`}>{title} vs {p.other}</a>)}</div>
+      </section>
+    )
+  }
+
+  {
+    log.length > 0 && (
+      <section class="section" id="changes">
+        <div class="section-head"><h2>{m.model} changes by model year</h2></div>
+        <ol class="timeline">
+          {log.map((e) => (
+            <li class={e.changes.some((c) => c.redesign) ? 'big' : ''}>
+              <span class="tl-year">{e.page ? <a href={href(m, e.year)}>{e.year}</a> : e.year}</span>
+              <ul>{e.changes.map((c) => <li>{c.text}</li>)}</ul>
+            </li>
+          ))}
+        </ol>
+        <p class="small muted">Differences in engines, powertrains, drivetrains, size, EPA ratings and NHTSA crash ratings from one model year to the next. Years without a measurable change are left out.</p>
       </section>
     )
   }

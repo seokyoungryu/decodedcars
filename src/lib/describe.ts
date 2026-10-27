@@ -8,7 +8,7 @@ export const bodyName = (name: string, model: string) =>
     .replace(new RegExp(`^${model.replace(/[^A-Za-z0-9 ]/g, '.')}\\s*`, 'i'), '')
     .toLowerCase()
     .replace(/\b([a-z])/g, (c) => c.toUpperCase())
-    .replace(/\b(Awd|Fwd|Rwd|4x4|2wd|4wd|Lx|Ex|Dx|Si|Gt|Rs|Ss|Ev)\b/g, (w) => w.toUpperCase())
+    .replace(/\b(Awd|Fwd|Rwd|4x4|2wd|4wd|Lx|Ex|Dx|Si|Gt|Rs|Ss|Ev|Suv|Phev|Hev)\b/g, (w) => w.toUpperCase())
     .replace(/(\d)Dr\b/g, '$1dr')
     .trim() || name;
 

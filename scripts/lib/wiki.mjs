@@ -20,13 +20,13 @@ import { norm } from './keys.mjs';
 const FILE = CACHE + 'wiki.json';
 export const TITLES = CACHE + 'wiki-titles.json';
 export const PHOTO_DIR = CACHE + 'photos/';
-const VERSION = 5; // bump when the checks change, so everything is re-checked
+const VERSION = 6; // bump when the checks change, so everything is re-checked
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const FREE = /^(cc0|cc[ -]by(-sa)?[ -][\d.]+|public domain|pd\b|pd-)/i;
 const CARLIKE = /\b(cars?|automobiles?|vehicles?|suvs?|crossovers?|minivans?|mpvs?|vans?|trucks?|pickups?|sedans?|saloons?|coupes?|coupés?|hatchbacks?|roadsters?|convertibles?|supercars?|hypercars?|grand tourers?|wagons?|estates?|limousines?|model series)\b/i;
 const NOT_CAR = /\b(atv|all-terrain|motorcycles?|motorbikes?|scooters?|dune buggy|buggy|quad|go-kart|snowmobiles?|outboard|lawn mower|tractors?|aircraft|boats?|engine family)\b/i;
 // not a photo of the whole road car
-const NOT_PHOTO = /\b(interior|innenraum|dash|dashboard|cockpit|steering|console|engine|motor ?room|rear|badge|emblem|logo|wheels?|rims?|seats?|trunk|boot|rally|wrc|race|racing|tcr|lms|gt3|gt4|formula|grand prix|limo|limousine|stretch(ed)?|concept|prototype|6x6|heck|innen)\b/i;
+const NOT_PHOTO = /\b(interior|innenraum|dash|dashboard|cockpit|steering|console|engine|motor ?room|rear|badge|emblem|logo|wheels?|rims?|seats?|trunk|boot|rally|wrc|race|racing|tcr|lms|gt3|gt4|formula|grand prix|limo|limousine|stretch(ed)?|concept|prototyp(e)?|erlkönig|camouflage|hrc|6x6|heck|innen)\b/i;
 const BLOCKLIST = JSON.parse(readFileSync(new URL('./photo-blocklist.json', import.meta.url), 'utf8'));
 const BLOCK = new Set(BLOCKLIST.files.map((f) => f.replace(/ /g, '_')));
 const NO_PHOTO = new Set(BLOCKLIST.models);
@@ -47,13 +47,13 @@ async function summary(title) {
   return s;
 }
 
-/** Production that ended well before our first model year ("Car model (1962–1978)", "…was produced from 1967 to 1972.") */
+/** Production that ended before our first model year ("Car model (1962–1978)", "…was produced from 1967 to 1972.") */
 function oldCar(desc, extract, firstYear) {
   // only the short description and first sentence: later sentences mention predecessors ("replaced the Bronco (1966–1996)")
   const t = `${desc}. ${String(extract).split(/\.\s/)[0]}`;
   if (/\b(present|current|ongoing|since)\b/i.test(t)) return false;
   const ranges = [...t.matchAll(/\b(19\d\d|20[0-4]\d)\s*(?:–|-|—|to|until|and)\s*(19\d\d|20[0-4]\d)\b/g)].map((x) => Number(x[2]));
-  return ranges.length > 0 && Math.max(...ranges) < firstYear - 3;
+  return ranges.length > 0 && Math.max(...ranges) < firstYear;
 }
 
 /** Is this summary a real article about this car (not an index page, not an ATV, not a much older namesake)? */
@@ -74,15 +74,26 @@ async function search(q) {
   return (j?.query?.search ?? []).map((x) => x.title);
 }
 
-/** Commons JPEGs among the article's images, lead image first */
-async function candidates(title, lead) {
-  const files = [];
+/**
+ * Commons photos among the article's images: lead image first, then files whose name dates them within our years
+ * (newest first), then undated ones. Long articles list old generations first, so ranking comes before the cut.
+ * JPEGs, plus PNGs that look like photos (a year or "front/side view" in the name) — other PNGs/SVGs are logos and maps.
+ */
+async function candidates(title, lead, { make, firstYear, lastYear }) {
   const m = String(lead ?? '').match(/(?:upload|thumb)\.wikimedia\.org\/wikipedia\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?]+)/);
-  if (m) files.push(decodeURIComponent(m[1]));
+  const leadFile = m ? decodeURIComponent(m[1]).replace(/ /g, '_') : undefined;
   const ml = await getJson(`https://en.wikipedia.org/api/rest_v1/page/media-list/${encodeURIComponent(title.replace(/ /g, '_'))}`).catch(() => null);
   await sleep(150);
-  for (const it of ml?.items ?? []) if (it.type === 'image') files.push(it.title.replace(/^File:/, ''));
-  return [...new Set(files.map((f) => f.replace(/ /g, '_')))].filter((f) => /\.jpe?g$/i.test(f) && !blocked(f)).slice(0, 25);
+  const photo = (f) => /\.jpe?g$/i.test(f) || (/\.png$/i.test(f) && /\b(19|20)\d\d\b|front|side|view/i.test(f.replace(/_/g, ' ')));
+  const all = [...new Set((ml?.items ?? []).filter((it) => it.type === 'image' && it.title).map((it) => it.title.replace(/^File:/, '').replace(/ /g, '_')))];
+  const rest = all
+    .filter((f) => f !== leadFile && photo(f) && !blocked(f))
+    .map((f) => ({ f, ys: captionYears(f.replace(/_/g, ' '), make) }))
+    .filter(({ ys }) => !ys.length || (Math.min(...ys) >= firstYear - 2 && Math.min(...ys) <= lastYear + 2))
+    .sort((a, b) => (b.ys.length ? Math.min(...b.ys) : 0) - (a.ys.length ? Math.min(...a.ys) : 0))
+    .map(({ f }) => f);
+  const files = [...(leadFile && photo(leadFile) && !blocked(leadFile) ? [leadFile] : []), ...rest].slice(0, 49);
+  return { files, leadFile };
 }
 
 /** Year of the car in a caption or file name: "2002 Honda Integra", "'60 Chevrolet Impala", "94-95 Mercedes-Benz E-Class" */
@@ -98,13 +109,13 @@ async function photoFor(title, lead, extract, { key, make, model, firstYear, las
   if (NO_PHOTO.has(key)) return undefined;
   // a recent nameplate on an article with a long history ("Honda Prelude" since 1978): undated images are likely older generations
   const revived = firstYear >= 2015 && yearsIn(extract).some((y) => y < firstYear - 10);
-  const files = await candidates(title, lead);
+  const { files, leadFile } = await candidates(title, lead, { make, firstYear, lastYear });
   if (!files.length) return undefined;
   await sleep(1000); // Commons is stricter than the Wikipedia REST API
   const j = await getJson(`https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=800&titles=${encodeURIComponent(files.map((f) => 'File:' + f).join('|'))}`);
   const info = new Map(Object.values(j?.query?.pages ?? {}).map((p) => [p.title.replace(/^File:/, '').replace(/ /g, '_'), p.imageinfo?.[0]]));
   const ok = [];
-  files.forEach((file, i) => {
+  files.forEach((file) => {
     const ii = info.get(file);
     const md = ii?.extmetadata ?? {};
     const lic = strip(md.LicenseShortName?.value);
@@ -113,8 +124,10 @@ async function photoFor(title, lead, extract, { key, make, model, firstYear, las
     const named = `${caption} ${file.replace(/_/g, ' ')}`;
     const text = `${named} ${strip(md.ImageDescription?.value).slice(0, 300)}`;
     if (NOT_CAR.test(text) || NOT_PHOTO.test(named)) return;
-    // the caption/file should name the model (catches images of a different car)
-    if (!norm(text).includes(modelToken(model))) return;
+    // the caption/file should name the model (catches images of a different car) — except the lead image of the
+    // already-verified article, whose captions often use chassis codes instead ("BMW G20" for the 3 Series)
+    const isLead = file === leadFile;
+    if (!isLead && !norm(text).includes(modelToken(model))) return;
     // year of the car in the caption or file name, else any year in the description
     const named_y = captionYears(named, make);
     const year = named_y.length ? Math.min(...named_y) : undefined;
@@ -123,14 +136,14 @@ async function photoFor(title, lead, extract, { key, make, model, firstYear, las
       const ys = yearsIn(text);
       if (ys.length && Math.max(...ys) < firstYear - 12) return;
     }
-    ok.push({ ii, md, lic, caption, year, lead: i === 0 && !!lead });
+    ok.push({ ii, md, lic, caption, year, lead: isLead });
   });
   if (revived) ok.splice(0, ok.length, ...ok.filter((x) => x.year));
   if (!ok.length) return undefined;
   // a photo dated within our years beats an undated lead image (undated leads are often an older generation)
   const dated = ok.filter((x) => x.year).sort((a, b) => b.lead - a.lead || b.year - a.year)[0];
   const pick = dated ?? ok.find((x) => x.lead) ?? ok[0];
-  const local = `${fileName(key)}.jpg`;
+  const local = `${fileName(key)}.${/\.png$/i.test(pick.ii.thumburl) ? 'png' : 'jpg'}`;
   const res = await fetch(pick.ii.thumburl, { headers: { 'User-Agent': USER_AGENT } });
   if (!res.ok) return undefined;
   await writeFile(PHOTO_DIR + local, Buffer.from(await res.arrayBuffer()));

@@ -1,0 +1,11 @@
+// The buyer tools, shown on the home page and the tools index (one list so they never drift apart)
+const ic = (d: string) => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+
+export const TOOLS = [
+  { href: '/finder', title: 'Car finder', short: 'Filter by body, hybrid/EV, AWD, MPG and safety', text: 'Filter every current model by body style, gas/hybrid/electric, AWD, MPG, EV range, safety and recalls.', icon: ic('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>') },
+  { href: '/compare', title: 'Compare two cars', short: 'Civic vs Corolla, CR-V vs RAV4 and more', text: 'Popular rivals side by side: efficiency, size, crash ratings, recalls and the best years to buy used.', icon: ic('<path d="M3 7h13M3 7l4-4M3 7l4 4M21 17H8m13 0-4-4m4 4-4 4"/>') },
+  { href: '/tools/vin-decoder', title: 'VIN decoder', short: 'What exactly is this used car?', text: 'Turn a 17-character VIN into year, trim, engine, horsepower and factory — then check recalls.', icon: ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M10 9v6M13 9v6M17 9v6"/>') },
+  { href: '/tools/fuel-cost', title: 'Fuel cost calculator', short: 'Gas vs hybrid vs EV for your driving', text: 'Gas vs hybrid vs electric: yearly and 5-year fuel cost for your mileage, plus payback time.', icon: ic('<path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3"/>') },
+  { href: '/tools/car-loan', title: 'Car loan calculator', short: 'Monthly payment and true cost of the loan', text: 'Monthly payment, total interest and loan lengths compared — or how much car fits your monthly budget.', icon: ic('<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>') },
+  { href: '/tools/garage-fit', title: 'Garage fit & size', short: 'Will it fit — and can you open the doors?', text: 'Will it fit your garage and door, with room to open the doors? Compare length, width and height of up to three cars.', icon: ic('<path d="M3 21V9l9-6 9 6v12"/><path d="M7 21v-8h10v8M7 17h10"/>') },
+];
