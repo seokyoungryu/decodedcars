@@ -13,7 +13,9 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 | Specs, MPG, EV range, fuel cost | EPA `vehicles.csv.zip` (fueleconomy.gov) | EPA Data License: public domain. **fueleconomy.gov photos are manufacturer-copyrighted, page text is non-commercial — use numbers only** | – |
 | Dimensions, curb weight | Transport Canada Canadian Vehicle Specifications via NHTSA vPIC | **Open Government Licence – Canada: attribution required** (footer + under each dimensions table) | vPIC rate control → one call per make-year, 400 ms apart, cached 60 days for recent years |
 | Model overview text | Wikipedia REST page summary | **CC BY-SA 4.0: shown unmodified, with article link and license** | cached 30 days |
-| Model photo | Wikimedia Commons (the article's lead image) | **Only free licenses (CC0/PD/CC BY/CC BY-SA); author, license and file link shown under the photo**; non-free enwiki images skipped | thumbnail downloaded once |
+| Model photo | Wikimedia Commons (the article's lead image, else another image of the article) | **Only free licenses (CC0/PD/CC BY/CC BY-SA); author, license and file link shown under the photo**; non-free enwiki images skipped | one Commons call per model, 1 s apart, cached 30 days |
+| Fuel prices (calculator defaults) | fueleconomy.gov web service `/ws/rest/fuelprices` (EPA/DOE) | public domain, numbers only | one call per run |
+| VIN decoding | NHTSA vPIC `DecodeVinValues`, called **from the visitor's browser** | US Government work; CORS open | the VIN never reaches our server and is not stored |
 | Crash-test photos, safety tech | NHTSA NCAP | US Government work | part of the ratings calls |
 | Trending / most researched | Wikimedia pageviews API | CC0; identifying User-Agent with contact required | gentle (one request per article per day) |
 | Most viewed on CarRadar | Cloudflare Web Analytics GraphQL | our own data | 300 queries / 5 min (we use 1) |
@@ -39,11 +41,19 @@ scripts/lib/nhtsa-files.mjs  recalls + complaints bulk files, streamed (300 MB+)
 scripts/lib/ratings.mjs      NCAP API, cached; missing years first, current years refreshed every 30 days
 scripts/lib/pageviews.mjs    Wikipedia title resolution (cached) + 60-day daily views
 scripts/lib/cvs.mjs          dimensions/weight (Transport Canada CVS via vPIC)
-scripts/lib/wiki.mjs         Wikipedia overview + free Commons photo (with attribution data)
+scripts/lib/wiki.mjs         Wikipedia article per model (checked, not an index page or older namesake) + free Commons photo per model
+scripts/lib/photo-blocklist.json  Commons files rejected on manual review (interiors, race cars, wrong generation)
+scripts/lib/buyer.mjs        best/worst years, finder rows, head-to-head pairs, fuel prices → data/site
 scripts/lib/analytics.mjs    Cloudflare Web Analytics (optional, after launch)
 scripts/lib/aggregate.mjs    NHTSA→EPA name matching, comparisons, rankings, noindex list → data/site
-src/pages/                   /, /makes, /[make], /[make]/[model], /[make]/[model]/[year], /recalls, /rankings/*, /guide/*
+src/pages/                   /, /makes, /[make], /[make]/[model], /[make]/[model]/[year], /recalls, /rankings/*, /guide/*,
+                             /finder, /compare/*, /tools/vin-decoder, /tools/fuel-cost
 ```
+
+Buyer features:
+- **Best / worst year to buy** (model page): model years 2015 to two years ago; score = complaints + recalls×20 + crashes×3 + fires×10. A "year to avoid" is shown only when it is clearly worse (score ≥ 40 and ≥ 2× the best year). Counts are not adjusted for sales, which the page says.
+- **Rivals** ("similar cars", comparison pages): same model year, body style (from all versions of the year — EPA files some crossovers as station wagons) and market tier (mainstream / luxury / exotic), exterior length within 10 in (or the same EPA size class when length is unknown), and cylinder count within 3. Comparison pages only for cars on sale this or last model year, at most 1,500.
+- **Photos** are reviewed by eye after changes to the photo rules (contact sheets of every photo); bad files, photo series and models without a correct photo go into `photo-blocklist.json`. Once chosen, a model's photo is kept on later re-checks (so reviewed photos don't silently change) unless it is blocklisted.
 
 Names are matched with a normalized key (`F-150` = `F150`, `CR-V` = `CRV`). If a NHTSA model has no exact EPA match, it falls back to the longest EPA model name it starts with (`SILVERADO 1500` → `Silverado`). Display names and URLs use NHTSA's punctuation (`/ford/f-150`).
 
@@ -83,3 +93,4 @@ npm run build && npm run preview
 
 - Horsepower/torque: no free official dataset found (EPA and NCAP don't publish it).
 - Choosing a final brand name and domain ("CarRadar" is a working name).
+- More buyer tools: loan/lease calculator, garage-fit size compare, recall RSS per model, what changed between model years.

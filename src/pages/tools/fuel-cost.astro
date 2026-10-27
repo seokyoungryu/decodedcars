@@ -36,7 +36,7 @@ const P = fuelPrices();
 
   function cost(r: Row, f: FormData) {
     const miles = +(f.get('miles') ?? 0);
-    if (r.kwh && (!r.gal || r.pw === 'Electric')) return { per100: (r.kwh * +(f.get('kwh') ?? 0)), unit: `${r.kwh} kWh/100 mi`, year: (miles / 100) * r.kwh * +(f.get('kwh') ?? 0) };
+    if (r.kwh && (!r.gal || r.pw === 'Electric')) return { per100: (r.kwh * +(f.get('kwh') ?? 0)), unit: `${Math.round(r.kwh * 10) / 10} kWh/100 mi`, year: (miles / 100) * r.kwh * +(f.get('kwh') ?? 0) };
     if (r.gal) {
       const price = r.premium ? +(f.get('prem') ?? 0) : +(f.get('gas') ?? 0);
       return { per100: r.gal * price, unit: `${Math.round(100 / r.gal)} MPG${r.premium ? ' (premium)' : ''}`, year: (miles / 100) * r.gal * price };

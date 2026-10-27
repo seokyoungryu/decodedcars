@@ -10,7 +10,7 @@ import { CACHE, readJson, writeJson } from './store.mjs';
 export const USER_AGENT = `CarRadarBot/0.1 (${process.env.SITE_CONTACT || 'https://github.com/'}; static vehicle-safety site, daily batch)`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function getJson(url, { tries = 4, headers = {} } = {}) {
+export async function getJson(url, { tries = 5, headers = {} } = {}) {
   let last;
   for (let i = 0; i < tries; i++) {
     try {
@@ -19,6 +19,11 @@ export async function getJson(url, { tries = 4, headers = {} } = {}) {
       if (res.ok) return await res.json();
       last = new Error(`${res.status} ${url}`);
       if (res.status < 500 && res.status !== 429) throw last;
+      // rate limited: wait as long as the server asks (Wikimedia sends Retry-After), at least 5 s
+      if (res.status === 429) {
+        await sleep(Math.max(5000 * 2 ** i, Number(res.headers.get('retry-after') || 0) * 1000));
+        continue;
+      }
     } catch (e) {
       last = e;
     }

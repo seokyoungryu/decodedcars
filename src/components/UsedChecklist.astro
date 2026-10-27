@@ -15,7 +15,8 @@ const tops = y.complaints.comps.filter(([c]) => !/UNKNOWN/i.test(c)).slice(0, 3)
 // what to physically check for the most-reported systems
 const TIP: [RegExp, string][] = [
   [/AIR BAG|SEAT BELT/i, 'confirm the airbag warning light turns off after start-up and any airbag recall was completed'],
-  [/ENGINE|POWER TRAIN|FUEL/i, 'cold-start the engine, listen for knocking, and watch for warning lights or hesitation on acceleration'],
+  [/FUEL/i, 'smell for fuel around the car and in the cabin, check that it starts easily when warm, and look at the oil dipstick for a fuel smell or rising level'],
+  [/ENGINE/i, 'cold-start the engine, listen for knocking, and watch for warning lights or hesitation on acceleration'],
   [/TRANSMISSION|POWER TRAIN/i, 'test-drive through all gears, including reverse; note slipping, harsh or delayed shifts'],
   [/BRAKE/i, 'brake firmly from speed; check for pulling, pulsing pedal or ABS warning light'],
   [/STEERING/i, 'turn lock-to-lock while parked and on the road; listen for noises and feel for heavy or loose steering'],

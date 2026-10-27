@@ -12,8 +12,13 @@ export function getStaticPaths() {
 const { p } = Astro.props as { p: VsPair };
 const A = loadModel(...p.a) as Model;
 const B = loadModel(...p.b) as Model;
-const ya = A.years.find((y) => y.page && y.year <= new Date().getUTCFullYear() + 1)!;
-const yb = B.years.find((y) => y.page && y.year <= new Date().getUTCFullYear() + 1)!;
+// the same model year for both: newest year both have, this year or earlier first (next-year data is thin early on)
+const now = new Date().getUTCFullYear();
+const common = A.years.filter((y) => y.page && B.years.some((x) => x.page && x.year === y.year)).map((y) => y.year);
+const year = common.find((y) => y <= now) ?? common[0];
+const pickYear = (m: Model) => m.years.find((y) => y.page && y.year === year) ?? m.years.find((y) => y.page && y.year <= now + 1)!;
+const ya = pickYear(A);
+const yb = pickYear(B);
 const na = `${A.make} ${A.model}`;
 const nb = `${B.make} ${B.model}`;
 const allRecalls = (m: Model) => new Set(m.years.flatMap((y) => y.recalls)).size;
@@ -58,7 +63,7 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
 <Base title={`${na} vs ${nb}: MPG, Size, Safety & Reliability`} description={desc} section="compare">
   <div class="crumbs"><a href="/compare">Compare</a></div>
   <h1>{na} vs {nb}</h1>
-  <p class="lead">{ya.year} {na} vs {yb.year} {nb} — two {classNoun(ya.cls)}s compared on efficiency, size, safety and reliability.</p>
+  <p class="lead">{ya.year} {na} vs {yb.year} {nb} — {classNoun(ya.cls) === classNoun(yb.cls) ? `two ${classNoun(ya.cls)}s` : 'two rivals'} compared on efficiency, size, safety and reliability.</p>
 
   <div class="vs-grid section">
     <div><CarPhoto photo={A.photo} alt={na} /><p style="margin:6px 0 0"><a href={href(A)}><b>{na}</b></a></p></div>

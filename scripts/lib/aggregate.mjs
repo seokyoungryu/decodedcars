@@ -5,13 +5,26 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PHOTO_DIR } from './wiki.mjs';
-import { buildBuyerData, verdict } from './buyer.mjs';
+import { buildBuyerData, verdict, yearBody } from './buyer.mjs';
 import { SITE, daysAgo, today, writeJson } from './store.mjs';
 import { norm, slug } from './keys.mjs';
 
 // EPA classes are by size only; compare mainstream with mainstream and luxury with luxury first
 const LUXURY = new Set(['ACURA', 'ALFAROMEO', 'ASTONMARTIN', 'AUDI', 'BENTLEY', 'BMW', 'BMWALPINA', 'BUGATTI', 'CADILLAC', 'FERRARI', 'GENESIS', 'INFINITI', 'JAGUAR', 'LAMBORGHINI', 'LANDROVER', 'LEXUS', 'LINCOLN', 'LOTUS', 'LUCID', 'MASERATI', 'MCLARENAUTOMOTIVE', 'MERCEDESBENZ', 'POLESTAR', 'PORSCHE', 'ROLLSROYCE', 'ROLLSROYCEMOTORCARSLTD', 'TESLA', 'VOLVO']);
-const tier = (key) => (LUXURY.has(key.split('|')[0]) ? 1 : 0);
+const EXOTIC = new Set(['ASTONMARTIN', 'BENTLEY', 'BUGATTI', 'FERRARI', 'LAMBORGHINI', 'LOTUS', 'MCLARENAUTOMOTIVE', 'ROLLSROYCE', 'ROLLSROYCEMOTORCARSLTD']);
+const tier = (key) => (EXOTIC.has(key.split('|')[0]) ? 2 : LUXURY.has(key.split('|')[0]) ? 1 : 0);
+// EPA size classes in order, used when exterior length is unknown
+const SIZE = (cls = '') => (/minicompact/i.test(cls) ? 0 : /subcompact|small/i.test(cls) ? 1 : /compact/i.test(cls) ? 2 : /midsize/i.test(cls) ? 3 : /large|standard/i.test(cls) ? 4 : 2);
+const lengthOf = (y) => y.dims?.find((d) => d.length)?.length;
+const maxCyl = (y) => Math.max(0, ...y.variants.filter((v) => v.type !== 'EV').map((v) => v.cyl ?? 0));
+/** Are these two model years real rivals? Same body style and market tier, similar size and engine class. */
+function rivals(a, b) {
+  if (yearBody(a.y) !== yearBody(b.y) || tier(a.m.key) !== tier(b.m.key)) return false;
+  const la = lengthOf(a.y), lb = lengthOf(b.y);
+  if (la && lb ? Math.abs(la - lb) > 10 : SIZE(a.y.cls) !== SIZE(b.y.cls)) return false;
+  const ca = maxCyl(a.y), cb = maxCyl(b.y);
+  return !(ca && cb && Math.abs(ca - cb) >= 4);
+}
 const NOT_GAS = new Set(['EV', 'FCV']); // MPGe, not comparable with gasoline MPG
 const MAX_YEAR_PAGES = 15000; // Cloudflare Pages free plan: 20k files total
 const median = (a) => {
@@ -58,7 +71,8 @@ function wikiFor(key) {
   const t = wikiCtx.titles[key];
   const w = t && wikiCtx.wiki[t];
   if (!w?.extract) return {};
-  return { overview: { title: t, text: w.extract, url: w.url }, photo: w.photo };
+  // the photo is chosen per model (an article can cover several models and generations)
+  return { overview: { title: t, text: w.extract, url: w.url }, photo: wikiCtx.wiki[`#${key}`]?.photo };
 }
 
 export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, log }) {
@@ -216,17 +230,17 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   }
   const live = modelsOut.filter((m) => !m.skip && m.years.some((y) => y.page));
 
-  // "Similar cars": same EPA size class and model year, most-researched first
-  const byClassYear = new Map();
+  // "Similar cars": same model year, body style and tier, similar length and engine class; most-researched first
+  // (EPA size classes alone go by interior volume, so a Civic sedan is "midsize" and a Corolla "compact")
+  const byBodyYear = new Map();
   for (const m of live)
     for (const y of m.years)
-      if (y.cls && y.page) (byClassYear.get(`${y.cls}|${y.year}`) ?? byClassYear.set(`${y.cls}|${y.year}`, []).get(`${y.cls}|${y.year}`)).push({ m, y });
-  for (const list of byClassYear.values()) {
+      if (y.cls && y.page) (byBodyYear.get(`${yearBody(y)}|${y.year}`) ?? byBodyYear.set(`${yearBody(y)}|${y.year}`, []).get(`${yearBody(y)}|${y.year}`)).push({ m, y });
+  for (const list of byBodyYear.values()) {
     list.sort((p, q) => (q.m.popularity?.views30 ?? 0) - (p.m.popularity?.views30 ?? 0) || q.y.complaints.total - p.y.complaints.total);
-    for (const { m, y } of list)
-      y.similar = list
-        .filter((p) => p.m !== m && p.m.make + p.m.model !== m.make + m.model)
-        .sort((p, q) => (tier(p.m.key) !== tier(m.key)) - (tier(q.m.key) !== tier(m.key)))
+    for (const a of list)
+      a.y.similar = list
+        .filter((p) => p.m !== a.m && p.m.make + p.m.model !== a.m.make + a.m.model && rivals(a, p))
         .slice(0, 6)
         .map((p) => ({ make: p.m.make, model: p.m.model, makeSlug: p.m.makeSlug, slug: p.m.slug, year: p.y.year, mpg: p.y.mpg?.max, range: p.y.range, overall: p.y.overall, recalls: p.y.recalls.length }));
   }

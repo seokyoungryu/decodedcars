@@ -54,7 +54,7 @@ const ratings = await step('ratings', () => collectRatings(jobs, { budget: Numbe
 const recentModels = [...epa.values()].filter((m) => Object.keys(m.years).some((y) => Number(y) >= new Date().getUTCFullYear() - 12));
 
 // Verified Wikipedia article per model (overview + free photo); popularity then uses the same verified titles
-const wikiModels = recentModels.map((m) => ({ key: m.key, make: m.make, model: displayName(m.model, nhtsaFor.get(m.key)?.model), firstYear: Math.min(...Object.keys(m.years).map(Number)) }));
+const wikiModels = recentModels.map((m) => ({ key: m.key, make: m.make, model: displayName(m.model, nhtsaFor.get(m.key)?.model), firstYear: Math.min(...Object.keys(m.years).map(Number)), lastYear: Math.max(...Object.keys(m.years).map(Number)) }));
 const { titles, wiki } = await step('wiki', () => collectWiki(wikiModels, { budget: Number(args.wiki ?? 1500), log }), { titles: await readJson(CACHE + 'wiki-titles.json', {}), wiki: await readJson(CACHE + 'wiki.json', {}) });
 const views = await step('pageviews', () => collectPageviews(recentModels.map((m) => ({ key: m.key })), titles, { log }), await readJson(CACHE + 'pageviews.json', {}));
 const siteViews = await step('analytics', () => collectSiteViews(log), {});

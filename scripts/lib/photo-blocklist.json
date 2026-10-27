@@ -1,0 +1,41 @@
+{
+  "_why": "Commons files that pass the automatic checks but are not a usable photo of the model (found by reviewing every photo). Never chosen.",
+  "files": [
+    "Aston_Martin_V8_Vantage_-_Flickr_-_The_Car_Spy_(3).jpg",
+    "2019_BMW_X3_xDrive_30i_Luxury_(18).jpg",
+    "Land_Rover_Defender_(L316)_Works_V8_Retro_Classics_2026_IMG_4923.jpg",
+    "Land_Rover_13_MY_LR2_-_Premium_New_Look_And_Feel_(8096035948).jpg",
+    "Escn0042.jpg",
+    "Mercedes-Benz_G-Class_6x6_JPN_005.JPG",
+    "Mercedes-Benz_S-Class_W140.jpg",
+    "Mercedes_Maybach_57_and_62.jpg",
+    "Rolls-Royce_Ghost_II_IAA_2023_1X7A0748.jpg",
+    "MIAS_2025_-_VinFast_VF_7_02.jpg",
+    "Beetle_(4935612536).jpg",
+    "Sebastian_Vettel_during_Hungarian_Formula_1_GP.jpg",
+    "Audi_S2_Wikipedia.JPG",
+    "BMW-M.M3.arp.750pix.jpg",
+    "2019_BMW_X3_xDrive_30i_Luxury_(49).jpg",
+    "Ferrari_818_Superfast.jpg",
+    "Maverick_(14836390669).jpg",
+    "Infiniti_Q60_Project_Black_S,_Paris_Motor_Show_2018,_IMG_0664.jpg",
+    "Jaguar_XJ-C_at_Schaffen-Diest_in_2015.JPG",
+    "Koenigsegg_Regera,_GIMS_2019,_Le_Grand-Saconnex_(GIMS1053).jpg",
+    "Mercedes-Benz_A-Class_F-Cell--DC.jpg",
+    "Maybach_57_Heck.jpg",
+    "Honda_INTEGRA_ZX_(DA7)_front.JPG",
+    "Alfa_Romeo_Giulia_Super_(cropped).jpg",
+    "Honda_Prelude_(14904412778).jpg",
+    "Infiniti_Q60_Project_Black_S,_Paris_Motor_Show_2018,_IMG_0319.jpg"
+  ],
+  "_models": "Models that get no photo: EPA catch-all names (several different cars) or no correct photo on the article.",
+  "models": [
+    "AUDI|RS",
+    "BMW|M",
+    "MERCEDESBENZ|MAYBACH"
+  ],
+  "_prefixes": "File-name prefixes of photo series that are mostly interior shots.",
+  "prefixes": [
+    "2019_BMW_X3_xDrive_30i_Luxury_("
+  ]
+}

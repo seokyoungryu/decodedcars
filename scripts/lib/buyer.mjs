@@ -43,6 +43,12 @@ export function body(cls = '') {
   if (/car/i.test(cls)) return 'Car';
   return 'Other';
 }
+const BODY_ORDER = ['Pickup', 'Minivan', 'Van', 'SUV', 'Sports / 2-seat', 'Car', 'Wagon', 'Other'];
+/** Body group of a model year from all its versions: EPA files some crossover versions (CR-V hybrid, HR-V 2WD) as "station wagons" */
+export function yearBody(y) {
+  const groups = new Set([y.cls, ...y.variants.map((v) => v.cls)].filter(Boolean).map((c) => body(c)));
+  return BODY_ORDER.find((b) => groups.has(b)) ?? 'Other';
+}
 const power = (y) => {
   const f = y.fuels.join(' ');
   if (/^EV$|\bEV\b/.test(f) && !/Hybrid|Gasoline|Diesel/.test(f)) return 'Electric';
@@ -70,7 +76,7 @@ export async function buildBuyerData(live, log) {
       s: m.slug,
       y: y.year,
       years: m.years.filter((x) => x.page).map((x) => x.year),
-      body: body(y.cls),
+      body: yearBody(y),
       cls: y.cls,
       pw: power(y),
       awd: y.drives.some((d) => /4-Wheel|All-Wheel|4WD|AWD|Part-time/i.test(d)) || undefined,
@@ -79,7 +85,7 @@ export async function buildBuyerData(live, log) {
       // per-100-mile energy of the most efficient version, for the cost calculator
       gal: gas ? Math.round((100 / gas.comb) * 1000) / 1000 : undefined,
       premium: gas ? /premium/i.test(gas.fuel ?? '') || undefined : undefined,
-      kwh: ev?.kwh,
+      kwh: ev ? Math.round(ev.kwh * 100) / 100 : undefined,
       cost: y.cost,
       st: y.overall,
       rc: y.recalls.length,
@@ -91,12 +97,14 @@ export async function buildBuyerData(live, log) {
   }
   await writeJson(SITE + 'finder.json', finder);
 
-  // vs pairs: each popular model × its top same-tier rivals in the latest year
-  const byKey = new Map(live.map((m) => [`${m.makeSlug}/${m.slug}`, m]));
+  // vs pairs: each popular, currently sold model × its top rivals in the latest year (both still on sale)
+  const current = (m) => (latest(m)?.year ?? 0) >= nowYear() - 1;
+  const byKey = new Map(live.filter(current).map((m) => [`${m.makeSlug}/${m.slug}`, m]));
   const pairs = new Map();
-  for (const m of [...live].sort((a, b) => (b.popularity?.views30 ?? 0) - (a.popularity?.views30 ?? 0))) {
-    const y = latest(m);
-    for (const s of (y?.similar ?? []).slice(0, 3)) {
+  for (const m of [...byKey.values()].sort((a, b) => (b.popularity?.views30 ?? 0) - (a.popularity?.views30 ?? 0))) {
+    // this year's lineup first: next-year models trickle in during the year
+    const y = m.years.find((x) => x.page && x.year <= nowYear() && (x.similar?.length ?? 0) >= 3) ?? latest(m);
+    for (const s of (y?.similar ?? []).slice(0, 4)) {
       const other = byKey.get(`${s.makeSlug}/${s.slug}`);
       if (!other) continue;
       const [a, b] = [m, other].sort((p, q) => `${p.make} ${p.model}`.localeCompare(`${q.make} ${q.model}`));

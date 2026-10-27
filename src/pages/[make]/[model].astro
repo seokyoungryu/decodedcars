@@ -15,6 +15,8 @@ const { m } = Astro.props as { m: Model };
 const years = m.years.filter((y) => y.page);
 const latest = years[0];
 const first = years.at(-1)!;
+// alternatives from the newest year that has enough rivals (next-year models trickle in during the year)
+const alt = years.find((y) => y.year <= new Date().getFullYear() && (y.similar?.length ?? 0) >= 3) ?? latest;
 const recallIds = new Set(years.flatMap((y) => y.recalls));
 const totalComplaints = years.reduce((s, y) => s + y.complaints.total, 0);
 const worst = [...years].sort((a, b) => b.complaints.total - a.complaints.total)[0];
@@ -113,14 +115,14 @@ const desc = `${title} by model year (${first.year}–${latest.year}): specs, si
   <Ad place="content" />
 
   {
-    (latest.similar?.length ?? 0) > 0 && (
+    (alt.similar?.length ?? 0) > 0 && (
       <section class="section">
-        <div class="section-head"><h2>Alternatives to the {latest.year} {m.model}</h2></div>
+        <div class="section-head"><h2>Alternatives to the {alt.year} {m.model}</h2></div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Model</th><th class="num">Best MPG / range</th><th>NHTSA overall</th><th class="num">Recalls</th></tr></thead>
             <tbody>
-              {latest.similar!.map((s) => (
+              {alt.similar!.map((s) => (
                 <tr>
                   <td><a href={href(s, s.year)}>{s.year} {s.make} {s.model}</a></td>
                   <td class="num">{s.mpg ? `${s.mpg} MPG` : s.range ? `${s.range} mi` : '–'}</td>
