@@ -1,7 +1,7 @@
 export const SITE_NAME = 'CarRadar';
-export const SITE_TAGLINE = 'Recalls, complaints, MPG and safety ratings for every car';
+export const SITE_TAGLINE = 'Specs, MPG, safety ratings and recalls for every car';
 export const SITE_DESCRIPTION =
-  'Check recalls, owner complaints, fuel economy, specs and crash-test ratings for any car, truck or SUV since 2005 — updated daily from NHTSA and EPA public data.';
+  'Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every car, truck and SUV since 2005 — compared year by year and updated daily.';
 
 /** Contact email for the About page (fill in before applying to AdSense) */
 export const CONTACT_EMAIL = '';

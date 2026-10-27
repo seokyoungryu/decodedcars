@@ -4,3 +4,5 @@ dist
 .env
 # Collected data is not committed (kept in the GitHub Actions cache, deployed straight after build)
 data/
+# Downloaded Wikimedia Commons thumbnails (re-created by collect)
+public/photos/

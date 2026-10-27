@@ -32,9 +32,35 @@ export interface Variant {
   range?: number;
   kwh?: number;
   motor?: string;
+  charge?: number;
+  co2?: number;
+  feScore?: number;
+  ghgScore?: number;
+  save5?: number;
+  startStop?: boolean;
+  engDesc?: string;
   vsClass?: number;
 }
-export interface Rating { desc: string; overall?: number; front?: number; side?: number; rollover?: number; rolloverRisk?: number }
+export interface Rating {
+  desc: string;
+  overall?: number;
+  front?: number;
+  frontDriver?: number;
+  frontPassenger?: number;
+  side?: number;
+  sidePole?: number;
+  rollover?: number;
+  rolloverRisk?: number;
+  tip?: string;
+  esc?: string;
+  fcw?: string;
+  ldw?: string;
+  frontPic?: string;
+  sidePic?: string;
+}
+export interface Dims { name: string; length?: number; width?: number; height?: number; wheelbase?: number; weight?: number; trackF?: number; trackR?: number; weightDist?: string }
+export interface Similar { make: string; model: string; makeSlug: string; slug: string; year: number; mpg?: number; range?: number; overall?: number; recalls: number }
+export interface Photo { file: string; w?: number; h?: number; caption: string; artist: string; license: string; licenseUrl?: string; page: string }
 export interface Complaints { total: number; crash?: number; fire?: number; injured?: number; deaths?: number; comps: [string, number][]; miles?: number; months?: Record<string, number> }
 export interface Year {
   year: number;
@@ -51,6 +77,16 @@ export interface Year {
   added?: string;
   rich: boolean;
   page: boolean;
+  dims: Dims[];
+  drives: string[];
+  fuels: string[];
+  engines: string[];
+  charge?: number;
+  co2?: number;
+  feScore?: number;
+  ghgScore?: number;
+  save5?: number;
+  similar?: Similar[];
 }
 export interface Model {
   key: string;
@@ -61,10 +97,12 @@ export interface Model {
   years: Year[];
   popularity?: { title: string; views30: number; week: number; prevWeek: number; change?: number; series: number[]; shared?: boolean };
   recent90: number;
+  overview?: { title: string; text: string; url: string };
+  photo?: Photo;
 }
 export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
-export interface MakeEntry { slug: string; name: string; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number }[] }
-type Card = { make: string; model: string; makeSlug: string; slug: string; latest?: number; year?: number; [k: string]: unknown };
+export interface MakeEntry { slug: string; name: string; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string }[] }
+type Card = { make: string; model: string; makeSlug: string; slug: string; latest?: number; year?: number; photo?: string; [k: string]: unknown };
 export interface Rankings {
   trending: Card[];
   popular: Card[];

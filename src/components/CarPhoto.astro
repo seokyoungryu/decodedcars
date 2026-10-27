@@ -1,0 +1,26 @@
+---
+// Free-licensed Wikimedia Commons photo with the attribution its license requires (author, license, source link).
+// The photo is of the model in general, not necessarily the exact model year — the caption says what it shows.
+import type { Photo } from '@/lib/data';
+interface Props {
+  photo?: Photo;
+  alt: string;
+  eager?: boolean;
+}
+const { photo, alt, eager = false } = Astro.props;
+---
+
+{
+  photo ? (
+    <figure class="photo">
+      <img src={`/photos/${photo.file}`} alt={alt} width={photo.w} height={photo.h} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+      <figcaption>
+        Pictured: {photo.caption}. Photo:{' '}
+        <a href={photo.page} rel="noopener" target="_blank">{photo.artist}</a>,{' '}
+        {photo.licenseUrl ? <a href={photo.licenseUrl} rel="noopener license" target="_blank">{photo.license}</a> : photo.license}, via Wikimedia Commons
+      </figcaption>
+    </figure>
+  ) : (
+    <div class="photo empty" aria-hidden="true"><span>🚗</span></div>
+  )
+}

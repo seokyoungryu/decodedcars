@@ -2,10 +2,15 @@
 // → data/site/*. Pages must add value beyond the raw government data (Google scaled-content and
 // AdSense low-value-content policies), so we compute comparisons: vs class average MPG, vs other
 // model years, complaint rates by component, trends, rankings. Thin model-years are noindexed.
-import { rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { PHOTO_DIR } from './wiki.mjs';
 import { SITE, daysAgo, today, writeJson } from './store.mjs';
 import { norm, slug } from './keys.mjs';
 
+// EPA classes are by size only; compare mainstream with mainstream and luxury with luxury first
+const LUXURY = new Set(['ACURA', 'ALFAROMEO', 'ASTONMARTIN', 'AUDI', 'BENTLEY', 'BMW', 'BMWALPINA', 'BUGATTI', 'CADILLAC', 'FERRARI', 'GENESIS', 'INFINITI', 'JAGUAR', 'LAMBORGHINI', 'LANDROVER', 'LEXUS', 'LINCOLN', 'LOTUS', 'LUCID', 'MASERATI', 'MCLARENAUTOMOTIVE', 'MERCEDESBENZ', 'POLESTAR', 'PORSCHE', 'ROLLSROYCE', 'ROLLSROYCEMOTORCARSLTD', 'TESLA', 'VOLVO']);
+const tier = (key) => (LUXURY.has(key.split('|')[0]) ? 1 : 0);
 const NOT_GAS = new Set(['EV', 'FCV']); // MPGe, not comparable with gasoline MPG
 const MAX_YEAR_PAGES = 15000; // Cloudflare Pages free plan: 20k files total
 const median = (a) => {
@@ -46,10 +51,41 @@ function displayName(epaName, nhtsaName) {
   return nhtsaName.replace(/[A-Za-z0-9]/g, () => letters[i++]);
 }
 
-export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), log }) {
+/** Wikipedia overview + free photo for a model (via its resolved article title) */
+let wikiCtx = { wiki: {}, titles: {} };
+function wikiFor(key) {
+  const t = wikiCtx.titles[key];
+  const w = t && wikiCtx.wiki[t];
+  if (!w?.extract) return {};
+  return { overview: { title: t, text: w.extract, url: w.url }, photo: w.photo };
+}
+
+export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, log }) {
   rmSync(SITE, { recursive: true, force: true });
+  wikiCtx = { wiki, titles };
   const resolve = resolver(epa);
   const nowYear = new Date().getUTCFullYear();
+
+  // Transport Canada dimensions: each CVS body ("CIVIC 5DR HATCH") goes to the EPA model with the longest name it starts with
+  const epaByMake = new Map();
+  for (const k of epa.keys()) {
+    const [mk, md] = k.split('|');
+    (epaByMake.get(mk) ?? epaByMake.set(mk, []).get(mk)).push(md);
+  }
+  for (const l of epaByMake.values()) l.sort((x, y) => y.length - x.length);
+  const dimsBy = new Map(); // 'epaKey|year' → [{ name, length, … }]
+  for (const [mkYear, entry] of Object.entries(cvs)) {
+    const [mkRaw, year] = mkYear.split('|');
+    const mk = norm(mkRaw) === 'MERCEDESBENZ' ? 'MERCEDESBENZ' : norm(mkRaw);
+    for (const d of entry.models ?? []) {
+      const n = norm(d.name);
+      const hit = (epaByMake.get(mk) ?? []).find((e) => e.length >= 2 && n.startsWith(e));
+      if (!hit) continue;
+      const k = `${mk}|${hit}|${year}`;
+      const list = dimsBy.get(k) ?? dimsBy.set(k, []).get(k);
+      if (!list.some((x) => x.name === d.name)) list.push(d);
+    }
+  }
 
   // NHTSA → EPA mapping, merged per model-year
   const recallsBy = new Map(); // epaKey → Map<year, Set<camp>>
@@ -112,7 +148,10 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       const ev = variants.filter((v) => v.type === 'EV' && v.range);
       const complaintsCount = cs?.ids.size ?? 0;
       const topComps = cs ? Object.entries(cs.comps).sort((a, b) => b[1] - a[1]).slice(0, 8) : [];
-      const rich = camps.length > 0 || complaintsCount >= 3 || rating.length > 0;
+      const dims = (dimsBy.get(`${m.key}|${y}`) ?? []).slice(0, 6);
+      const rich = camps.length > 0 || complaintsCount >= 3 || rating.length > 0 || dims.length > 0;
+      const pickMax = (f) => (variants.some((v) => v[f]) ? Math.max(...variants.filter((v) => v[f]).map((v) => v[f])) : undefined);
+      const pickMin = (f) => (variants.some((v) => v[f]) ? Math.min(...variants.filter((v) => v[f]).map((v) => v[f])) : undefined);
       years.push({
         year: y,
         cls: variants[0]?.cls,
@@ -121,6 +160,15 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
         range: ev.length ? Math.max(...ev.map((v) => v.range)) : undefined,
         cost: variants.some((v) => v.cost) ? Math.min(...variants.filter((v) => v.cost).map((v) => v.cost)) : undefined,
         classAvg: variants[0] && avgOf(variants[0].cls, y),
+        dims,
+        drives: [...new Set(variants.map((v) => v.drive).filter(Boolean))],
+        fuels: [...new Set(variants.map((v) => v.type ?? v.fuel).filter(Boolean))],
+        engines: [...new Set(variants.filter((v) => v.displ).map((v) => `${v.displ.toFixed(1)}L ${v.cyl ? `${v.cyl}-cyl` : ''}${v.turbo ? ' turbo' : ''}`.trim()))],
+        charge: pickMin('charge'),
+        co2: pickMin('co2'),
+        feScore: pickMax('feScore'),
+        ghgScore: pickMax('ghgScore'),
+        save5: pickMax('save5'),
         recalls: camps.map((c) => c.id),
         complaints: cs
           ? { total: complaintsCount, crash: cs.crash, fire: cs.fire, injured: cs.injured, deaths: cs.deaths, comps: topComps, miles: median(cs.miles), months: cs.months }
@@ -142,7 +190,8 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       years,
       popularity: pv && { title: pv.title, views30: pv.views30, week: pv.week, prevWeek: pv.prevWeek, change: pv.prevWeek ? Math.round((pv.week / pv.prevWeek - 1) * 100) : undefined, series: pv.series, shared: pv.shared },
       recent90: recent90.get(m.key) ?? 0,
-      siteViews: siteViews[`/${m.makeSlug}/${m.slug}`] ?? 0,
+      siteViews: siteViews[`/${m.makeSlug}/${slug(shown)}`] ?? 0,
+      ...wikiFor(m.key),
     };
     modelsOut.push(model);
     for (const y of years) yearPages.push({ m: model, y, score: (y.rich ? 1e6 : 0) + y.recalls.length * 50 + y.complaints.total + (pv?.views30 ?? 0) / 100 });
@@ -166,7 +215,34 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   }
   const live = modelsOut.filter((m) => !m.skip && m.years.some((y) => y.page));
 
+  // "Similar cars": same EPA size class and model year, most-researched first
+  const byClassYear = new Map();
+  for (const m of live)
+    for (const y of m.years)
+      if (y.cls && y.page) (byClassYear.get(`${y.cls}|${y.year}`) ?? byClassYear.set(`${y.cls}|${y.year}`, []).get(`${y.cls}|${y.year}`)).push({ m, y });
+  for (const list of byClassYear.values()) {
+    list.sort((p, q) => (q.m.popularity?.views30 ?? 0) - (p.m.popularity?.views30 ?? 0) || q.y.complaints.total - p.y.complaints.total);
+    for (const { m, y } of list)
+      y.similar = list
+        .filter((p) => p.m !== m && p.m.make + p.m.model !== m.make + m.model)
+        .sort((p, q) => (tier(p.m.key) !== tier(m.key)) - (tier(q.m.key) !== tier(m.key)))
+        .slice(0, 6)
+        .map((p) => ({ make: p.m.make, model: p.m.model, makeSlug: p.m.makeSlug, slug: p.m.slug, year: p.y.year, mpg: p.y.mpg?.max, range: p.y.range, overall: p.y.overall, recalls: p.y.recalls.length }));
+  }
+
+
   for (const m of live) await writeJson(`${SITE}models/${m.makeSlug}/${m.slug}.json`, m);
+
+  // Photos → public/photos (served as static files; attribution is stored with each model)
+  const PUBLIC_PHOTOS = fileURLToPath(new URL('../../public/photos/', import.meta.url));
+  rmSync(PUBLIC_PHOTOS, { recursive: true, force: true });
+  mkdirSync(PUBLIC_PHOTOS, { recursive: true });
+  let photoCount = 0;
+  for (const m of live)
+    if (m.photo && existsSync(PHOTO_DIR + m.photo.file) && !existsSync(PUBLIC_PHOTOS + m.photo.file)) {
+      copyFileSync(PHOTO_DIR + m.photo.file, PUBLIC_PHOTOS + m.photo.file);
+      photoCount++;
+    }
   const campaigns = Object.fromEntries([...usedCamps].map((id) => [id, recalls.campaigns[id]]));
   await writeJson(SITE + 'campaigns.json', campaigns);
 
@@ -185,13 +261,15 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       mpg: ys[0]?.mpg?.max,
       range: ys[0]?.range,
       views30: m.popularity?.views30 ?? 0,
+      photo: m.photo?.file,
+      cls: ys[0]?.cls,
     });
   }
   const makeList = [...makes.values()].map((x) => ({ ...x, models: x.models.sort((a, b) => b.views30 - a.views30 || a.name.localeCompare(b.name)) })).sort((a, b) => a.name.localeCompare(b.name));
   await writeJson(SITE + 'makes.json', makeList);
 
   // Rankings
-  const card = (m, extra = {}) => ({ make: m.make, model: m.model, makeSlug: m.makeSlug, slug: m.slug, latest: m.years.find((y) => y.page)?.year, ...extra });
+  const card = (m, extra = {}) => ({ make: m.make, model: m.model, makeSlug: m.makeSlug, slug: m.slug, latest: m.years.find((y) => y.page)?.year, photo: m.photo?.file, ...extra });
   const recentYears = (m) => m.years.some((y) => y.year >= nowYear - 8);
   const since45 = daysAgo(45);
   const recentRecalls = Object.values(campaigns)
@@ -232,5 +310,5 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   await writeJson(SITE + 'rankings.json', rankings);
   await writeJson(SITE + 'noindex.json', noindex);
   await writeJson(SITE + 'meta.json', { updated: new Date().toISOString(), date: today(), models: live.length, yearPages: kept.size });
-  log(`Aggregate: ${makeList.length} makes, ${live.length} models, ${kept.size} model-year pages (${noindex.length} noindex), ${usedCamps.size} recall campaigns`);
+  log(`Aggregate: ${makeList.length} makes, ${live.length} models, ${kept.size} model-year pages (${noindex.length} noindex), ${usedCamps.size} recall campaigns, ${photoCount} photos`);
 }

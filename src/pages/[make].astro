@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
+import ModelCard from '@/components/ModelCard.astro';
 import { type MakeEntry, makes, n } from '@/lib/data';
 
 export function getStaticPaths() {
@@ -8,38 +9,39 @@ export function getStaticPaths() {
 }
 const { mk } = Astro.props as { mk: MakeEntry };
 const recalls = mk.models.reduce((s, m) => s + m.recalls, 0);
-const current = mk.models.filter((m) => m.to >= new Date().getUTCFullYear() - 1);
+const year = new Date().getUTCFullYear();
+const current = mk.models.filter((m) => m.to >= year - 1);
 const past = mk.models.filter((m) => !current.includes(m));
-const table = (list: MakeEntry['models']) => list;
+const sub = (m: MakeEntry['models'][number]) => [m.from === m.to ? m.from : `${m.from}–${m.to}`, m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '', m.cls?.replace(/ 2WD| 4WD/, '')].filter(Boolean).join(' · ');
 ---
 
-<Base title={`${mk.name} Recalls, Problems & MPG by Model`} description={`All ${mk.name} models since 2005: recalls, owner complaints, fuel economy and NHTSA safety ratings by model year.`} section="makes">
+<Base title={`${mk.name} Models: Specs, MPG, Safety & Recalls`} description={`Every ${mk.name} model since 2005 — specs, dimensions, MPG, NHTSA safety ratings, recalls and owner complaints by model year.`} section="makes">
   <div class="crumbs"><a href="/makes">Makes</a>›<span>{mk.name}</span></div>
-  <h1>{mk.name} recalls &amp; problems by model</h1>
-  <p class="lead">{mk.models.length} {mk.name} models since 2005 with {n(recalls)} recall campaigns on file. Pick a model to compare its years.</p>
+  <h1>{mk.name} models</h1>
+  <p class="lead">{mk.models.length} {mk.name} models since 2005 · {n(recalls)} recall campaigns on file.</p>
+  {current.length > 0 && (<section class="section"><div class="section-head"><h2>Current models</h2></div><div class="mcards">{current.map((m) => <ModelCard href={`/${mk.slug}/${m.slug}`} title={`${mk.name} ${m.name}`} sub={sub(m)} photo={m.photo} />)}</div></section>)}
+  <Ad place="content" />
   {
-    [['Current models', current], ['Past models', past]].map(([label, list]) =>
-      (list as MakeEntry['models']).length ? (
-        <section class="section">
-          <div class="section-head"><h2>{label as string}</h2></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Model</th><th>Years</th><th class="num">Recalls</th><th class="num">Complaints</th><th class="num">Latest best MPG</th></tr></thead>
-              <tbody>
-                {table(list as MakeEntry['models']).map((m) => (
-                  <tr>
-                    <td><a href={`/${mk.slug}/${m.slug}`}>{mk.name} {m.name}</a></td>
-                    <td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td>
-                    <td class="num">{m.recalls}</td>
-                    <td class="num">{n(m.complaints)}</td>
-                    <td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null,
+    past.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Past models</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Model</th><th>Years</th><th class="num">Best MPG</th><th class="num">Recalls</th><th class="num">Complaints</th></tr></thead>
+            <tbody>
+              {past.map((m) => (
+                <tr>
+                  <td><a href={`/${mk.slug}/${m.slug}`}>{mk.name} {m.name}</a></td>
+                  <td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td>
+                  <td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td>
+                  <td class="num">{m.recalls}</td>
+                  <td class="num">{n(m.complaints)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     )
   }
   <Ad place="bottom" />

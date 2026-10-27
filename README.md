@@ -1,6 +1,6 @@
 # CarRadar (carradar)
 
-English (US) site: recalls, owner complaints, EPA fuel economy/specs, NHTSA crash ratings and popularity rankings for every U.S. car, truck and SUV since model year 2005.
+English (US) car information site: specs, dimensions, fuel economy, safety ratings, photos and overviews for every U.S. car, truck and SUV since model year 2005 — with recalls and owner-reported problems as part of each model-year page.
 Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages every day. Ad-supported (AdSense). No API keys needed for the data.
 
 ## Data sources and terms (checked 2026-10-27)
@@ -11,6 +11,10 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 | Owner complaints | NHTSA `COMPLAINTS_RECEIVED_*.zip` (daily) | Government compilation. **Narratives are owner-written; personal fields (city, partial VIN, operator name, dealer)** | we store only make/model/year/component/outcome counts/dates |
 | Crash ratings | NHTSA NCAP API `api.nhtsa.gov/SafetyRatings` | US Government work | no published limit → slow, cached, ≤2,500 calls/day |
 | Specs, MPG, EV range, fuel cost | EPA `vehicles.csv.zip` (fueleconomy.gov) | EPA Data License: public domain. **fueleconomy.gov photos are manufacturer-copyrighted, page text is non-commercial — use numbers only** | – |
+| Dimensions, curb weight | Transport Canada Canadian Vehicle Specifications via NHTSA vPIC | **Open Government Licence – Canada: attribution required** (footer + under each dimensions table) | vPIC rate control → one call per make-year, 400 ms apart, cached 60 days for recent years |
+| Model overview text | Wikipedia REST page summary | **CC BY-SA 4.0: shown unmodified, with article link and license** | cached 30 days |
+| Model photo | Wikimedia Commons (the article's lead image) | **Only free licenses (CC0/PD/CC BY/CC BY-SA); author, license and file link shown under the photo**; non-free enwiki images skipped | thumbnail downloaded once |
+| Crash-test photos, safety tech | NHTSA NCAP | US Government work | part of the ratings calls |
 | Trending / most researched | Wikimedia pageviews API | CC0; identifying User-Agent with contact required | gentle (one request per article per day) |
 | Most viewed on CarRadar | Cloudflare Web Analytics GraphQL | our own data | 300 queries / 5 min (we use 1) |
 
@@ -34,6 +38,8 @@ scripts/lib/epa.mjs          EPA file → the model universe (make + baseModel +
 scripts/lib/nhtsa-files.mjs  recalls + complaints bulk files, streamed (300 MB+)
 scripts/lib/ratings.mjs      NCAP API, cached; missing years first, current years refreshed every 30 days
 scripts/lib/pageviews.mjs    Wikipedia title resolution (cached) + 60-day daily views
+scripts/lib/cvs.mjs          dimensions/weight (Transport Canada CVS via vPIC)
+scripts/lib/wiki.mjs         Wikipedia overview + free Commons photo (with attribution data)
 scripts/lib/analytics.mjs    Cloudflare Web Analytics (optional, after launch)
 scripts/lib/aggregate.mjs    NHTSA→EPA name matching, comparisons, rankings, noindex list → data/site
 src/pages/                   /, /makes, /[make], /[make]/[model], /[make]/[model]/[year], /recalls, /rankings/*, /guide/*
@@ -75,5 +81,5 @@ npm run build && npm run preview
 
 ## Ideas not done yet
 
-- Car photos from Wikimedia Commons, with a per-image license and attribution check.
+- Horsepower/torque: no free official dataset found (EPA and NCAP don't publish it).
 - Choosing a final brand name and domain ("CarRadar" is a working name).

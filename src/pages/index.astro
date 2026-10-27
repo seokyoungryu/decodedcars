@@ -1,6 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
+import ModelCard from '@/components/ModelCard.astro';
 import { VIN_LOOKUP } from '@/config/site';
 import { comp, date, href, makes, n, rankings, updatedLabel } from '@/lib/data';
 import { RANKINGS } from '@/lib/rankings';
@@ -10,26 +11,70 @@ const popularMakes = makes()
   .map((m) => ({ ...m, v: m.models.reduce((s, x) => s + x.views30, 0) }))
   .sort((a, b) => b.v - a.v)
   .slice(0, 24);
-const sections = [
-  { r: RANKINGS.find((x) => x.slug === 'trending')!, rows: R.trending.slice(0, 8) },
-  { r: RANKINGS.find((x) => x.slug === 'popular')!, rows: R.popular.slice(0, 8) },
-  { r: RANKINGS.find((x) => x.slug === 'most-complaints')!, rows: R.complaints90.slice(0, 8) },
+const sub = (x: { latest?: number; [k: string]: unknown }) => `${x.latest ?? ''}${x.views30 ? ` · ${n(x.views30 as number)} views/mo` : ''}`;
+const lists = [
+  { r: RANKINGS.find((x) => x.slug === 'best-mpg')!, rows: R.bestMpg.slice(0, 6) },
+  { r: RANKINGS.find((x) => x.slug === 'longest-range')!, rows: R.longestRange.slice(0, 6) },
+  { r: RANKINGS.find((x) => x.slug === 'most-complaints')!, rows: R.complaints90.slice(0, 6) },
 ];
 ---
 
-<Base title="Car recalls, problems, MPG and safety ratings">
+<Base title="Car specs, MPG, safety ratings and recalls">
   <section>
-    <h1>Is your car safe, efficient and trouble-free?</h1>
-    <p class="lead">Recalls, owner complaints, EPA fuel economy and NHTSA crash ratings for every U.S. car, truck and SUV since 2005 — compared year by year. {updatedLabel()}</p>
+    <h1>Every car, compared year by year</h1>
+    <p class="lead">Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every U.S. car, truck and SUV since 2005. {updatedLabel()}</p>
     <div class="chips" style="margin-top:14px">{popularMakes.map((m) => <a href={`/${m.slug}`}>{m.name}</a>)}<a href="/makes">All makes →</a></div>
   </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Most researched cars</h2><a href="/rankings/popular">Top 30 →</a></div>
+    <div class="mcards">{R.popular.slice(0, 12).map((x) => <ModelCard href={href(x)} title={`${x.make} ${x.model}`} sub={sub(x)} photo={x.photo} />)}</div>
+  </section>
+
+  {
+    R.trending.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Trending this week</h2><a href="/rankings/trending">More →</a></div>
+        <div class="mcards">{R.trending.slice(0, 6).map((x) => <ModelCard href={href(x)} title={`${x.make} ${x.model}`} sub={`${(x.change as number) > 0 ? '+' : ''}${x.change}% interest this week`} photo={x.photo} />)}</div>
+      </section>
+    )
+  }
+
+  <Ad place="content" />
+
+  <div class="grid section">
+    {
+      lists.map(({ r, rows }) => (
+        <div class="card">
+          <div class="section-head" style="margin-bottom:6px"><h2 style="font-size:1.05rem">{r.title}</h2><a href={`/rankings/${r.slug}`}>More →</a></div>
+          <ol class="list" style="padding:0">
+            {rows.map((x) => (
+              <li>
+                <a href={r.yearLink && x.year ? href(x, x.year) : href(x)}>{r.yearLink && x.year ? `${x.year} ` : ''}{x.make} {x.model}</a>
+                <span class="small muted">{r.value(x)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    R.newModels.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>New models &amp; model years</h2><a href="/rankings/new-models">All →</a></div>
+        <div class="mcards">{R.newModels.slice(0, 6).map((x) => <ModelCard href={href(x, x.year)} title={`${x.year} ${x.make} ${x.model}`} sub={x.range ? `${x.range} mi range` : x.mpg ? `${x.mpg} MPG` : undefined} photo={x.photo} />)}</div>
+      </section>
+    )
+  }
 
   <section class="section">
     <div class="section-head"><h2>Latest recalls</h2><a href="/recalls">All new recalls →</a></div>
     <div class="card">
       <ul class="list">
         {
-          R.recentRecalls.slice(0, 8).map((r) => (
+          R.recentRecalls.slice(0, 6).map((r) => (
             <li>
               <span>
                 {r.models.slice(0, 2).map((m, i) => <>{i > 0 && ', '}<a href={href(m, m.year)}>{m.year} {m.make} {m.model}</a></>)}
@@ -46,37 +91,8 @@ const sections = [
     <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">Check your VIN for open recalls ↗</a>
   </section>
 
-  <Ad place="content" />
-
-  <div class="grid section">
-    {
-      sections.map(({ r, rows }) => (
-        <div class="card">
-          <div class="section-head" style="margin-bottom:6px"><h2 style="font-size:1.05rem">{r.title}</h2><a href={`/rankings/${r.slug}`}>More →</a></div>
-          <ol class="list" style="padding:0">
-            {rows.map((x) => (
-              <li>
-                <a href={href(x)}>{x.make} {x.model}</a>
-                <span class="small muted">{r.value(x)}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))
-    }
-  </div>
-
   <section class="section">
-    <div class="section-head"><h2>More rankings</h2></div>
+    <div class="section-head"><h2>Rankings</h2></div>
     <div class="chips">{RANKINGS.map((r) => <a href={`/rankings/${r.slug}`}>{r.short}</a>)}</div>
   </section>
-
-  {
-    R.newModels.length > 0 && (
-      <section class="section">
-        <div class="section-head"><h2>Newly added models</h2><a href="/rankings/new-models">All →</a></div>
-        <div class="chips">{R.newModels.slice(0, 16).map((x) => <a href={href(x, x.year)}>{x.year} {x.make} {x.model}</a>)}</div>
-      </section>
-    )
-  }
 </Base>

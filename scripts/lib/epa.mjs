@@ -61,6 +61,13 @@ export async function collectEpa(log) {
       range: num(get('range')) || num(get('rangeA')), // EV range, miles
       kwh: num(get('combE')), // kWh/100 mi
       motor: get('evMotor') || undefined,
+      charge: num(get('charge240')), // hours on a 240 V charger
+      co2: num(get('co2TailpipeGpm')), // tailpipe CO2, g/mile
+      feScore: num(get('feScore')), // EPA fuel economy score 1–10
+      ghgScore: num(get('ghgScore')), // EPA greenhouse gas score 1–10
+      save5: Number(get('youSaveSpend')) || undefined, // 5-year fuel cost vs average new vehicle (+ = saves)
+      startStop: get('startStop') === 'Y' || undefined,
+      engDesc: get('eng_dscr') || undefined,
       added: epaDate(get('createdOn')),
     });
   }

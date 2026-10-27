@@ -1,6 +1,7 @@
 // Daily: download/refresh every source → data/site. Run by .github/workflows/daily.yml.
 //   node scripts/collect.mjs                  everything
 //   node scripts/collect.mjs --ratings=300    cap NHTSA safety-rating API calls this run (default 2500)
+//   node scripts/collect.mjs --cvs=100 --wiki=100  cap dimension / Wikipedia calls (defaults 600 / 900)
 //   node scripts/collect.mjs --skip=pageviews skip a slow step while testing (comma list)
 // A failing source does not stop the run; the site is built from what we have and the job is marked failed.
 import { readJson } from './lib/store.mjs';
@@ -10,6 +11,8 @@ import { collectComplaints, collectRecalls, nhtsaNames } from './lib/nhtsa-files
 import { collectRatings } from './lib/ratings.mjs';
 import { collectPageviews } from './lib/pageviews.mjs';
 import { collectSiteViews } from './lib/analytics.mjs';
+import { collectCvs } from './lib/cvs.mjs';
+import { collectWiki } from './lib/wiki.mjs';
 import { aggregate, resolver } from './lib/aggregate.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
@@ -52,7 +55,16 @@ const recentModels = [...epa.values()].filter((m) => Object.keys(m.years).some((
 const views = await step('pageviews', () => collectPageviews(recentModels.map((m) => ({ key: m.key, make: m.make, model: m.model })), { log }), await readJson(CACHE + 'pageviews.json', {}));
 const siteViews = await step('analytics', () => collectSiteViews(log), {});
 
-await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, log }));
+// Dimensions: one vPIC call per make + model year
+const cvsJobs = [...new Set([...epa.values()].flatMap((m) => Object.keys(m.years).map((y) => `${m.make}|${y}`)))].map((s) => ({ make: s.split('|')[0], year: Number(s.split('|')[1]) }));
+const cvs = await step('cvs', () => collectCvs(cvsJobs, { budget: Number(args.cvs ?? 600), log }), await readJson(CACHE + 'cvs.json', {}));
+
+// Overview text + free-licensed photo per Wikipedia article (titles resolved by the pageviews step)
+const titles = await readJson(CACHE + 'wiki-titles.json', {});
+const wikiTitles = [...new Set(recentModels.map((m) => titles[m.key]).filter(Boolean))];
+const wiki = await step('wiki', () => collectWiki(wikiTitles, { budget: Number(args.wiki ?? 900), log }), await readJson(CACHE + 'wiki.json', {}));
+
+await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, log }));
 if (failed.length) {
   log('Failed:', failed.join(', '));
   process.exit(1);

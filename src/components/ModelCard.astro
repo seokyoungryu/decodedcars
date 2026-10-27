@@ -1,0 +1,18 @@
+---
+// Model card with its free-licensed photo (full attribution is on the model page under the large photo)
+interface Props {
+  href: string;
+  title: string;
+  sub?: string;
+  photo?: string;
+}
+const { href, title, sub, photo } = Astro.props;
+---
+
+<a class="mcard" href={href}>
+  <div class="img">{photo ? <img src={`/photos/${photo}`} alt="" loading="lazy" decoding="async" /> : <span aria-hidden="true">🚗</span>}</div>
+  <div class="body">
+    <h3>{title}</h3>
+    {sub && <p>{sub}</p>}
+  </div>
+</a>
