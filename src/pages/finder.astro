@@ -1,0 +1,83 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+---
+
+<Base title="Car Finder: Filter by Body, MPG, Safety & Reliability" description="Find the right car: filter every current model by body style, gas/hybrid/electric, AWD, fuel economy, EV range, crash rating and recalls." section="finder">
+  <h1>Car finder</h1>
+  <p class="lead">Filter every current car, truck and SUV by what matters to you. Results use each model's latest model year.</p>
+
+  <form class="card form section" id="f" onsubmit="return false">
+    <label>Body style
+      <select name="body"><option value="">Any</option><option>Car</option><option>SUV</option><option>Pickup</option><option>Minivan</option><option>Van</option><option>Wagon</option><option>Sports / 2-seat</option></select>
+    </label>
+    <label>Powertrain
+      <select name="pw"><option value="">Any</option><option>Gas</option><option>Hybrid</option><option>Plug-in hybrid</option><option>Electric</option><option>Diesel</option></select>
+    </label>
+    <label>Min. combined MPG
+      <select name="mpg"><option value="0">Any</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option></select>
+    </label>
+    <label>Min. EV range
+      <select name="range"><option value="0">Any</option><option>200</option><option>250</option><option>300</option><option>350</option></select>
+    </label>
+    <label>Sort by
+      <select name="sort"><option value="pop">Most researched</option><option value="mpg">Best MPG</option><option value="range">Longest EV range</option><option value="cost">Lowest fuel cost</option><option value="safety">Safety rating</option><option value="problems">Fewest recalls &amp; complaints</option></select>
+    </label>
+    <div>
+      <label class="check"><input type="checkbox" name="awd" /> AWD / 4WD available</label>
+      <label class="check"><input type="checkbox" name="five" /> 5-star NHTSA overall</label>
+      <label class="check"><input type="checkbox" name="clean" /> No recalls (latest year)</label>
+    </div>
+  </form>
+  <p id="count" class="small muted" aria-live="polite">Loading…</p>
+  <div id="out" class="mcards"></div>
+  <Ad place="bottom" />
+  <p class="source">Data: EPA fuel economy, NHTSA ratings, recalls and complaints, Transport Canada dimensions. Prices are not included.</p>
+</Base>
+
+<script>
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; body: string; cls?: string; pw: string; awd?: boolean; mpg?: number; range?: number; cost?: number; st?: number; rc: number; cp: number; pop: number; ph?: string };
+  const form = document.getElementById('f') as HTMLFormElement;
+  const out = document.getElementById('out')!;
+  const count = document.getElementById('count')!;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  let rows: Row[] = [];
+  const thisYear = new Date().getUTCFullYear();
+
+  function render() {
+    const f = new FormData(form);
+    const g = (k: string) => String(f.get(k) ?? '');
+    let list = rows.filter((r) => r.y >= thisYear - 1);
+    if (g('body')) list = list.filter((r) => r.body === g('body'));
+    if (g('pw')) list = list.filter((r) => r.pw === g('pw') || (g('pw') === 'Electric' && r.pw === 'Gas + EV versions'));
+    if (+g('mpg')) list = list.filter((r) => (r.mpg ?? 0) >= +g('mpg'));
+    if (+g('range')) list = list.filter((r) => (r.range ?? 0) >= +g('range'));
+    if (f.get('awd')) list = list.filter((r) => r.awd);
+    if (f.get('five')) list = list.filter((r) => r.st === 5);
+    if (f.get('clean')) list = list.filter((r) => r.rc === 0);
+    const by: Record<string, (a: Row, b: Row) => number> = {
+      pop: (a, b) => b.pop - a.pop,
+      mpg: (a, b) => (b.mpg ?? 0) - (a.mpg ?? 0),
+      range: (a, b) => (b.range ?? 0) - (a.range ?? 0),
+      cost: (a, b) => (a.cost ?? 1e9) - (b.cost ?? 1e9),
+      safety: (a, b) => (b.st ?? 0) - (a.st ?? 0) || b.pop - a.pop,
+      problems: (a, b) => a.rc * 20 + a.cp - (b.rc * 20 + b.cp) || b.pop - a.pop,
+    };
+    list.sort(by[g('sort')] ?? by.pop);
+    count.textContent = `${list.length} model${list.length === 1 ? '' : 's'} match`;
+    out.innerHTML = list
+      .slice(0, 60)
+      .map((r) => {
+        const facts = [r.mpg ? `${r.mpg} MPG` : '', r.range ? `${r.range} mi range` : '', r.st ? `${'★'.repeat(r.st)}` : '', `${r.rc} recall${r.rc === 1 ? '' : 's'}`].filter(Boolean).join(' · ');
+        return `<a class="mcard" href="/${r.ms}/${r.s}/${r.y}"><div class="img">${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="" loading="lazy">` : '<span>🚗</span>'}</div><div class="body"><h3>${r.y} ${esc(r.mk)} ${esc(r.md)}</h3><p>${esc(r.body)} · ${esc(r.pw)}</p><p>${facts}</p></div></a>`;
+      })
+      .join('');
+  }
+  form.addEventListener('input', render);
+  fetch('/finder-data.json')
+    .then((r) => r.json())
+    .then((d) => {
+      rows = d.rows;
+      render();
+    });
+</script>

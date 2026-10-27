@@ -1,0 +1,15 @@
+---
+import Base from '@/layouts/Base.astro';
+import { model as loadModel, vsPairs } from '@/lib/data';
+const name = (mk: string, s: string) => {
+  const m = loadModel(mk, s);
+  return m ? `${m.make} ${m.model}` : s;
+};
+const list = vsPairs().slice(0, 300).map((p) => ({ id: p.id, a: name(...p.a), b: name(...p.b) }));
+---
+
+<Base title="Car Comparisons" description="Popular head-to-head car comparisons: fuel economy, size, safety ratings, recalls and the best years to buy used." section="compare">
+  <h1>Compare cars head to head</h1>
+  <p class="lead">The most-researched rivals in each class, compared on MPG, size, crash ratings, recalls and owner complaints.</p>
+  <div class="chips section">{list.map((p) => <a href={`/compare/${p.id}`}>{p.a} vs {p.b}</a>)}</div>
+</Base>

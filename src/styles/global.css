@@ -185,3 +185,22 @@ details.recall-item dd { margin: 0; color: var(--ink-soft); font-size: .92rem; }
 .mcard .body { padding: 10px 12px 12px; }
 .mcard h3 { font-size: .98rem; }
 .mcard p { margin: 4px 0 0; font-size: .82rem; color: var(--ink-mute); }
+
+/* buyer tools */
+.verdict { text-decoration: none; display: block; }
+.good-card { border-left: 4px solid var(--good); }
+.bad-card { border-left: 4px solid var(--bad); }
+.checklist { margin: 0; padding: 14px 18px 14px 36px; }
+.checklist li { margin: 6px 0; color: var(--ink-soft); }
+.checklist a { color: var(--brand); }
+.print-btn { font: inherit; font-size: .86rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink-soft); cursor: pointer; }
+details.all-years > summary { cursor: pointer; font-weight: 700; padding: 10px 0; color: var(--brand); }
+.form { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); align-items: end; }
+.form label { display: grid; gap: 4px; font-size: .82rem; font-weight: 650; color: var(--ink-mute); }
+.form input, .form select { font: inherit; font-size: .95rem; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-elev); color: var(--ink); min-width: 0; }
+.form .check { display: flex; gap: 6px; align-items: center; font-size: .92rem; color: var(--ink-soft); }
+.btn { font: inherit; font-weight: 750; padding: 9px 16px; border-radius: 10px; border: 0; background: var(--brand); color: var(--brand-ink); cursor: pointer; }
+.vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vs-table td:first-child { color: var(--ink-mute); font-weight: 650; }
+.vs-table td.win { color: var(--good); font-weight: 750; }
+@media print { .site-header, .site-footer, .tabs, .ad, .cta, .print-btn, nav { display: none !important; } body { background: #fff; } }

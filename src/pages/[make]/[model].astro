@@ -5,7 +5,8 @@ import Stars from '@/components/Stars.astro';
 import Bars from '@/components/Bars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
 import { VIN_LOOKUP } from '@/config/site';
-import { type Model, comp, href, makes, model as loadModel, n } from '@/lib/data';
+import VerdictCard from '@/components/VerdictCard.astro';
+import { type Model, comp, href, makes, model as loadModel, n, vsFor } from '@/lib/data';
 
 export function getStaticPaths() {
   return makes().flatMap((mk) => mk.models.map((mm) => ({ params: { make: mk.slug, model: mm.slug }, props: { m: loadModel(mk.slug, mm.slug)! } })));
@@ -30,6 +31,13 @@ const len = (y: (typeof years)[number]) => y.dims.find((d) => d.length)?.length;
 const wt = (y: (typeof years)[number]) => y.dims.find((d) => d.weight)?.weight;
 const pop = m.popularity;
 const title = `${m.make} ${m.model}`;
+const nameOf = (mk: string, s: string) => {
+  const o = loadModel(mk, s);
+  return o ? `${o.make} ${o.model}` : s;
+};
+const rivals = vsFor(m.makeSlug, m.slug)
+  .slice(0, 6)
+  .map((p) => ({ id: p.id, other: p.a[0] === m.makeSlug && p.a[1] === m.slug ? nameOf(...p.b) : nameOf(...p.a) }));
 const desc = `${title} by model year (${first.year}–${latest.year}): specs, size, MPG${ranges.length ? ', EV range' : ''}, NHTSA safety ratings, ${recallIds.size} recalls and ${n(totalComplaints)} owner complaints compared${fewest ? `. Fewest problems: ${fewest.year}` : ''}.`;
 ---
 
@@ -64,8 +72,19 @@ const desc = `${title} by model year (${first.year}–${latest.year}): specs, si
     )
   }
 
-  <section class="section">
-    <div class="section-head"><h2>Every model year compared</h2></div>
+  {m.verdict && <VerdictCard m={m} />}
+
+  {
+    rivals.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Compare head to head</h2></div>
+        <div class="chips">{rivals.map((p) => <a href={`/compare/${p.id}`}>{title} vs {p.other}</a>)}</div>
+      </section>
+    )
+  }
+
+  <details class="section all-years">
+    <summary>Show all {years.length} model years side by side</summary>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Year</th><th>Engines</th><th class="num">Best MPG / range</th><th class="num">Length</th><th class="num">Weight</th><th>Overall</th><th class="num">Recalls</th><th class="num">Complaints</th></tr></thead>
@@ -87,7 +106,7 @@ const desc = `${title} by model year (${first.year}–${latest.year}): specs, si
         </tbody>
       </table>
     </div>
-  </section>
+  </details>
 
   {mpgs.length > 1 && <Bars data={[...years].reverse().filter((y) => y.mpg).map((y) => [String(y.year), y.mpg!.max])} caption={`Best combined MPG by model year — ${title}`} fmt={(v) => `${v} MPG`} />}
 

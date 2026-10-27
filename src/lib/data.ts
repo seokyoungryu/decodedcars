@@ -99,6 +99,7 @@ export interface Model {
   recent90: number;
   overview?: { title: string; text: string; url: string };
   photo?: Photo;
+  verdict?: Verdict;
 }
 export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
 export interface MakeEntry { slug: string; name: string; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string }[] }
@@ -135,3 +136,17 @@ export function updatedLabel() {
 }
 /** "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP" → "Fuel System, Gasoline › Delivery › Fuel Pump" */
 export const comp = (s?: string) => (s ? title(s).replace(/:/g, ' › ') : '–');
+
+/* ── buyer tools ── */
+export interface VerdictYear { year: number; complaints: number; recalls: number; crash: number; fire: number; top?: string; overall?: number }
+export interface Verdict { best: VerdictYear; worst?: VerdictYear; compared: number }
+export interface FinderRow {
+  mk: string; md: string; ms: string; s: string; y: number; years: number[]; body: string; cls?: string; pw: string; awd?: boolean;
+  mpg?: number; range?: number; gal?: number; premium?: boolean; kwh?: number; cost?: number; st?: number; rc: number; cp: number; len?: number; pop: number; ph?: string;
+}
+export interface VsPair { id: string; a: [string, string]; b: [string, string]; pop: number }
+export const finder = () => load('finder.json', [] as FinderRow[]);
+export const vsPairs = () => load('vs.json', [] as VsPair[]);
+export const fuelPrices = () => load('fuelprices.json', {} as Record<string, string>);
+/** comparison pages that include this model */
+export const vsFor = (makeSlug: string, slug: string) => vsPairs().filter((p) => (p.a[0] === makeSlug && p.a[1] === slug) || (p.b[0] === makeSlug && p.b[1] === slug));

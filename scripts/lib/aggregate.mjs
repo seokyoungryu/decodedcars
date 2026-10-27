@@ -5,6 +5,7 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PHOTO_DIR } from './wiki.mjs';
+import { buildBuyerData, verdict } from './buyer.mjs';
 import { SITE, daysAgo, today, writeJson } from './store.mjs';
 import { norm, slug } from './keys.mjs';
 
@@ -44,7 +45,7 @@ export function resolver(epaModels) {
 }
 
 /** EPA "F150" + NHTSA "F-150" → "F-150": NHTSA punctuation, EPA letter case (keeps "CR-V", not "Cr-V") */
-function displayName(epaName, nhtsaName) {
+export function displayName(epaName, nhtsaName) {
   if (!nhtsaName || norm(nhtsaName) !== norm(epaName) || nhtsaName.length <= epaName.length) return epaName;
   const letters = epaName.replace(/[^A-Za-z0-9]/g, '');
   let i = 0;
@@ -231,7 +232,9 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   }
 
 
+  for (const m of live) m.verdict = verdict(m);
   for (const m of live) await writeJson(`${SITE}models/${m.makeSlug}/${m.slug}.json`, m);
+  await buildBuyerData(live, log);
 
   // Photos → public/photos (served as static files; attribution is stored with each model)
   const PUBLIC_PHOTOS = fileURLToPath(new URL('../../public/photos/', import.meta.url));

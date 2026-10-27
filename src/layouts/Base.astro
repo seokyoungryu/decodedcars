@@ -7,7 +7,7 @@ interface Props {
   title: string;
   description?: string;
   noindex?: boolean;
-  section?: 'makes' | 'recalls' | 'rankings' | 'guide';
+  section?: 'makes' | 'recalls' | 'rankings' | 'guide' | 'finder' | 'compare' | 'tools';
   jsonLd?: Record<string, unknown>[];
 }
 const { title, description = SITE_DESCRIPTION, noindex = false, section, jsonLd = [] } = Astro.props;
@@ -15,10 +15,12 @@ const path = Astro.url.pathname.replace(/\.html$/, '').replace(/\/(index)?$/, ''
 const fullTitle = path === '/' ? `${SITE_NAME} — ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
 const canonical = new URL(path, SITE_URL).href;
 const NAV = [
-  { href: '/makes', key: 'makes', label: 'All makes' },
-  { href: '/recalls', key: 'recalls', label: 'New recalls' },
+  { href: '/finder', key: 'finder', label: 'Car finder' },
+  { href: '/compare', key: 'compare', label: 'Compare' },
+  { href: '/makes', key: 'makes', label: 'Makes' },
   { href: '/rankings', key: 'rankings', label: 'Rankings' },
-  { href: '/guide', key: 'guide', label: 'Guides' },
+  { href: '/tools', key: 'tools', label: 'Tools' },
+  { href: '/recalls', key: 'recalls', label: 'Recalls' },
 ];
 ---
 
@@ -58,6 +60,7 @@ const NAV = [
           <a href="/about">About</a>
           <a href="/terms">Terms &amp; disclaimer</a>
           <a href="/privacy">Privacy</a>
+          <a href="/guide">Guides</a>
           {CONTACT_EMAIL && <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>}
           <a href={VIN_LOOKUP} rel="noopener" target="_blank">Check your VIN at NHTSA ↗</a>
         </nav>

@@ -1,0 +1,101 @@
+---
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import Stars from '@/components/Stars.astro';
+import CarPhoto from '@/components/CarPhoto.astro';
+import { type Model, type VsPair, href, model as loadModel, n, usd, vsPairs } from '@/lib/data';
+import { classNoun } from '@/lib/describe';
+
+export function getStaticPaths() {
+  return vsPairs().map((p) => ({ params: { id: p.id }, props: { p } }));
+}
+const { p } = Astro.props as { p: VsPair };
+const A = loadModel(...p.a) as Model;
+const B = loadModel(...p.b) as Model;
+const ya = A.years.find((y) => y.page && y.year <= new Date().getUTCFullYear() + 1)!;
+const yb = B.years.find((y) => y.page && y.year <= new Date().getUTCFullYear() + 1)!;
+const na = `${A.make} ${A.model}`;
+const nb = `${B.make} ${B.model}`;
+const allRecalls = (m: Model) => new Set(m.years.flatMap((y) => y.recalls)).size;
+const dim = (y: typeof ya, f: 'length' | 'width' | 'height' | 'weight') => {
+  const v = y.dims.map((d) => d[f]).filter((x): x is number => !!x);
+  return v.length ? Math.min(...v) : undefined;
+};
+type Row = { label: string; a?: number; b?: number; fmt: (v: number) => string; better?: 'high' | 'low' };
+const rows: Row[] = [
+  { label: 'Best combined MPG', a: ya.mpg?.max, b: yb.mpg?.max, fmt: (v) => `${v} MPG`, better: 'high' },
+  { label: 'City / highway MPG (best)', a: ya.mpg?.city, b: yb.mpg?.city, fmt: (v) => `${v} city` },
+  { label: 'EV range', a: ya.range, b: yb.range, fmt: (v) => `${v} mi`, better: 'high' },
+  { label: 'Fuel cost per year (EPA)', a: ya.cost, b: yb.cost, fmt: usd, better: 'low' },
+  { label: 'Length', a: dim(ya, 'length'), b: dim(yb, 'length'), fmt: (v) => `${v} in` },
+  { label: 'Width', a: dim(ya, 'width'), b: dim(yb, 'width'), fmt: (v) => `${v} in` },
+  { label: 'Height', a: dim(ya, 'height'), b: dim(yb, 'height'), fmt: (v) => `${v} in` },
+  { label: 'Curb weight (lightest)', a: dim(ya, 'weight'), b: dim(yb, 'weight'), fmt: (v) => `${n(Math.round(v))} lb` },
+  { label: `Recalls (${ya.year === yb.year ? ya.year : 'latest year'})`, a: ya.recalls.length, b: yb.recalls.length, fmt: (v) => String(v), better: 'low' },
+  { label: 'Recalls, all years since 2005', a: allRecalls(A), b: allRecalls(B), fmt: (v) => String(v), better: 'low' },
+  { label: 'Owner complaints (latest year)', a: ya.complaints.total, b: yb.complaints.total, fmt: n, better: 'low' },
+  { label: 'Wikipedia views, 30 days', a: A.popularity?.views30, b: B.popularity?.views30, fmt: n },
+];
+const win = (r: Row, side: 'a' | 'b') => {
+  if (!r.better || r.a == null || r.b == null || r.a === r.b) return false;
+  const mine = side === 'a' ? r.a : r.b, other = side === 'a' ? r.b : r.a;
+  return r.better === 'high' ? mine > other : mine < other;
+};
+// plain-English summary from the rows that have a winner
+const say: string[] = [];
+const mpgRow = rows[0];
+if (mpgRow.a && mpgRow.b && mpgRow.a !== mpgRow.b) say.push(`The ${mpgRow.a > mpgRow.b ? na : nb} is more fuel-efficient: ${Math.max(mpgRow.a, mpgRow.b)} vs ${Math.min(mpgRow.a, mpgRow.b)} MPG combined in its best version.`);
+if (ya.cost && yb.cost && ya.cost !== yb.cost) say.push(`That works out to about ${usd(Math.abs(ya.cost - yb.cost))} a year less in fuel for the ${ya.cost < yb.cost ? na : nb} (EPA estimate, 15,000 miles).`);
+const la = dim(ya, 'length'), lb = dim(yb, 'length');
+if (la && lb && Math.abs(la - lb) >= 2) say.push(`The ${la > lb ? na : nb} is the bigger car, about ${Math.round(Math.abs(la - lb))} inches longer.`);
+if (ya.overall && yb.overall && ya.overall !== yb.overall) say.push(`In NHTSA crash tests the ${ya.overall > yb.overall ? na : nb} scores higher overall (${Math.max(ya.overall, yb.overall)} vs ${Math.min(ya.overall, yb.overall)} stars).`);
+else if (ya.overall && ya.overall === yb.overall) say.push(`Both earned ${ya.overall} stars overall in NHTSA crash tests.`);
+const ra = allRecalls(A), rb = allRecalls(B);
+if (ra !== rb) say.push(`Across all model years since 2005, the ${ra < rb ? na : nb} has had fewer recall campaigns (${Math.min(ra, rb)} vs ${Math.max(ra, rb)}).`);
+const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and owner complaints compared side by side for the ${ya.year} models${A.verdict && B.verdict ? ', plus the best years to buy used' : ''}.`;
+---
+
+<Base title={`${na} vs ${nb}: MPG, Size, Safety & Reliability`} description={desc} section="compare">
+  <div class="crumbs"><a href="/compare">Compare</a></div>
+  <h1>{na} vs {nb}</h1>
+  <p class="lead">{ya.year} {na} vs {yb.year} {nb} — two {classNoun(ya.cls)}s compared on efficiency, size, safety and reliability.</p>
+
+  <div class="vs-grid section">
+    <div><CarPhoto photo={A.photo} alt={na} /><p style="margin:6px 0 0"><a href={href(A)}><b>{na}</b></a></p></div>
+    <div><CarPhoto photo={B.photo} alt={nb} /><p style="margin:6px 0 0"><a href={href(B)}><b>{nb}</b></a></p></div>
+  </div>
+
+  {say.length > 0 && (<section class="section overview"><h2 style="margin-bottom:10px">The short version</h2>{say.map((s) => <p>{s}</p>)}</section>)}
+
+  <section class="section">
+    <div class="table-wrap">
+      <table class="vs-table">
+        <thead><tr><th></th><th>{ya.year} {na}</th><th>{yb.year} {nb}</th></tr></thead>
+        <tbody>
+          <tr><td>Class</td><td>{ya.cls}</td><td>{yb.cls}</td></tr>
+          <tr><td>Engines</td><td>{ya.engines.join(', ') || ya.fuels.join(', ')}</td><td>{yb.engines.join(', ') || yb.fuels.join(', ')}</td></tr>
+          <tr><td>Drivetrain</td><td>{ya.drives.join(', ')}</td><td>{yb.drives.join(', ')}</td></tr>
+          <tr><td>NHTSA overall</td><td class={ya.overall && yb.overall && ya.overall > yb.overall ? 'win' : ''}><Stars value={ya.overall} /></td><td class={ya.overall && yb.overall && yb.overall > ya.overall ? 'win' : ''}><Stars value={yb.overall} /></td></tr>
+          {
+            rows
+              .filter((r) => r.a != null || r.b != null)
+              .map((r) => (
+                <tr>
+                  <td>{r.label}</td>
+                  <td class={win(r, 'a') ? 'win' : ''}>{r.a == null ? '–' : r.fmt(r.a)}</td>
+                  <td class={win(r, 'b') ? 'win' : ''}>{r.b == null ? '–' : r.fmt(r.b)}</td>
+                </tr>
+              ))
+          }
+          <tr><td>Best used year</td><td>{A.verdict ? <a href={href(A, A.verdict.best.year)}>{A.verdict.best.year}</a> : '–'}</td><td>{B.verdict ? <a href={href(B, B.verdict.best.year)}>{B.verdict.best.year}</a> : '–'}</td></tr>
+          <tr><td>Year to avoid</td><td>{A.verdict?.worst ? <a href={href(A, A.verdict.worst.year)}>{A.verdict.worst.year}</a> : '–'}</td><td>{B.verdict?.worst ? <a href={href(B, B.verdict.worst.year)}>{B.verdict.worst.year}</a> : '–'}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Green marks the better figure where higher or lower is clearly better. MPG and fuel cost: EPA. Size: Transport Canada CVS (Open Government Licence – Canada). Safety, recalls, complaints: NHTSA. Prices are not included.</p>
+  </section>
+
+  <Ad place="content" />
+  <p class="chips section"><a href={href(A, ya.year)}>Full {ya.year} {na} specs →</a><a href={href(B, yb.year)}>Full {yb.year} {nb} specs →</a><a href="/tools/fuel-cost">Compare fuel costs for your driving →</a></p>
+  <Ad place="bottom" />
+</Base>

@@ -23,6 +23,12 @@ const lists = [
   <section>
     <h1>Every car, compared year by year</h1>
     <p class="lead">Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every U.S. car, truck and SUV since 2005. {updatedLabel()}</p>
+    <div class="grid" style="margin-top:16px">
+      <a class="card" href="/finder"><h2 style="font-size:1.05rem">🔎 Car finder</h2><p class="small muted" style="margin:4px 0 0">Filter by body, hybrid/EV, AWD, MPG, safety</p></a>
+      <a class="card" href="/compare"><h2 style="font-size:1.05rem">⚖️ Compare two cars</h2><p class="small muted" style="margin:4px 0 0">Civic vs Corolla, RAV4 vs CR-V…</p></a>
+      <a class="card" href="/tools/vin-decoder"><h2 style="font-size:1.05rem">🔢 VIN decoder</h2><p class="small muted" style="margin:4px 0 0">What exactly is this used car?</p></a>
+      <a class="card" href="/tools/fuel-cost"><h2 style="font-size:1.05rem">⛽ Fuel cost calculator</h2><p class="small muted" style="margin:4px 0 0">Gas vs hybrid vs EV for your driving</p></a>
+    </div>
     <div class="chips" style="margin-top:14px">{popularMakes.map((m) => <a href={`/${m.slug}`}>{m.name}</a>)}<a href="/makes">All makes →</a></div>
   </section>
 
