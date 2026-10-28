@@ -5,11 +5,11 @@ order: 2
 updated: 2026-10-27
 ---
 
-CarRadar puts three kinds of public data side by side. Each is useful, and each has limits worth knowing before you compare cars.
+DecodedCars puts three kinds of public data side by side. Each is useful, and each has limits worth knowing before you compare cars.
 
 ## Owner complaints
 
-Anyone can file a vehicle safety complaint with NHTSA. CarRadar counts every vehicle complaint received since 2015, once per report, grouped by model year and by the component the owner selected.
+Anyone can file a vehicle safety complaint with NHTSA. DecodedCars counts every vehicle complaint received since 2015, once per report, grouped by model year and by the component the owner selected.
 
 **Keep in mind:**
 
@@ -22,7 +22,7 @@ Anyone can file a vehicle safety complaint with NHTSA. CarRadar counts every veh
 
 MPG figures come from the EPA's standardized lab tests, adjusted to reflect typical driving. They are designed for comparing cars with each other, not for predicting exactly what you will get. Your results depend on speed, climate, terrain, tire pressure, cargo and driving style.
 
-CarRadar compares each version's combined MPG with the average for its EPA size class and model year (for example, all 2024 midsize cars), so you can see whether a car is efficient for its type. Electric vehicles are compared by EPA range and energy use (kWh per 100 miles) instead.
+DecodedCars compares each version's combined MPG with the average for its EPA size class and model year (for example, all 2024 midsize cars), so you can see whether a car is efficient for its type. Electric vehicles are compared by EPA range and energy use (kWh per 100 miles) instead.
 
 Annual fuel cost is EPA's estimate for 15,000 miles a year at current national average prices, which makes gas, hybrid and electric running costs directly comparable.
 
@@ -37,4 +37,4 @@ NHTSA crash-tests new vehicles and publishes ratings for frontal crash, side cra
 
 ---
 
-All figures come from public NHTSA and EPA records. Comparisons, averages and rankings are calculated by CarRadar.
+All figures come from public NHTSA and EPA records. Comparisons, averages and rankings are calculated by DecodedCars.

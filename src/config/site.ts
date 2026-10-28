@@ -1,4 +1,4 @@
-export const SITE_NAME = 'CarRadar';
+export const SITE_NAME = 'DecodedCars';
 export const SITE_TAGLINE = 'Specs, MPG, safety ratings and recalls for every car';
 export const SITE_DESCRIPTION =
   'Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every car, truck and SUV since 2005 — compared year by year and updated daily.';
@@ -14,7 +14,7 @@ export const ADSENSE_SLOTS = { content: '', bottom: '' };
 
 /** Shown on every page: not a government site, and VIN lookup is the only way to confirm an open recall */
 export const NOTICE =
-  'CarRadar is an independent site and is not affiliated with or endorsed by NHTSA, the EPA, the U.S. Department of Transportation, or any vehicle manufacturer. Recalls apply to specific vehicles — always confirm with your 17-character VIN at nhtsa.gov/recalls or with a dealer.';
+  'DecodedCars is an independent site and is not affiliated with or endorsed by NHTSA, the EPA, the U.S. Department of Transportation, or any vehicle manufacturer. Recalls apply to specific vehicles — always confirm with your 17-character VIN at nhtsa.gov/recalls or with a dealer.';
 
 export const VIN_LOOKUP = 'https://www.nhtsa.gov/recalls';
 export const campaignUrl = (id: string) => `https://www.nhtsa.gov/recalls?nhtsaId=${encodeURIComponent(id)}`;

@@ -1,4 +1,4 @@
-# CarRadar (carradar)
+# DecodedCars (decodedcars.com)
 
 English (US) car information site: specs, dimensions, fuel economy, safety ratings, photos and overviews for every U.S. car, truck and SUV since model year 2005 — with recalls and owner-reported problems as part of each model-year page.
 Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages every day. Ad-supported (AdSense). No API keys needed for the data.
@@ -19,7 +19,7 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 | Crash-test photos, safety tech | NHTSA NCAP | US Government work | part of the ratings calls |
 | Trims, horsepower, transmissions, seats, driver-assist features (standard/optional), assembly plant | NHTSA vPIC `DecodeVinValuesExtended` on **VIN patterns** (chars 1–8 + `*` + year/plant chars) taken from the complaint file | US Government work. **The pattern drops the check digit and serial number, so it describes a factory configuration, never one vehicle; patterns stay in data/cache and are never published** | 2,500 patterns/run, 350 ms apart, cached forever (≈18k patterns → about a week to fill) |
 | Trending / most researched | Wikimedia pageviews API | CC0; identifying User-Agent with contact required | gentle (one request per article per day) |
-| Most viewed on CarRadar | Cloudflare Web Analytics GraphQL | our own data | 300 queries / 5 min (we use 1) |
+| Most viewed on DecodedCars | Cloudflare Web Analytics GraphQL | our own data | 300 queries / 5 min (we use 1) |
 
 ## Compliance rules (read before changing)
 
@@ -80,7 +80,7 @@ It also commits a one-line heartbeat on the 1st of each month: GitHub disables s
 ## First-time setup
 
 1. **GitHub:** create a **public** repository (Actions minutes are free for public repos; a run takes 10–20 minutes) and push.
-2. **Cloudflare Pages:** Workers & Pages → Create → Pages → "Upload assets" → create a project named `carradar` (direct upload, not Git-connected).
+2. **Cloudflare Pages:** Workers & Pages → Create → Pages → "Upload assets" → create a project named `decodedcars` (direct upload, not Git-connected).
 3. **API token:** create a Cloudflare API token with Account › Cloudflare Pages › Edit and Account › Account Analytics › Read.
 4. **Repository secrets:**
    - `CLOUDFLARE_API_TOKEN`
@@ -89,7 +89,7 @@ It also commits a one-line heartbeat on the 1st of each month: GitHub disables s
 5. **First run:** Actions → **Daily update** → Run workflow. Safety ratings fill in over about two daily runs.
 6. **Domain:** after connecting one, update `src/config/site-url.mjs` and `public/robots.txt`.
 7. **After launch:**
-   - Enable Cloudflare Web Analytics for the site and add its site tag as the secret `CF_SITE_TAG`. This turns on "most viewed on CarRadar".
+   - Enable Cloudflare Web Analytics for the site and add its site tag as the secret `CF_SITE_TAG`. This turns on "most viewed on DecodedCars".
    - Add the site to Google Search Console and submit `/sitemap-index.xml`.
 8. **Before AdSense:** set `CONTACT_EMAIL` in `src/config/site.ts`, and consider adding a few more guides (`src/content/guides`).
 9. **After approval:**
@@ -109,7 +109,6 @@ npm run build && npm run preview
 ## Ideas not done yet
 
 - Horsepower/torque: no free official dataset found (EPA and NCAP don't publish it).
-- Choosing a final brand name and domain ("CarRadar" is a working name).
 - More buyer tools: lease calculator, recall RSS per model.
 
 ## Spanish (/es)

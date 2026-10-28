@@ -7,7 +7,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { CACHE, readJson, writeJson } from './store.mjs';
 
-export const USER_AGENT = `CarRadarBot/0.1 (${process.env.SITE_CONTACT || 'https://github.com/'}; static vehicle-safety site, daily batch)`;
+export const USER_AGENT = `DecodedCarsBot/0.1 (${process.env.SITE_CONTACT || 'https://github.com/'}; static vehicle-safety site, daily batch)`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export async function getJson(url, { tries = 5, headers = {} } = {}) {

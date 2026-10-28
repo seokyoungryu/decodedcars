@@ -29,12 +29,12 @@ Safety recall repairs are performed free of charge at authorized dealers, even i
 
 ## Pay attention to "Do Not Drive" and "Park Outside"
 
-Some recalls carry an advisory telling owners not to drive the vehicle at all, or to park it outside and away from buildings because of a fire risk. CarRadar highlights these recalls in red on each model-year page. If your VIN shows one of these, contact the dealer before driving.
+Some recalls carry an advisory telling owners not to drive the vehicle at all, or to park it outside and away from buildings because of a fire risk. DecodedCars highlights these recalls in red on each model-year page. If your VIN shows one of these, contact the dealer before driving.
 
 ## Recalls are different from complaints
 
-Owner complaints are reports filed with NHTSA by drivers. They are not verified and do not mean a defect exists, but a cluster of similar complaints is one of the ways NHTSA decides to open an investigation, which can lead to a recall. CarRadar shows complaint counts by component so you can see which systems owners report most often.
+Owner complaints are reports filed with NHTSA by drivers. They are not verified and do not mean a defect exists, but a cluster of similar complaints is one of the ways NHTSA decides to open an investigation, which can lead to a recall. DecodedCars shows complaint counts by component so you can see which systems owners report most often.
 
 ---
 
-CarRadar is an independent site and is not affiliated with NHTSA or any manufacturer. Always confirm recall status with your VIN.
+DecodedCars is an independent site and is not affiliated with NHTSA or any manufacturer. Always confirm recall status with your VIN.

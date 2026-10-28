@@ -1,22 +1,19 @@
-# 배포 가이드 (CarRadar → 실제 이름은 결정 후 변경)
+# 배포 가이드 (DecodedCars · decodedcars.com)
 
 계정·결제·비밀번호가 필요한 단계는 직접 하셔야 하고, 나머지는 Claude가 합니다. ☐ 표시가 직접 하실 일입니다.
 
-## 0. 이름 정하기
-- ☐ 사이트 이름 고르기: 후보 CarPickHub(carpickhub.com), ModelYearHub, BestCarYears, CarFactsHub (2026-10-28 기준 .com 구매 가능)
-- Claude: 사이트 안의 이름(`src/config/site.ts`, 번역 문구, 봇 이름)을 한 번에 바꿈
-
 ## 1. 도메인 (Cloudflare Registrar, 연 약 $10)
-- ☐ Cloudflare 대시보드 → Domain Registration → 도메인 구매
+- ☐ Cloudflare 대시보드 → Domain Registration → **decodedcars.com** 구매 (2026-10-28 기준 등록 기록 없음, 구매 직전에 다시 확인)
+- 사이트 안의 이름·주소(canonical, sitemap, robots)는 이미 DecodedCars / decodedcars.com 으로 설정됨
 
 ## 2. GitHub 저장소
-- ☐ github.com에서 **공개(public)** 저장소 생성 (예: `carpickhub`). README·.gitignore 추가하지 말고 빈 저장소로
+- ☐ github.com에서 **공개(public)** 저장소 생성 (예: `decodedcars`). README·.gitignore 추가하지 말고 빈 저장소로
   - 공개인 이유: 매일 수집·빌드가 30~90분 걸려서 비공개 무료 한도(월 2,000분)를 넘음. 공개 저장소는 Actions가 무제한 무료
   - 공개돼도 문제없음: 비밀키는 Secrets에만 들어가고, 저장소에는 코드와 공개 데이터 시드만 있음
 - 저장소 주소를 알려주시면 Claude가 연결하고 push (처음 한 번 GitHub 로그인 창이 뜰 수 있음)
 
 ## 3. Cloudflare Pages 프로젝트와 API 토큰
-- ☐ Workers & Pages → Create → Pages → **Upload assets** → 프로젝트 이름 `carradar` (이름 바꾸면 Claude가 workflow도 수정) → 아무 파일이나 한 번 업로드해서 생성
+- ☐ Workers & Pages → Create → Pages → **Upload assets** → 프로젝트 이름 `decodedcars` → 아무 파일이나 한 번 업로드해서 생성
 - ☐ My Profile → API Tokens → Create Token → Custom token:
   - Account › Cloudflare Pages › **Edit**
   - Account › Account Analytics › **Read**
@@ -35,7 +32,7 @@
 
 ## 6. 도메인 연결과 마무리 (Claude가 코드 수정, 대시보드는 직접)
 - ☐ Pages 프로젝트 → Custom domains → 도메인 추가 (+ www → 루트 리디렉션 규칙)
-- Claude: `src/config/site-url.mjs`, `public/robots.txt`를 새 도메인으로 변경
+- 코드의 주소(`src/config/site-url.mjs`, `public/robots.txt`)는 이미 decodedcars.com — 그래서 **도메인을 먼저 사고 연결**하는 게 좋음 (`decodedcars.pages.dev`도 열리지만 검색엔진에는 decodedcars.com이 대표 주소로 알려짐)
 - ☐ Cloudflare → Email → Email Routing: `hello@도메인` → 내 Gmail로 전달 설정
 - Claude: `CONTACT_EMAIL = 'hello@도메인'` 설정 (애드센스 점검 항목)
 - ☐ Google Search Console: 도메인 속성 추가(DNS TXT) → `sitemap-index.xml` 제출

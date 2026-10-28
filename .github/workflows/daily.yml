@@ -6,7 +6,7 @@
 #   CLOUDFLARE_API_TOKEN   token with Account › Cloudflare Pages › Edit (+ Account Analytics › Read for site views)
 #   CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID
 #   SITE_CONTACT           URL or email put in our User-Agent (Wikimedia requires contact info)
-#   CF_SITE_TAG            (optional, after launch) Web Analytics site tag for "most viewed on CarRadar"
+#   CF_SITE_TAG            (optional, after launch) Web Analytics site tag for "most viewed on DecodedCars"
 name: Daily update
 
 on:
@@ -69,7 +69,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=carradar --branch=main
+          command: pages deploy dist --project-name=decodedcars --branch=main
 
       # GitHub disables scheduled workflows in public repos after 60 days without repository activity.
       # The data is never committed, so commit a one-line heartbeat on the 1st of each month.

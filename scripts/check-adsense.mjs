@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 애드센스 신청 전 점검: npm run build 다음에 npm run check:adsense
-// CarRadar용 (CityFluent에서 이식, 영어+스페인어 단어 수). FreeConvertter가 "가치가 별로 없는 콘텐츠"로 거절된 원인(빈약한 페이지·카테고리 페이지, 같은 틀 반복, 짧은 소개·문의, 너무 새 사이트)과
+// DecodedCars용 (CityFluent에서 이식, 영어+스페인어 단어 수). FreeConvertter가 "가치가 별로 없는 콘텐츠"로 거절된 원인(빈약한 페이지·카테고리 페이지, 같은 틀 반복, 짧은 소개·문의, 너무 새 사이트)과
 // "준비 중" 페이지를 빌드 결과(dist/)에서 숫자로 확인한다. ✗가 하나라도 있으면 신청하지 않는다.
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
