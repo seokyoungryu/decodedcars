@@ -12,6 +12,15 @@ export interface RankDef {
   rows: () => Row[];
   value: (r: Row) => string;
   yearLink: boolean;
+  /** the headline figure split for display: [number, unit] */
+  stat: (r: Row) => [string, string];
+  /** numeric value for the bar (omit when a bar would mislead) */
+  num?: (r: Row) => number | undefined;
+  /** lower is better (bars shown inverted) */
+  low?: boolean;
+  /** accent colour and a small line icon (SVG path data, 24×24) */
+  accent: string;
+  icon: string;
 }
 const R = () => rankings();
 
@@ -25,6 +34,10 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().trending as Row[],
     value: (r) => `${(r.change as number) > 0 ? '+' : ''}${r.change}% · ${n(r.week as number)} views`,
     yearLink: false,
+    stat: (r) => [`${(r.change as number) > 0 ? '+' : ''}${r.change}%`, 'this week'],
+    num: (r) => r.change as number,
+    accent: '#e8590c',
+    icon: 'M3 17l6-6 4 4 8-8M14 7h7v7',
   },
   {
     slug: 'popular',
@@ -35,6 +48,10 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().popular as Row[],
     value: (r) => `${n(r.views30 as number)} views / 30 days`,
     yearLink: false,
+    stat: (r) => [n(r.views30 as number), 'views / 30 days'],
+    num: (r) => r.views30 as number,
+    accent: '#7c5cff',
+    icon: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
   },
   {
     slug: 'most-complaints',
@@ -45,6 +62,10 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().complaints90 as Row[],
     value: (r) => `${n(r.recent90 as number)} complaints / 90 days`,
     yearLink: false,
+    stat: (r) => [n(r.recent90 as number), 'complaints / 90 days'],
+    num: (r) => r.recent90 as number,
+    accent: '#d6336c',
+    icon: 'M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z',
   },
   {
     slug: 'best-mpg',
@@ -55,6 +76,10 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().bestMpg as Row[],
     value: (r) => `${r.mpg} MPG · ${r.cls ?? ''}`,
     yearLink: true,
+    stat: (r) => [String(r.mpg), 'MPG combined'],
+    num: (r) => r.mpg as number,
+    accent: '#0f8a5f',
+    icon: 'M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17M3 22h12M3 11h12M15 8l3 3v7a2 2 0 004 0V9l-4-4',
   },
   {
     slug: 'longest-range',
@@ -65,6 +90,10 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().longestRange as Row[],
     value: (r) => `${r.range} miles · ${r.cls ?? ''}`,
     yearLink: true,
+    stat: (r) => [String(r.range), 'miles range'],
+    num: (r) => r.range as number,
+    accent: '#1c7ed6',
+    icon: 'M13 2L4 14h7l-1 8 9-12h-7l1-8z',
   },
   {
     slug: 'cheapest-to-fuel',
@@ -75,6 +104,11 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().cheapestFuel as Row[],
     value: (r) => `${usd(r.cost as number)} / year · ${r.cls ?? ''}`,
     yearLink: true,
+    stat: (r) => [usd(r.cost as number), 'fuel per year'],
+    num: (r) => r.cost as number,
+    low: true,
+    accent: '#2f9e44',
+    icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',
   },
   {
     slug: 'safest',
@@ -85,6 +119,9 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().safest as Row[],
     value: (r) => `5★ · ${r.recalls} recall${r.recalls === 1 ? '' : 's'}`,
     yearLink: true,
+    stat: (r) => ['5★', `${r.recalls} recall${r.recalls === 1 ? '' : 's'}`],
+    accent: '#f59f00',
+    icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
   },
   {
     slug: 'new-models',
@@ -95,5 +132,8 @@ export const RANKINGS: RankDef[] = [
     rows: () => R().newModels as Row[],
     value: (r) => (r.range ? `${r.range} mi range` : r.mpg ? `${r.mpg} MPG` : `added ${r.added}`),
     yearLink: true,
+    stat: (r) => (r.range ? [String(r.range), 'mi range'] : r.mpg ? [String(r.mpg), 'MPG'] : ['New', '']),
+    accent: '#0ca678',
+    icon: 'M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z',
   },
 ];

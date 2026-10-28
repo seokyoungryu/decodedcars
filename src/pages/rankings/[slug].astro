@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
-import { href, updatedLabel } from '@/lib/data';
+import { date, href, n, updatedLabel } from '@/lib/data';
 import { RANKINGS, type RankDef } from '@/lib/rankings';
 
 export function getStaticPaths() {
@@ -20,34 +20,76 @@ const readout = rows.length >= 3 ? [
   rows.length >= 10 ? `Rounding out the top ten: ${rows.slice(3, 10).map(nm).join(', ')}.` : '',
   rows.length >= 15 ? `Further down, places ${rows.length - 2} to ${rows.length} go to the ${rows.slice(-3).map(nm).join(', the ')} (${r.value(rows.at(-1)!)} for the last).` : '',
 ].filter(Boolean) : [];
+const link = (x: (typeof rows)[number]) => (r.yearLink && x.year ? href(x, x.year) : href(x));
+// bar length: share of the best figure (inverted when lower is better)
+const nums = rows.map((x) => r.num?.(x)).filter((v): v is number => v != null && v > 0);
+const best = r.low ? Math.min(...nums) : Math.max(...nums);
+const bar = (x: (typeof rows)[number]) => {
+  const v = r.num?.(x);
+  if (v == null || !nums.length || v <= 0) return undefined;
+  return Math.max(6, Math.round((r.low ? best / v : v / best) * 100));
+};
+const sub = (x: (typeof rows)[number]) => [x.cls as string | undefined, r.slug === 'trending' ? `${n(x.week as number)} views this week` : '', r.slug === 'new-models' && x.added ? `added ${date(x.added as string)}` : ''].filter(Boolean).join(' · ');
 ---
 
 <Base title={r.title} description={r.intro.slice(0, 155)} section="rankings" noindex={rows.length < 5}>
-  <div class="crumbs"><a href="/rankings">Rankings</a></div>
-  <h1>{r.title}</h1>
-  <p class="lead">{r.intro}</p>
-  <p class="small muted">{updatedLabel()} · <a href="/methodology">How we calculate this →</a></p>
-  {(readout.length > 0 || r.how) && <section class="section overview">{readout.map((p) => <p>{p}</p>)}{r.how && <p><b>How to use this list:</b> {r.how}</p>}</section>}
+  <section class="band rk-hero" style={`--rk:${r.accent}`}>
+    <div class="crumbs"><a href="/rankings">Rankings</a></div>
+    <span class="rk-icon big"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={r.icon} /></svg></span>
+    <h1 style="margin-top:12px">{r.title}</h1>
+    <p class="lead">{r.intro}</p>
+    <p class="small" style="color:var(--chrome-mute)">{updatedLabel()} · <a href="/methodology">How we calculate this →</a></p>
+    <nav class="rk-nav" aria-label="Rankings">
+      {RANKINGS.map((x) => (
+        <a href={`/rankings/${x.slug}`} style={`--rk:${x.accent}`} aria-current={x.slug === r.slug ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={x.icon} /></svg>{x.short}</a>
+      ))}
+    </nav>
+  </section>
+
+  {
+    rows.length >= 3 && (
+      <div class="rk-podium section" style={`--rk:${r.accent}`}>
+        {[1, 0, 2].map((i) => {
+          const x = rows[i];
+          const [big, unit] = r.stat(x);
+          return (
+            <a class={`rk-pod p${i + 1}`} href={link(x)}>
+              <div class="rk-pod-img">{x.photo ? <img src={`/photos/${x.photo}`} alt="" loading={i ? 'lazy' : 'eager'} decoding="async" /> : <span>🚗</span>}<span class="rk-medal">{i + 1}</span></div>
+              <b>{nm(x)}</b>
+              <span class="rk-big">{big}</span>
+              <small>{unit}</small>
+            </a>
+          );
+        })}
+      </div>
+    )
+  }
+
   {
     rows.length ? (
-      <div class="table-wrap section">
-        <table>
-          <thead><tr><th class="num">#</th><th>Model</th><th class="num">Value</th></tr></thead>
-          <tbody>
-            {rows.map((x, i) => (
-              <tr>
-                <td class="num">{i + 1}</td>
-                <td><a href={r.yearLink && x.year ? href(x, x.year) : href(x)}>{r.yearLink && x.year ? `${x.year} ` : ''}{x.make} {x.model}</a></td>
-                <td class="num">{r.value(x)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ol class="rk-list section" style={`--rk:${r.accent}`}>
+        {rows.map((x, i) => {
+          const [big, unit] = r.stat(x);
+          const w = bar(x);
+          return (
+            <li>
+              <a href={link(x)}>
+                <span class={`rk-n${i < 3 ? ' top' : ''}`}>{i + 1}</span>
+                {x.photo ? <img src={`/photos/${x.photo}`} alt="" loading="lazy" decoding="async" /> : <i />}
+                <span class="rk-name"><b>{nm(x)}</b>{sub(x) && <small>{sub(x)}</small>}</span>
+                <span class="rk-val">
+                  <span><b>{big}</b> <small>{unit}</small></span>
+                  {w != null && <span class="rk-bar"><i style={`width:${w}%`} /></span>}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
     ) : (
       <p class="muted section">No data for this ranking yet.</p>
     )
   }
+  {(readout.length > 0 || r.how) && <section class="section overview">{readout.map((p) => <p>{p}</p>)}{r.how && <p><b>How to use this list:</b> {r.how}</p>}</section>}
   <Ad place="bottom" />
-  <div class="chips section">{RANKINGS.filter((x) => x.slug !== r.slug).map((x) => <a href={`/rankings/${x.slug}`}>{x.short}</a>)}</div>
 </Base>

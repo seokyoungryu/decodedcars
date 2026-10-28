@@ -1,23 +1,61 @@
 ---
 import Base from '@/layouts/Base.astro';
+import { href, meta, updatedLabel } from '@/lib/data';
 import { RANKINGS } from '@/lib/rankings';
+
+// each ranking as a leaderboard: the leader with its photo and headline figure, then the next four
+const boards = RANKINGS.map((r) => ({ r, rows: r.rows() })).filter((b) => b.rows.length > 0);
+const link = (r: (typeof RANKINGS)[number], x: ReturnType<(typeof RANKINGS)[number]['rows']>[number]) => (r.yearLink && x.year ? href(x, x.year) : href(x));
+const label = (r: (typeof RANKINGS)[number], x: ReturnType<(typeof RANKINGS)[number]['rows']>[number]) => `${r.yearLink && x.year ? `${x.year} ` : ''}${x.make} ${x.model}`;
+const M = meta;
 ---
 
 <Base title="Car Rankings" description="Trending and most-researched cars, best MPG, longest EV range, cheapest to fuel, 5-star safety and cars with the most new complaints — updated daily." section="rankings">
-  <h1>Car rankings</h1>
-  <p class="lead">Updated every day from NHTSA, EPA and Wikipedia public data. Each list explains exactly how it is calculated, and every model links to its full page with specs, recalls and complaints.</p>
-  <div class="grid section">
-    {
-      RANKINGS.map((r) => {
-        const top = r.rows().slice(0, 3);
-        return (
-          <a class="card" href={`/rankings/${r.slug}`}>
-            <h2 style="font-size:1.05rem">{r.title}</h2>
-            <p class="small muted" style="margin:6px 0 0">{r.intro}</p>
-            <ol class="small muted" style="margin:8px 0 0;padding-left:18px">{top.map((x) => <li>{x.make} {x.model}</li>)}</ol>
+  <section class="band">
+    <span class="eyebrow">Leaderboards · {updatedLabel()}</span>
+    <h1 style="margin-top:10px">Car rankings</h1>
+    <p class="lead">Updated every day from NHTSA, EPA and Wikipedia public data. Each list explains exactly how it is calculated, and every model links to its full page with specs, recalls and complaints.</p>
+    <nav class="rk-nav" aria-label="Rankings">
+      {boards.map(({ r }) => (
+        <a href={`/rankings/${r.slug}`} style={`--rk:${r.accent}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={r.icon} /></svg>{r.short}</a>
+      ))}
+    </nav>
+    <div class="hero-stats"><span><b>{boards.length}</b>leaderboards</span><span><b>{M.models.toLocaleString('en-US')}</b>models tracked</span><span><b>Daily</b>updates</span></div>
+  </section>
+
+  <div class="rk-boards section">
+    {boards.map(({ r, rows }) => {
+      const [lead, ...rest] = rows;
+      const [big, unit] = r.stat(lead);
+      return (
+        <article class="rk-board" style={`--rk:${r.accent}`}>
+          <header>
+            <span class="rk-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d={r.icon} /></svg></span>
+            <div><h2><a href={`/rankings/${r.slug}`}>{r.title}</a></h2><p>{r.intro.split('. ')[0]}.</p></div>
+          </header>
+          <a class="rk-leader" href={link(r, lead)}>
+            <div class="rk-leader-img">{lead.photo ? <img src={`/photos/${lead.photo}`} alt="" loading="lazy" decoding="async" /> : <span>🚗</span>}<span class="rk-medal">1</span></div>
+            <div class="rk-leader-text"><b>{label(r, lead)}</b><span class="rk-big">{big}</span><small>{unit}</small></div>
           </a>
-        );
-      })
-    }
+          <ol class="rk-mini" start="2">
+            {rest.slice(0, 4).map((x, i) => {
+              const [v, u] = r.stat(x);
+              return (
+                <li>
+                  <a href={link(r, x)}>
+                    <span class="rk-n">{i + 2}</span>
+                    {x.photo ? <img src={`/photos/${x.photo}`} alt="" loading="lazy" decoding="async" /> : <i />}
+                    <span class="rk-name">{label(r, x)}</span>
+                    <span class="rk-v">{v === big ? u : v}{v !== big && !/^this/.test(u) && <small> {u.split(' ')[0]}</small>}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+          <a class="rk-all" href={`/rankings/${r.slug}`}>See all {rows.length} →</a>
+        </article>
+      );
+    })}
   </div>
+  <p class="small muted section">Rankings use public data only and are not paid placements. <a href="/methodology">How we calculate these →</a></p>
 </Base>
