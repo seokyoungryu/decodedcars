@@ -54,25 +54,25 @@ const T = {
   en: {
     title: `${name} Specs, MPG, Safety Rating & Recalls`,
     desc: `${name} specs, dimensions and MPG${y.range ? `, ${y.range}-mile range` : ''}${y.overall ? `, ${y.overall}-star NHTSA rating` : ''}, plus ${recalls.length} recall${recalls.length === 1 ? '' : 's'} and ${num(lang, c.total)} owner complaints. Compare with other years and similar cars.`,
-    makes: 'Makes', lead: `Trims, performance, features, fuel economy, safety and known problems — with the pros and cons against similar ${y.year} models.`,
+    how: 'How we calculate this →', makes: 'Makes', lead: `Trims, performance, features, fuel economy, safety and known problems — with the pros and cons against similar ${y.year} models.`,
     cls: 'Class', bodies: 'Body styles', engines: 'Engines', electric: 'Electric motor', hp: 'Horsepower', trans: 'Transmission', drive: 'Drivetrain', seats: 'Seats', fuel: 'Fuel',
     mpgBest: 'MPG (best)', comb: 'combined', city: 'city', hwy: 'hwy', evRange: 'EV range', on240: 'h on 240 V', length: 'Length', weight: 'Curb weight', rating: 'NHTSA rating', recalls: 'Recalls',
     campaigns: (k: number) => `${k} campaign${k === 1 ? '' : 's'}`,
     pc: 'Pros & cons', good: "What's good", watch: 'Watch out for', noPros: 'Nothing stands out against similar models in the data.', noCons: 'No weak spots against similar models in the data.',
-    pcNote: `Our comparison of EPA, NHTSA and manufacturer-reported (vPIC) data with the class average${y.peer ? ` and ${y.peer.n} similar ${y.year} models` : ''}. Not a road test or owner review; complaint counts grow with sales.`,
+    pcNote: `Calculated from EPA, NHTSA and vPIC data${y.peer ? ` against ${y.peer.n} similar ${y.year} models` : ''} — not a review.`,
     onPage: 'On this page', overview: 'Overview', changed: 'What changed', trims: 'Trims & features', dims: 'Dimensions', engMpg: 'Engines & MPG', safety: 'Safety', similar: 'Similar cars', problems: 'Problems', checklist: 'Used buyer checklist',
     changedFor: `What changed for ${y.year}`,
     noChange: (p: number) => `No changes to engines, powertrains, drivetrains, size, EPA ratings or NHTSA crash rating compared with the ${yName(p)} — a carry-over year in the data.`,
-    changeNote: (p: number) => `Compared with the ${p} model year, using EPA, Transport Canada and NHTSA data. Trim, feature and price changes are not covered.`, see: (p: number) => `See the ${yName(p)} →`,
+    changeNote: (p: number) => `Compared with ${p}; trim, feature and price changes aren't covered.`, see: (p: number) => `See the ${yName(p)} →`,
     trimsH: 'Trims, performance & features', engine: 'Engine', powertrain: 'Powertrain', plusMotor: (h: number) => ` + ${h} hp electric motor`, drv: 'Drive', seating: 'Seating', seatsW: 'seats', rows: 'rows',
     trimsList: 'Trims', features: 'Safety & driver-assist features', featV: { std: 'Standard', some: 'Some trims', opt: 'Optional' }, led: 'LED headlights', yes: 'Yes', built: 'Built in:',
-    specNote: (k: number) => `Source: NHTSA vPIC, as reported by the manufacturer for ${k} ${y.year} ${m.model} configuration${k === 1 ? '' : 's'} (the ones owners most often report to NHTSA), so the list may not include every trim or option package. "Some trims" means standard on some configurations and optional or missing on others. Horsepower is the gasoline engine's rating; hybrids also have electric motor power.`,
+    specNote: (k: number) => `NHTSA vPIC, as reported by the manufacturer for ${k} ${y.year} ${m.model} configuration${k === 1 ? '' : 's'}; may not list every trim.`,
     dimsH: 'Dimensions & weight', body: 'Body', width: 'Width', height: 'Height', wb: 'Wheelbase', track: 'Track F / R', wdist: 'Weight F/R',
-    dimsNote: 'Source: Canadian Vehicle Specifications, Transport Canada. Contains information licensed under the Open Government Licence – Canada. Canadian-market measurements; U.S. versions are usually the same or very close.',
+    dimsNote: 'Transport Canada CVS (Open Government Licence – Canada), Canadian-market figures.',
     garage: 'Will it fit your garage? Check with your measurements →',
     engH: 'Engines, MPG & running costs', version: 'Version', cityHwy: 'City / Hwy / Comb', vsClass: 'vs. class', fuelYr: 'Fuel / yr', co2: 'CO₂ g/mi',
     feScore: 'EPA fuel economy score (best version)', ghg: 'EPA greenhouse gas score', save: (v: string) => `Save ${v}`, spend: (v: string) => `Spend ${v}`, fuel5: 'Fuel over 5 years vs. average new car', avg: `${y.year} ${classL(lang, y.cls)} average`,
-    engNote: `EPA estimates; your mileage will vary. "vs. class" compares combined MPG with the ${y.year} average for the same EPA size class. Fuel cost assumes 15,000 miles a year at current national prices.`,
+    engNote: `EPA estimates; "vs. class" is combined MPG against the ${y.year} EPA class average.`,
     safetyH: 'Safety ratings & technology', overall: 'Overall', frontal: 'Frontal', drvPass: 'Driver / passenger', side: 'Side', pole: 'Side pole', rollover: 'Rollover', risk: 'Rollover risk',
     esc: 'Electronic stability control', fcw: 'Forward collision warning', ldw: 'Lane departure warning', frontCrash: 'Frontal crash test', sideCrash: 'Side crash test', photoN: 'Photo: NHTSA.',
     noRating: `NHTSA has not published 5-Star ratings for the ${name}${y.year < 2011 ? ' under the current (2011+) test program' : ''}.`,
@@ -80,35 +80,35 @@ const T = {
     recallsH: `Recalls (${recalls.length})`, advisory: 'Safety advisory:', advisoryText: (k: number) => `${k} recall${k > 1 ? 's' : ''} for this model year carr${k > 1 ? 'y' : 'ies'} a "Do Not Drive" or "Park Outside" warning. Check your VIN now.`,
     dnd: 'Do not drive', park: 'Park outside', campaign: 'NHTSA campaign', vehicles: 'vehicles', problem: 'Problem', riskL: 'Risk', fix: 'Fix', officialEn: '',
     noRecalls: `No vehicle recalls on file with NHTSA for the ${name}.`, vinBtn: 'Check your VIN for open recalls at NHTSA ↗',
-    recallNote: `Recalls cover specific build dates and parts, so not every ${name} is affected. Only a VIN check confirms your car's status.`,
+    recallNote: `Not every ${name} is affected — only a VIN check confirms your car.`,
     problemsH: 'Owner-reported problems', cmplSince: 'Complaints to NHTSA since 2015', crash: 'Involved a crash', fire: 'Involved a fire', injured: 'Injuries reported', miles: 'Typical mileage at failure',
-    perMonth: 'Complaints received per month (last 24 months with reports)', cmplNote: 'Unverified owner reports, counted once per report. Popular models collect more reports simply because more are on the road.',
+    perMonth: 'Complaints received per month (last 24 months with reports)', cmplNote: 'Unverified owner reports; best-sellers collect more.',
     noCmpl: `No owner complaints for the ${name} in NHTSA's database since 2015.`,
     otherH: `Other ${m.model} years`, compareAll: 'Compare all years →', yearH: 'Year', complaints: 'Complaints',
-    source: `Sources: EPA fuel economy data; NHTSA NCAP ratings, recalls and consumer complaints; NHTSA vPIC; Transport Canada Canadian Vehicle Specifications (Open Government Licence – Canada); photo via Wikimedia Commons. Overview, comparisons and class averages are written and calculated by CarRadar. Not affiliated with NHTSA, the EPA, Transport Canada or ${m.make}.`,
+    source: `Sources: EPA, NHTSA, Transport Canada, Wikimedia Commons. Not affiliated with NHTSA, the EPA or ${m.make}.`,
   },
   es: {
     title: `${name}: ficha técnica, consumo, seguridad y retiros`,
     desc: `${name}: ficha técnica, dimensiones y consumo (MPG)${y.range ? `, ${y.range} millas de autonomía` : ''}${y.overall ? `, ${y.overall} estrellas NHTSA` : ''}, ${recalls.length} ${recalls.length === 1 ? 'retiro' : 'retiros'} y ${num(lang, c.total)} quejas de propietarios. Compara con otros años y autos similares.`,
-    makes: 'Marcas', lead: `Versiones, desempeño, equipamiento, consumo, seguridad y problemas conocidos, con sus ventajas y desventajas frente a modelos similares ${y.year}.`,
+    how: 'Cómo lo calculamos →', makes: 'Marcas', lead: `Versiones, desempeño, equipamiento, consumo, seguridad y problemas conocidos, con sus ventajas y desventajas frente a modelos similares ${y.year}.`,
     cls: 'Clase', bodies: 'Carrocerías', engines: 'Motores', electric: 'Motor eléctrico', hp: 'Potencia', trans: 'Transmisión', drive: 'Tracción', seats: 'Asientos', fuel: 'Combustible',
     mpgBest: 'MPG (mejor)', comb: 'combinadas', city: 'ciudad', hwy: 'carretera', evRange: 'Autonomía eléctrica', on240: 'h a 240 V', length: 'Largo', weight: 'Peso en vacío', rating: 'Calificación NHTSA', recalls: 'Retiros',
     campaigns: (k: number) => `${k} ${k === 1 ? 'campaña' : 'campañas'}`,
     pc: 'Ventajas y desventajas', good: 'Lo bueno', watch: 'A tener en cuenta', noPros: 'Nada destaca frente a modelos similares en los datos.', noCons: 'Sin puntos débiles frente a modelos similares en los datos.',
-    pcNote: `Nuestra comparación de datos de la EPA, la NHTSA y del fabricante (vPIC) con el promedio de su clase${y.peer ? ` y ${y.peer.n} modelos similares ${y.year}` : ''}. No es una prueba de manejo ni una reseña de propietarios; las quejas aumentan con las ventas.`,
+    pcNote: `Calculado con datos de la EPA, la NHTSA y vPIC${y.peer ? ` frente a ${y.peer.n} modelos similares ${y.year}` : ''}; no es una reseña.`,
     onPage: 'En esta página', overview: 'Resumen', changed: 'Novedades', trims: 'Versiones y equipo', dims: 'Dimensiones', engMpg: 'Motores y consumo', safety: 'Seguridad', similar: 'Autos similares', problems: 'Problemas', checklist: 'Lista para comprar usado',
     changedFor: `Novedades del ${y.year}`,
     noChange: (p: number) => `Sin cambios en motores, versiones, tracción, tamaño, consumo EPA ni calificación NHTSA respecto al ${yName(p)}: un año sin cambios según los datos.`,
-    changeNote: (p: number) => `Comparado con el año modelo ${p} usando datos de la EPA, Transport Canada y la NHTSA. No incluye cambios de versiones, equipamiento ni precio.`, see: (p: number) => `Ver el ${yName(p)} →`,
+    changeNote: (p: number) => `Comparado con ${p}; no incluye cambios de versiones, equipamiento ni precio.`, see: (p: number) => `Ver el ${yName(p)} →`,
     trimsH: 'Versiones, desempeño y equipamiento', engine: 'Motor', powertrain: 'Tren motriz', plusMotor: (h: number) => ` + motor eléctrico de ${h} hp`, drv: 'Tracción', seating: 'Asientos', seatsW: 'asientos', rows: 'filas',
     trimsList: 'Versiones', features: 'Seguridad y asistencias al conductor', featV: { std: 'De serie', some: 'Algunas versiones', opt: 'Opcional' }, led: 'Faros LED', yes: 'Sí', built: 'Fabricado en:',
-    specNote: (k: number) => `Fuente: NHTSA vPIC, según lo reportado por el fabricante para ${k} ${k === 1 ? 'configuración' : 'configuraciones'} del ${m.model} ${y.year} (las que los propietarios reportan con más frecuencia a la NHTSA), así que puede no incluir todas las versiones o paquetes. "Algunas versiones" significa de serie en unas configuraciones y opcional o ausente en otras. La potencia es la del motor de gasolina; los híbridos suman además la del motor eléctrico.`,
+    specNote: (k: number) => `NHTSA vPIC, según el fabricante, para ${k} ${k === 1 ? 'configuración' : 'configuraciones'} del ${m.model} ${y.year}; puede no incluir todas las versiones.`,
     dimsH: 'Dimensiones y peso', body: 'Carrocería', width: 'Ancho', height: 'Alto', wb: 'Distancia entre ejes', track: 'Vía del. / tras.', wdist: 'Peso del./tras.',
-    dimsNote: 'Fuente: Canadian Vehicle Specifications, Transport Canada. Contiene información con licencia Open Government Licence – Canada. Medidas del mercado canadiense; las versiones de EE. UU. suelen ser iguales o muy parecidas.',
+    dimsNote: 'Transport Canada CVS (Open Government Licence – Canada), medidas del mercado canadiense.',
     garage: '¿Cabe en tu garaje? Compruébalo con tus medidas →',
     engH: 'Motores, consumo y costo de uso', version: 'Versión', cityHwy: 'Ciudad / Carr. / Comb.', vsClass: 'vs. su clase', fuelYr: 'Combustible / año', co2: 'CO₂ g/mi',
     feScore: 'Puntaje EPA de consumo (mejor versión)', ghg: 'Puntaje EPA de gases de efecto invernadero', save: (v: string) => `Ahorra ${v}`, spend: (v: string) => `Gasta ${v}`, fuel5: 'Combustible en 5 años vs. un auto nuevo promedio', avg: `Promedio ${y.year}: ${classL(lang, y.cls)}`,
-    engNote: `Estimaciones de la EPA; tu consumo puede variar. "vs. su clase" compara las MPG combinadas con el promedio ${y.year} de la misma clase de tamaño EPA. El costo supone 15,000 millas al año a precios nacionales actuales.`,
+    engNote: `Estimaciones de la EPA; "vs. su clase" compara las MPG combinadas con el promedio ${y.year} de su clase EPA.`,
     safetyH: 'Calificaciones de seguridad y tecnología', overall: 'General', frontal: 'Frontal', drvPass: 'Conductor / pasajero', side: 'Lateral', pole: 'Poste lateral', rollover: 'Volcadura', risk: 'Riesgo de volcadura',
     esc: 'Control electrónico de estabilidad', fcw: 'Alerta de colisión frontal', ldw: 'Alerta de salida de carril', frontCrash: 'Prueba de choque frontal', sideCrash: 'Prueba de choque lateral', photoN: 'Foto: NHTSA.',
     noRating: `La NHTSA no ha publicado calificaciones de 5 estrellas para el ${name}${y.year < 2011 ? ' con el programa de pruebas actual (2011+)' : ''}.`,
@@ -116,12 +116,12 @@ const T = {
     recallsH: `Retiros (${recalls.length})`, advisory: 'Aviso de seguridad:', advisoryText: (k: number) => `${k} ${k > 1 ? 'retiros' : 'retiro'} de este año modelo ${k > 1 ? 'tienen' : 'tiene'} aviso de "no conducir" o "estacionar afuera". Consulta tu VIN ahora.`,
     dnd: 'No conducir', park: 'Estacionar afuera', campaign: 'Campaña NHTSA', vehicles: 'vehículos', problem: 'Problema', riskL: 'Riesgo', fix: 'Solución', officialEn: 'Texto oficial de la NHTSA (en inglés).',
     noRecalls: `No hay retiros registrados en la NHTSA para el ${name}.`, vinBtn: 'Consulta tu VIN en NHTSA (en inglés) ↗',
-    recallNote: `Los retiros cubren fechas de fabricación y piezas específicas, así que no todos los ${m.model} ${y.year} están afectados. Solo la consulta del VIN confirma el estado de tu auto.`,
+    recallNote: `No todos los ${m.model} ${y.year} están afectados: solo el VIN lo confirma.`,
     problemsH: 'Problemas reportados por propietarios', cmplSince: 'Quejas ante la NHTSA desde 2015', crash: 'Con choque', fire: 'Con incendio', injured: 'Lesionados reportados', miles: 'Millaje típico de la falla',
-    perMonth: 'Quejas recibidas por mes (últimos 24 meses con reportes)', cmplNote: 'Reportes de propietarios sin verificar, contados una vez por reporte. Los modelos populares acumulan más reportes simplemente porque hay más en circulación.',
+    perMonth: 'Quejas recibidas por mes (últimos 24 meses con reportes)', cmplNote: 'Reportes sin verificar; los más vendidos acumulan más.',
     noCmpl: `No hay quejas de propietarios del ${name} en la base de datos de la NHTSA desde 2015.`,
     otherH: `Otros años del ${m.model}`, compareAll: 'Comparar todos los años →', yearH: 'Año', complaints: 'Quejas',
-    source: `Fuentes: datos de consumo de la EPA; calificaciones NCAP, retiros y quejas de la NHTSA; NHTSA vPIC; Canadian Vehicle Specifications de Transport Canada (Open Government Licence – Canada); foto vía Wikimedia Commons. El resumen, las comparaciones y los promedios los redacta y calcula CarRadar. Sin afiliación con la NHTSA, la EPA, Transport Canada ni ${m.make}.`,
+    source: `Fuentes: EPA, NHTSA, Transport Canada, Wikimedia Commons. Sin afiliación con la NHTSA, la EPA ni ${m.make}.`,
   },
 }[lang];
 const crashPics = (y.rating ?? []).flatMap((r) => [r.frontPic && { src: r.frontPic, cap: `${T.frontCrash} — ${r.desc}` }, r.sidePic && { src: r.sidePic, cap: `${T.sideCrash} — ${r.desc}` }]).filter(Boolean).slice(0, 2) as { src: string; cap: string }[];
@@ -175,7 +175,7 @@ const jsonLd = [
           <div class="pc pros"><h3>{T.good}</h3>{pc.pros.length ? <ul>{pc.pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">{T.noPros}</p>}</div>
           <div class="pc cons"><h3>{T.watch}</h3>{pc.cons.length ? <ul>{pc.cons.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">{T.noCons}</p>}</div>
         </div>
-        <p class="small muted">{T.pcNote}</p>
+        <p class="small muted">{T.pcNote} <a href={to(lang, '/methodology')}>{T.how}</a></p>
       </section>
     )
   }
@@ -226,7 +226,7 @@ const jsonLd = [
           </>
         )}
         {sp.plants.length > 0 && <p class="small" style="margin-top:16px"><b>{T.built}</b> {sp.plants.join(' · ')}</p>}
-        <p class="small muted">{T.specNote(sp.n)}</p>
+        <p class="small muted">{T.specNote(sp.n)} <a href={to(lang, '/methodology')}>{T.how}</a></p>
       </section>
     )
   }
@@ -289,7 +289,7 @@ const jsonLd = [
       {y.save5 !== undefined && <div class="stat"><b class={y.save5 > 0 ? 'good' : 'bad'}>{y.save5 > 0 ? T.save(money(lang, y.save5)) : T.spend(money(lang, -y.save5))}</b><span>{T.fuel5}</span></div>}
       {y.classAvg && <div class="stat"><b>{y.classAvg} MPG</b><span>{T.avg}</span></div>}
     </div>
-    <p class="small muted">{T.engNote}</p>
+    <p class="small muted">{T.engNote} <a href={to(lang, '/methodology')}>{T.how}</a></p>
   </section>
 
   <Ad place="content" lang={lang} />
@@ -444,5 +444,5 @@ const jsonLd = [
   }
 
   <Ad place="bottom" lang={lang} />
-  <p class="source">{T.source}</p>
+  <p class="source">{T.source} <a href={to(lang, '/methodology')}>{T.how}</a></p>
 </Base>

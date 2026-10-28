@@ -34,6 +34,13 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 - **Ads** are labeled "Advertisement" and never placed next to navigation or the VIN button.
 - **Fuel-cell (FCV) and EV figures are kept out of MPG comparisons**, because MPGe is not comparable with gasoline MPG.
 
+## AdSense readiness
+
+FreeConvertter was rejected for thin pages, repeated template text, short about/contact pages and a too-new site. `npm run build && SITE_LAUNCH=YYYY-MM-DD npm run check:adsense` checks the build for all of these and must show 0 ✗ before applying.
+- Pages under 300 words were either given more data-written text (make lineups, model histories, comparison verdicts, tool guides) or marked noindex: model pages with one model year, or two and no overview/rivals; makes with < 4 models or < 3 indexable models; model-years that aren't data-rich. The noindex list also drives the sitemap.
+- Long explanations live once on /methodology; pages carry short notes that link there.
+- About, Contact, Methodology, Terms and Privacy exist in English and Spanish. `CONTACT_EMAIL` (hello@<domain>) and `SITE_LAUNCH` are the only items left for launch.
+
 ## How it works
 
 ```
@@ -67,7 +74,7 @@ Buyer features:
 
 Names are matched with a normalized key (`F-150` = `F150`, `CR-V` = `CRV`). If a NHTSA model has no exact EPA match, it falls back to the longest EPA model name it starts with (`SILVERADO 1500` → `Silverado`). Display names and URLs use NHTSA's punctuation (`/ford/f-150`).
 
-`data/` is never committed. The workflow keeps `data/cache` in the Actions cache and deploys `dist` directly with wrangler.
+`data/` is never committed, except `seed/cache`: a copy of the slow API caches (ratings, CVS dimensions, Wikipedia choices incl. reviewed photos and their direct URLs, vPIC specs, pageviews) that a fresh machine copies in when its cache is empty, so the first GitHub Actions run publishes a complete site. Chosen photos are re-downloaded from their stored URLs without API calls. The workflow keeps `data/cache` in the Actions cache and deploys `dist` directly with wrangler.
 It also commits a one-line heartbeat on the 1st of each month: GitHub disables scheduled workflows in public repos after 60 days without activity.
 
 ## First-time setup

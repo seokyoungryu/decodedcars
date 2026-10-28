@@ -67,6 +67,28 @@ const SORTS = ['pop', 'mpg', 'range', 'cost', 'safety', 'problems'];
   <p id="count" class="small muted" aria-live="polite">{T.loading}</p>
   <div id="out" class="mcards"></div>
   <script type="application/json" id="i18n" set:html={JSON.stringify(JS)} />
+  <section class="section prose">
+    {
+      es ? (
+        <>
+          <h2>Cómo usar el buscador</h2>
+          <p>Empieza por lo que no negocias: el tipo de carrocería y si necesitas tracción total. Luego filtra por tipo de motor: un híbrido conviene si manejas mucho en ciudad, y un eléctrico si puedes cargar en casa. Después ordena por lo que más te importa: consumo, costo de combustible, calificación de seguridad o menos retiros y quejas.</p>
+          <p>"Más investigados" ordena por las visitas recientes a su artículo de Wikipedia, una señal de interés del público. "Menos retiros y quejas" suma las campañas de retiro y las quejas del año más reciente, así que los modelos recién lanzados pueden verse mejor de lo que son simplemente porque llevan menos tiempo en la calle.</p>
+          <p>Las casillas son estrictas: "Sin retiros" deja fuera cualquier modelo con al menos una campaña en su último año, y "5 estrellas NHTSA" solo muestra modelos ya probados bajo el programa actual.</p>
+          <p>Los resultados muestran el año modelo más reciente de cada modelo que sigue a la venta. Abre cualquiera para ver sus versiones, potencia, equipamiento de seguridad, ventajas y desventajas, y los mejores años si piensas comprar usado. Cuando tengas dos o tres candidatos, compara su costo de combustible y comprueba si caben en tu garaje con nuestras herramientas.</p>
+        </>
+      ) : (
+        <>
+          <h2>How to use the finder</h2>
+          <p>Start with what you won't compromise on: the body style and whether you need all-wheel drive. Then filter by powertrain — a hybrid pays off if you drive a lot in town, an EV if you can charge at home. Finally, sort by what matters most to you: fuel economy, fuel cost, safety rating or the fewest recalls and complaints.</p>
+          <p>"Most researched" sorts by recent views of each model's Wikipedia article, a signal of public interest. "Fewest recalls & complaints" adds up recall campaigns and complaints for the latest year, so brand-new models can look better than they are simply because they haven't been on the road long.</p>
+          <p>The checkboxes are strict: "No recalls" drops any model with even one campaign in its latest year, and "5-star NHTSA overall" shows only models already tested under the current program.</p>
+          <p>Nothing you choose here is saved or sent anywhere; the filtering happens in your browser.</p>
+          <p>Results show the newest model year of every model still on sale. Open any of them to see its trims, horsepower, safety equipment, pros and cons, and the best years if you're buying used. Once you have two or three candidates, compare their fuel costs and check that they fit your garage with our tools.</p>
+        </>
+      )
+    }
+  </section>
   <Ad place="bottom" lang={lang} />
   <p class="source">{T.source}</p>
 </Base>

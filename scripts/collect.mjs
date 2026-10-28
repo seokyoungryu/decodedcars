@@ -20,6 +20,18 @@ import { aggregate, displayName, resolver } from './lib/aggregate.mjs';
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
 const skip = new Set((args.skip ?? '').split(',').filter(Boolean));
 const log = (...a) => console.log(...a);
+
+// First run on a fresh machine (e.g. the first GitHub Actions run): start from the committed seed of slow API results
+// (ratings, dimensions, Wikipedia choices incl. reviewed photos, vPIC specs) instead of an empty cache.
+// Seeds are only copied when the file is missing; caches then refresh on their own schedules.
+{
+  const { copyFileSync, existsSync, mkdirSync, readdirSync } = await import('node:fs');
+  const SEED = new URL('../seed/cache/', import.meta.url);
+  mkdirSync(CACHE, { recursive: true });
+  let n = 0;
+  for (const f of existsSync(SEED) ? readdirSync(SEED) : []) if (!existsSync(CACHE + f)) copyFileSync(new URL(f, SEED), CACHE + f), n++;
+  if (n) log(`Seeded ${n} cache files from seed/cache`);
+}
 const failed = [];
 async function step(name, fn, fallback) {
   if (skip.has(name)) return fallback;

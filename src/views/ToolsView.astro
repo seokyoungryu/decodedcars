@@ -20,4 +20,26 @@ const T = es
     <p class="lead">{T.lead}</p>
   </section>
   <div class="tool-cards section">{TOOLS.map((t) => <a href={t.href}><span class="ic" set:html={t.icon} /><h2>{t.title}</h2><p>{t.text}</p></a>)}</div>
+  <section class="section prose">
+    {
+      es ? (
+        <>
+          <h2>Por dónde empezar</h2>
+          <p>Si todavía no sabes qué comprar, empieza con el buscador: filtra por carrocería, tipo de motor y seguridad, y quédate con tres candidatos. Compara su costo de combustible con tu propio millaje y revisa si caben en tu garaje. Antes de firmar, calcula el préstamo con la tasa de tu preaprobación. Si vas a comprar usado, decodifica el VIN del auto concreto para confirmar el año, la versión y el motor, y revisa si tiene retiros pendientes.</p>
+          <p>¿Buscas un dato concreto de un modelo, como su potencia, sus versiones o qué asistencias trae de serie? Esa información está en la página de cada año modelo, a la que llegas desde el buscador o desde la página de cada marca.</p>
+          <p>Las herramientas son gratis y no piden cuenta. También funcionan en el celular, así que puedes decodificar un VIN o revisar el préstamo desde el concesionario.</p>
+          <p>Todas las herramientas usan los mismos datos oficiales que las páginas de cada modelo y funcionan en tu navegador: no guardamos lo que escribes.</p>
+        </>
+      ) : (
+        <>
+          <h2>Where to start</h2>
+          <p>Not sure what to buy yet? Start with the car finder: filter by body style, powertrain and safety, and keep three candidates. Compare their fuel costs for your own mileage and check they fit your garage. Before you sign, run the loan numbers with your pre-approved rate. Buying used? Decode the VIN of the actual car to confirm its year, trim and engine, then check it for open recalls.</p>
+          <p>Looking for one specific fact — a model's horsepower, its trims or which driver aids are standard? That lives on each model-year page, which you can reach from the finder or from any brand's page.</p>
+          <p>Each tool page also explains its method and limits, so you know exactly what the number means.</p>
+          <p>The tools are free and need no account. They work on phones too, so you can decode a VIN or check the loan numbers while you're standing on the lot.</p>
+          <p>Every tool uses the same official data as the model pages and runs in your browser — we don't store what you type.</p>
+        </>
+      )
+    }
+  </section>
 </Base>

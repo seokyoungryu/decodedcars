@@ -3,8 +3,9 @@ import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
 import Stars from '@/components/Stars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
-import { type Model, type VsPair, href, model as loadModel, n, usd, vsPairs } from '@/lib/data';
-import { classNoun } from '@/lib/describe';
+import { type Model, type VsPair, campaigns, href, model as loadModel, n, usd, vsPairs } from '@/lib/data';
+import { classNoun, describeYear } from '@/lib/describe';
+import { prosCons } from '@/lib/proscons';
 
 export function getStaticPaths() {
   return vsPairs().map((p) => ({ params: { id: p.id }, props: { p } }));
@@ -26,12 +27,18 @@ const dim = (y: typeof ya, f: 'length' | 'width' | 'height' | 'weight') => {
   const v = y.dims.map((d) => d[f]).filter((x): x is number => !!x);
   return v.length ? Math.min(...v) : undefined;
 };
+const hp = (y: typeof ya) => y.specs?.hp?.[1];
+const seats = (y: typeof ya) => y.specs?.seats?.[1];
+const stdTech = (y: typeof ya) => Object.values(y.specs?.features ?? {}).filter((v) => v === 'std').length || undefined;
 type Row = { label: string; a?: number; b?: number; fmt: (v: number) => string; better?: 'high' | 'low' };
 const rows: Row[] = [
   { label: 'Best combined MPG', a: ya.mpg?.max, b: yb.mpg?.max, fmt: (v) => `${v} MPG`, better: 'high' },
   { label: 'City / highway MPG (best)', a: ya.mpg?.city, b: yb.mpg?.city, fmt: (v) => `${v} city` },
   { label: 'EV range', a: ya.range, b: yb.range, fmt: (v) => `${v} mi`, better: 'high' },
   { label: 'Fuel cost per year (EPA)', a: ya.cost, b: yb.cost, fmt: usd, better: 'low' },
+  { label: 'Horsepower (most powerful)', a: hp(ya), b: hp(yb), fmt: (v) => `${v} hp`, better: 'high' },
+  { label: 'Seats (most)', a: seats(ya), b: seats(yb), fmt: (v) => String(v) },
+  { label: 'Driver-assist features standard', a: stdTech(ya), b: stdTech(yb), fmt: (v) => String(v), better: 'high' },
   { label: 'Length', a: dim(ya, 'length'), b: dim(yb, 'length'), fmt: (v) => `${v} in` },
   { label: 'Width', a: dim(ya, 'width'), b: dim(yb, 'width'), fmt: (v) => `${v} in` },
   { label: 'Height', a: dim(ya, 'height'), b: dim(yb, 'height'), fmt: (v) => `${v} in` },
@@ -57,6 +64,32 @@ if (ya.overall && yb.overall && ya.overall !== yb.overall) say.push(`In NHTSA cr
 else if (ya.overall && ya.overall === yb.overall) say.push(`Both earned ${ya.overall} stars overall in NHTSA crash tests.`);
 const ra = allRecalls(A), rb = allRecalls(B);
 if (ra !== rb) say.push(`Across all model years since 2005, the ${ra < rb ? na : nb} has had fewer recall campaigns (${Math.min(ra, rb)} vs ${Math.max(ra, rb)}).`);
+// specs from vPIC (when decoded) and each car's pros & cons
+const C = campaigns();
+const pcA = prosCons(A, ya, ya.recalls.map((id) => C[id]).filter(Boolean));
+const pcB = prosCons(B, yb, yb.recalls.map((id) => C[id]).filter(Boolean));
+// "choose X if…": every clear advantage, in plain words
+const awd = (y: typeof ya) => y.drives.some((d) => /4-Wheel|All-Wheel|4WD|AWD|Part-time/i.test(d));
+const hybrid = (y: typeof ya) => y.fuels.some((f) => /Hybrid|EV/.test(f));
+function reasons(me: typeof ya, other: typeof ya, mine: Model, theirs: Model) {
+  const r: string[] = [];
+  if (me.mpg && other.mpg && me.mpg.max - other.mpg.max >= 2) r.push(`you want lower fuel bills (${me.mpg.max} vs ${other.mpg.max} MPG)`);
+  if (me.range && (!other.range || me.range - other.range >= 20)) r.push(`you want an EV with more range (${me.range} miles)`);
+  if (hp(me) && hp(other) && hp(me)! >= hp(other)! * 1.1) r.push(`you want more power (up to ${hp(me)} vs ${hp(other)} hp)`);
+  if (seats(me) && seats(other) && seats(me)! > seats(other)!) r.push(`you need more seats (${seats(me)} vs ${seats(other)})`);
+  const lm = dim(me, 'length'), lo = dim(other, 'length');
+  if (lm && lo && lo - lm >= 3) r.push(`you want something easier to park (${Math.round(lo - lm)} in shorter)`);
+  if (lm && lo && lm - lo >= 3) r.push(`you want more room (${Math.round(lm - lo)} in longer)`);
+  if (awd(me) && !awd(other)) r.push('you need AWD or 4WD');
+  if (hybrid(me) && !hybrid(other)) r.push('you want a hybrid or electric option');
+  if (me.overall && other.overall && me.overall > other.overall) r.push(`crash-test stars matter most (${me.overall} vs ${other.overall})`);
+  if (stdTech(me) && stdTech(other) && stdTech(me)! - stdTech(other)! >= 2) r.push('you want more standard driver-assist tech');
+  const rm = allRecalls(mine), rt = allRecalls(theirs);
+  if (rt - rm >= 5) r.push(`you put reliability history first (${rm} vs ${rt} recalls since 2005)`);
+  return r;
+}
+const whyA = reasons(ya, yb, A, B);
+const whyB = reasons(yb, ya, B, A);
 const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and owner complaints compared side by side for the ${ya.year} models${A.verdict && B.verdict ? ', plus the best years to buy used' : ''}.`;
 ---
 
@@ -71,6 +104,7 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
   </div>
 
   {say.length > 0 && (<section class="section overview"><h2 style="margin-bottom:10px">The short version</h2>{say.map((s) => <p>{s}</p>)}</section>)}
+  <section class="section overview"><h2 style="margin-bottom:10px">The two cars</h2><p>{describeYear(A, ya).slice(0, 2).join(' ')}</p><p>{describeYear(B, yb).slice(0, 2).join(' ')}</p>{A.verdict && B.verdict && <p>Buying used? The {A.verdict.best.year} {A.model} and the {B.verdict.best.year} {B.model} have the fewest problems in our data{A.verdict.worst || B.verdict.worst ? `; avoid ${[A.verdict.worst && `the ${A.verdict.worst.year} ${A.model}`, B.verdict.worst && `the ${B.verdict.worst.year} ${B.model}`].filter(Boolean).join(' and ')}` : ''}.</p>}</section>
 
   <section class="section">
     <div class="table-wrap">
@@ -97,8 +131,38 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
         </tbody>
       </table>
     </div>
-    <p class="small muted">Green marks the better figure where higher or lower is clearly better. MPG and fuel cost: EPA. Size: Transport Canada CVS (Open Government Licence – Canada). Safety, recalls, complaints: NHTSA. Prices are not included.</p>
+    <p class="small muted">Green = clearly better. Prices are not included. <a href="/methodology">How we calculate this →</a></p>
   </section>
+
+  {
+    (whyA.length > 0 || whyB.length > 0) && (
+      <section class="section">
+        <div class="section-head"><h2>Which one should you choose?</h2></div>
+        <div class="pc-grid">
+          <div class="pc pros"><h3>Choose the {na} if…</h3>{whyA.length ? <ul>{whyA.map((w) => <li><b>{w[0].toUpperCase() + w.slice(1)}</b></li>)}</ul> : <p class="muted small">It doesn't clearly beat the {nb} on any measure we track.</p>}</div>
+          <div class="pc pros"><h3>Choose the {nb} if…</h3>{whyB.length ? <ul>{whyB.map((w) => <li><b>{w[0].toUpperCase() + w.slice(1)}</b></li>)}</ul> : <p class="muted small">It doesn't clearly beat the {na} on any measure we track.</p>}</div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    [pcA, pcB].some((p) => p.pros.length || p.cons.length) && (
+      <section class="section">
+        <div class="section-head"><h2>Pros &amp; cons of each</h2></div>
+        <div class="pc-grid">
+          {[[na, ya, pcA], [nb, yb, pcB]].map(([nm, y, pc]) => (
+            <div class="pc"><h3>{(y as typeof ya).year} {nm as string}</h3>
+              <ul>
+                {(pc as typeof pcA).pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}
+                {(pc as typeof pcA).cons.map((p) => <li class="minus"><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   <Ad place="content" />
   <p class="chips section"><a href={href(A, ya.year)}>Full {ya.year} {na} specs →</a><a href={href(B, yb.year)}>Full {yb.year} {nb} specs →</a><a href={`/tools/fuel-cost?a=${encodeURIComponent(`${ya.year} ${na}`)}&b=${encodeURIComponent(`${yb.year} ${nb}`)}`}>Compare fuel costs for your driving →</a><a href={`/tools/garage-fit?a=${encodeURIComponent(na)}&b=${encodeURIComponent(nb)}`}>Compare size &amp; garage fit →</a></p>

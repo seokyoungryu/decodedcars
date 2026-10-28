@@ -17,6 +17,7 @@ const T = es
 <Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? '/makes' : '/es/makes'}>
   <h1>{T.h1}</h1>
   <p class="lead">{T.lead}</p>
+  <p class="small muted" style="max-width:75ch">{es ? 'Cada marca tiene su propia página con un resumen de su gama: el modelo más eficiente y el más investigado, cuántos retiros acumula, qué modelos ya no se venden y una línea sobre cada uno. Desde ahí puedes entrar a cualquier modelo y a cada año modelo para ver versiones, potencia, equipamiento, seguridad y problemas reportados.' : 'Each brand has its own page summarizing its lineup: the most efficient and most researched models, how many recalls it has on file, which models have been discontinued, and a line on each one. From there you can open any model and every model year for trims, horsepower, equipment, safety and reported problems.'}</p>
   <div class="grid section">
     {
       all.map((mk) => (

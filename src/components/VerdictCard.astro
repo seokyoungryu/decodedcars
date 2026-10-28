@@ -18,8 +18,8 @@ const reason = (y: NonNullable<typeof v.worst>) =>
   [pl(y.complaints, 'owner complaint', 'queja'), pl(y.recalls, 'recall', 'retiro'), y.fire ? pl(y.fire, 'fire report', 'reporte de incendio') : '', y.crash ? pl(y.crash, 'crash report', 'reporte de choque') : ''].filter(Boolean).join(' · ');
 const link = (year: number) => (hasPage(year) ? to(lang, href(m, year)) : href(m, year));
 const t = es
-  ? { h: 'Mejores y peores años para comprar usado', best: 'Mejor año', avoid: 'Año a evitar', overall: 'General NHTSA', most: 'Más reportado', none: 'Ningún año destaca por problemas', noneText: `Ninguno de los ${v.compared} años modelo comparados destaca por quejas o retiros.`, note: `Basado en retiros y quejas de propietarios ante la NHTSA (recibidas desde 2015; choques e incendios pesan más) de ${v.compared} años modelo desde 2015 con al menos dos años de antigüedad. Las quejas no se ajustan por la cantidad de autos vendidos: úsalo junto con una inspección previa a la compra y el historial de servicio.` }
-  : { h: 'Best and worst years to buy used', best: 'Best year', avoid: 'Year to avoid', overall: 'NHTSA overall', most: 'Most reported', none: 'No clear problem year', noneText: `None of the ${v.compared} model years we compared stands out for complaints or recalls.`, note: `Based on NHTSA recalls and owner complaints (received since 2015, crashes and fires weighted more) for ${v.compared} model years from 2015 that are at least two years old. Complaint counts are not adjusted for how many cars were sold, so use this alongside a pre-purchase inspection and the car's service history.` };
+  ? { h: 'Mejores y peores años para comprar usado', best: 'Mejor año', avoid: 'Año a evitar', overall: 'General NHTSA', most: 'Más reportado', none: 'Ningún año destaca por problemas', noneText: `Ninguno de los ${v.compared} años modelo comparados destaca por quejas o retiros.`, note: `Retiros y quejas ante la NHTSA de ${v.compared} años modelo desde 2015; úsalo junto con una inspección previa a la compra.` }
+  : { h: 'Best and worst years to buy used', best: 'Best year', avoid: 'Year to avoid', overall: 'NHTSA overall', most: 'Most reported', none: 'No clear problem year', noneText: `None of the ${v.compared} model years we compared stands out for complaints or recalls.`, note: `NHTSA recalls and complaints for ${v.compared} model years since 2015; use it alongside a pre-purchase inspection.` };
 ---
 
 <section class="section" id="best-years">
@@ -47,5 +47,5 @@ const t = es
       )
     }
   </div>
-  <p class="small muted">{t.note}</p>
+  <p class="small muted">{t.note} <a href={to(lang, '/methodology')}>{es ? 'Cómo lo calculamos →' : 'How we calculate this →'}</a></p>
 </section>

@@ -78,6 +78,31 @@ const JS = es
     <h2>{T.howH}</h2>
     <p>{T.how1}</p>
     <p>{T.how2}</p>
+    {
+      es ? (
+        <>
+          <h2>Cómo pagar menos por el préstamo</h2>
+          <ul>
+            <li><b>Consigue una preaprobación</b> de tu banco o cooperativa antes de ir al concesionario; así tienes una tasa para comparar.</li>
+            <li><b>Negocia el precio del auto por separado</b> del pago mensual: un pago bajo puede esconder un plazo más largo.</li>
+            <li><b>Un enganche mayor</b> reduce los intereses y el riesgo de deber más de lo que vale el auto.</li>
+            <li><b>Revisa los cargos</b> de documentación y los productos añadidos (garantías extendidas, seguros) antes de firmar.</li>
+          </ul>
+          <p>Una regla práctica muy usada: enganche de al menos 20 %, plazo de no más de 4 años y pagos totales del auto (incluido el seguro) por debajo del 10 % de tu ingreso bruto. No siempre se puede cumplir, pero sirve para ver cuánto te alejas.</p>
+        </>
+      ) : (
+        <>
+          <h2>How to pay less for a car loan</h2>
+          <ul>
+            <li><b>Get pre-approved</b> by your bank or credit union before visiting the dealer, so you have a rate to compare.</li>
+            <li><b>Negotiate the car's price separately</b> from the monthly payment — a low payment can hide a longer loan.</li>
+            <li><b>A bigger down payment</b> cuts the interest and the risk of owing more than the car is worth.</li>
+            <li><b>Check the fees</b> and add-ons (extended warranties, insurance products) before you sign.</li>
+          </ul>
+          <p>A popular rule of thumb: put at least 20% down, borrow for no more than four years, and keep total car costs (including insurance) under 10% of gross income. It isn't always possible, but it shows how far a deal stretches you.</p>
+        </>
+      )
+    }
   </section>
   <Ad place="bottom" lang={lang} />
 </Base>

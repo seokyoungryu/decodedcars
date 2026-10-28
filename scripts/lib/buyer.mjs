@@ -115,7 +115,9 @@ export async function buildBuyerData(live, log) {
     const y = m.years.find((x) => x.page && x.year <= nowYear() && (x.similar?.length ?? 0) >= 3) ?? latest(m);
     for (const s of (y?.similar ?? []).slice(0, 4)) {
       const other = byKey.get(`${s.makeSlug}/${s.slug}`);
-      if (!other) continue;
+      if (!other || m.thin || other.thin) continue;
+      // variants of the same car ("296-gtb" vs "296-gts", "rav4" vs "rav4-prime") aren't real rivals
+      if (m.makeSlug === other.makeSlug && (m.slug.split('-')[0] === other.slug.split('-')[0])) continue;
       const [a, b] = [m, other].sort((p, q) => `${p.make} ${p.model}`.localeCompare(`${q.make} ${q.model}`));
       const id = `${a.makeSlug}-${a.slug}-vs-${b.makeSlug}-${b.slug}`;
       if (!pairs.has(id)) pairs.set(id, { id, a: [a.makeSlug, a.slug], b: [b.makeSlug, b.slug], pop: (a.popularity?.views30 ?? 0) + (b.popularity?.views30 ?? 0) });

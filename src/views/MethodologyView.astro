@@ -1,0 +1,68 @@
+---
+// How every figure on the site is produced. Long explanations live here once, so car pages carry short notes that link here
+// instead of repeating the same paragraphs thousands of times.
+import Base from '@/layouts/Base.astro';
+import { SITE_NAME, VIN_LOOKUP } from '@/config/site';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+---
+
+{
+  es ? (
+    <Base title="Metodología: cómo comparamos los autos" description={`Cómo calcula ${SITE_NAME} el consumo frente a su clase, las ventajas y desventajas, los mejores años para comprar usado, los rivales y los datos de versiones.`} lang={lang} alt="/methodology">
+      <article class="prose">
+        <h1>Metodología</h1>
+        <p>{SITE_NAME} no prueba autos en la calle ni publica opiniones. Reúne datos públicos oficiales y los compara de forma constante para que cada página responda lo mismo para todos los modelos. Aquí explicamos cada cálculo una sola vez, en detalle.</p>
+        <h2>Consumo y costo de combustible</h2>
+        <p>Las cifras de MPG, autonomía eléctrica, tiempo de carga, CO₂ y costo anual de combustible vienen de la EPA. "vs. su clase" compara las MPG combinadas de cada versión con el promedio del mismo año y de la misma clase de tamaño EPA (que se basa en el volumen interior). El costo de combustible de la EPA supone 15,000 millas al año a precios nacionales. Tu consumo real dependerá de cómo y dónde manejes.</p>
+        <h2>Dimensiones y peso</h2>
+        <p>Largo, ancho, alto, distancia entre ejes, vías y peso en vacío provienen de las Canadian Vehicle Specifications de Transport Canada, con licencia Open Government Licence – Canada. Son medidas del mercado canadiense; las versiones de EE. UU. suelen ser iguales o muy parecidas. El ancho no incluye espejos.</p>
+        <h2>Versiones, potencia y equipamiento</h2>
+        <p>Las versiones, la potencia del motor, la transmisión, los asientos, la planta de fabricación y si cada sistema de asistencia es de serie u opcional vienen de NHTSA vPIC, según lo que reporta el fabricante. Consultamos las configuraciones de cada año modelo que los propietarios reportan con más frecuencia a la NHTSA, así que la lista puede no incluir todas las versiones o paquetes. "Algunas versiones" significa de serie en unas configuraciones y opcional o ausente en otras. En los híbridos, la potencia es la del motor de gasolina; el motor eléctrico se indica aparte.</p>
+        <h2>Ventajas y desventajas</h2>
+        <p>Comparamos cada año modelo con el promedio de su clase EPA y con sus rivales: modelos del mismo año, el mismo tipo de carrocería, el mismo segmento (generalista, lujo o exótico) y un tamaño parecido (largo dentro de 10 pulgadas). Solo señalamos diferencias claras: por ejemplo, un consumo al menos 15 % mejor que el promedio, el triple de quejas que los rivales, o un retiro con aviso de "no conducir". No es una prueba de manejo ni una reseña.</p>
+        <h2>Mejores y peores años para comprar usado</h2>
+        <p>Comparamos los años modelo desde 2015 con al menos dos años de antigüedad. Cada año recibe un puntaje: quejas + retiros × 20 + quejas con choque × 3 + quejas con incendio × 10. Solo marcamos un "año a evitar" si su puntaje es al menos 40 y el doble del mejor año. Las quejas no se ajustan por la cantidad de autos vendidos, así que los modelos más vendidos acumulan más reportes.</p>
+        <h2>Retiros y quejas</h2>
+        <p>Los retiros y las quejas de propietarios vienen de los archivos de la Oficina de Investigación de Defectos de la NHTSA, que descargamos a diario. Las quejas son reportes sin verificar y se cuentan una vez por reporte; nunca publicamos los relatos ni datos personales. Un retiro cubre fechas de fabricación y piezas específicas: solo el VIN confirma si tu auto está afectado, en <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> (en inglés) o con un concesionario.</p>
+        <h2>Calificaciones de seguridad</h2>
+        <p>Las estrellas y las fotos de pruebas de choque vienen del programa 5-Star Safety Ratings (NCAP) de la NHTSA. Las calificaciones de antes de 2011 usaban otra prueba y no se comparan con las actuales.</p>
+        <h2>Novedades de cada año</h2>
+        <p>Comparamos cada año con el anterior: motores, versiones híbridas o eléctricas, tracción, consumo, peso y calificación de choque. Un cambio de largo de 2 pulgadas o más, o de distancia entre ejes de 1 pulgada o más, suele indicar un rediseño. Para los modelos del año próximo, cuya lista EPA aún se está completando, no decimos que algo "se retiró".</p>
+        <h2>Lista para comprar usado</h2>
+        <p>Cada lista se arma con los retiros y los sistemas más reportados de ese año. Además, en cualquier auto usado conviene revisar el historial de servicio y el reporte de antecedentes, y pedir una inspección a un mecánico independiente antes de pagar.</p>
+        <p>¿Ves algo que no cuadra? <a href={to(lang, '/contact')}>Escríbenos</a>.</p>
+      </article>
+    </Base>
+  ) : (
+    <Base title="Methodology: How We Compare Cars" description={`How ${SITE_NAME} calculates MPG versus class, pros and cons, best years to buy used, rivals, trims and features.`} lang={lang} alt="/es/methodology">
+      <article class="prose">
+        <h1>Methodology</h1>
+        <p>{SITE_NAME} doesn't road-test cars or publish opinions. It brings together official public data and compares it the same way for every model, so each page answers the same questions. This page explains every calculation once, in full.</p>
+        <h2>Fuel economy and fuel cost</h2>
+        <p>MPG, EV range, charging time, CO₂ and yearly fuel cost come from the EPA. "vs. class" compares each version's combined MPG with the average for the same model year and EPA size class (which is based on interior volume). EPA fuel cost assumes 15,000 miles a year at national prices. Your real-world results depend on how and where you drive.</p>
+        <h2>Dimensions and weight</h2>
+        <p>Length, width, height, wheelbase, track and curb weight come from Transport Canada's Canadian Vehicle Specifications, licensed under the Open Government Licence – Canada. They are Canadian-market measurements; U.S. versions are usually the same or very close. Width excludes mirrors.</p>
+        <h2>Trims, horsepower and features</h2>
+        <p>Trims, engine horsepower, transmission, seating, assembly plant and whether each driver-assist system is standard or optional come from NHTSA vPIC, as reported by the manufacturer. We look up the configurations of each model year that owners most often report to NHTSA, so the list may not include every trim or option package. "Some trims" means standard on some configurations and optional or missing on others. For hybrids, horsepower is the gasoline engine's rating; the electric motor is listed separately.</p>
+        <h2>Pros and cons</h2>
+        <p>Each model year is compared with its EPA class average and with its rivals: models of the same year, body style, market tier (mainstream, luxury or exotic) and similar size (length within 10 inches). Only clear differences are called out — for example fuel economy at least 15% better than average, three times the complaints of rivals, or a "do not drive" recall. It is not a road test or a review.</p>
+        <h2>Best and worst years to buy used</h2>
+        <p>We compare model years from 2015 that are at least two years old. Each year gets a score: complaints + recalls × 20 + crash complaints × 3 + fire complaints × 10. A "year to avoid" is shown only when its score is at least 40 and twice the best year's. Complaints are not adjusted for sales, so the best-selling models collect more reports.</p>
+        <h2>Recalls and complaints</h2>
+        <p>Recalls and owner complaints come from NHTSA Office of Defects Investigation data files, downloaded daily. Complaints are unverified reports, counted once per report; we never publish owners' narratives or personal details. A recall covers specific build dates and parts: only the VIN confirms whether your car is affected, at <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> or with a dealer.</p>
+        <h2>Safety ratings</h2>
+        <p>Star ratings and crash-test photos come from NHTSA's 5-Star Safety Ratings program (NCAP). Ratings from before 2011 used a different test and aren't comparable with current ones.</p>
+        <h2>What changed each year</h2>
+        <p>We compare each model year with the one before: engines, hybrid or electric versions, drivetrain, fuel economy, weight and crash rating. A length change of 2 inches or more, or a wheelbase change of 1 inch or more, usually signals a redesign. For next year's models, whose EPA list is still filling in, we never say something was dropped.</p>
+        <h2>Used-car checklists</h2>
+        <p>Each checklist is built from that year's recalls and most-reported systems. On top of that, for any used car it pays to check the service history and a vehicle history report, and to have an independent mechanic inspect it before you pay.</p>
+        <p>Spot something that looks wrong? <a href="/contact">Tell us</a>.</p>
+      </article>
+    </Base>
+  )
+}

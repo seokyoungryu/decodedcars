@@ -49,6 +49,33 @@ const JS = es
   <div id="out" class="section"></div>
   <script type="application/json" id="i18n" set:html={JSON.stringify({ ...JS, over: undefined })} />
   <p class="small muted">{T.note}</p>
+  <section class="section prose">
+    {
+      es ? (
+        <>
+          <h2>Cómo leer el resultado</h2>
+          <p>El costo anual multiplica tus millas por el consumo EPA del auto y por el precio que escribiste. "Por milla" sirve para comparar autos de distinto tamaño: un sedán híbrido suele costar menos de 10 centavos por milla en gasolina, mientras que una pickup grande puede pasar de 20.</p>
+          <h2>¿Vale la pena pagar más por un híbrido o eléctrico?</h2>
+          <p>Escribe en "Diferencia de precio" cuánto más cuesta la versión eficiente. La calculadora divide esa diferencia entre el ahorro anual y te dice en cuántos años se recupera. Si manejas pocas millas al año, el ahorro es pequeño y la recuperación tarda más; si manejas mucho, o la gasolina es cara donde vives, el auto eficiente se paga antes.</p>
+          <h2>Lo que no incluye</h2>
+          <p>Los valores predeterminados son promedios nacionales; los precios cambian mucho entre estados y de una semana a otra, así que vale la pena escribir los de tu zona.</p>
+          <p>Consejo: pon en "Años" el tiempo que piensas quedarte con el auto. Cuanto más tiempo lo tengas, más vale un motor eficiente, y más te cuesta que pida gasolina premium.</p>
+          <p>No incluye mantenimiento, seguro, depreciación ni incentivos fiscales, y supone que cargas en casa. La carga rápida pública suele costar dos o tres veces más por kWh, así que si dependes de ella, sube el precio de la electricidad para ver el efecto.</p>
+        </>
+      ) : (
+        <>
+          <h2>How to read the result</h2>
+          <p>The yearly cost multiplies your miles by the car's EPA fuel use and the price you entered. "Per mile" is the fairest way to compare cars of different sizes: a hybrid sedan often costs under 10 cents a mile in gas, while a full-size pickup can go past 20.</p>
+          <h2>Is a hybrid or EV worth paying more for?</h2>
+          <p>Enter how much more the efficient version costs under "Price difference". The calculator divides it by the yearly saving to show how many years it takes to pay back. If you drive few miles, the saving is small and the payback slow; if you drive a lot, or fuel is expensive where you live, the efficient car pays for itself sooner.</p>
+          <h2>What it leaves out</h2>
+          <p>The default prices are national averages; prices vary a lot between states and from week to week, so it's worth entering your local ones.</p>
+          <p>Tip: set the years to how long you plan to keep the car. The longer you keep it, the more a frugal powertrain is worth — and the more a premium-fuel requirement costs you.</p>
+          <p>It doesn't include maintenance, insurance, depreciation or tax incentives, and it assumes you charge at home. Public fast charging often costs two to three times more per kWh, so if you rely on it, raise the electricity price to see the effect.</p>
+        </>
+      )
+    }
+  </section>
   <Ad place="bottom" lang={lang} />
 </Base>
 

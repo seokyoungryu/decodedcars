@@ -1,0 +1,56 @@
+---
+// Contact page. CONTACT_EMAIL is set once the domain exists (hello@<domain> via Cloudflare Email Routing);
+// check:adsense fails while it is empty.
+import Base from '@/layouts/Base.astro';
+import { CONTACT_EMAIL, SITE_NAME, VIN_LOOKUP } from '@/config/site';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+---
+
+{
+  es ? (
+    <Base title="Contacto" description={`Contacta a ${SITE_NAME}: reporta un dato incorrecto, sugiere una función o pregunta por la publicidad.`} lang={lang} alt="/contact">
+      <article class="prose">
+        <h1>Contacto</h1>
+        <p>La mejor forma de comunicarte con nosotros es por correo electrónico: {CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <b>{SITE_NAME}</b>}. Leemos todos los mensajes, y los reportes de los lectores son una de las principales formas en que mantenemos los datos correctos.</p>
+        <h2>Reportar un dato incorrecto</h2>
+        <p>Nuestros datos vienen de la EPA, la NHTSA y Transport Canada, y la correspondencia entre esas fuentes es automática, así que a veces un modelo puede quedar agrupado o separado de forma distinta a como lo hace el fabricante. Si algo no coincide con lo que viste, cuéntanos. Ayuda mucho si incluyes:</p>
+        <ul>
+          <li>la dirección (URL) de la página,</li>
+          <li>qué dice la página y qué encontraste tú,</li>
+          <li>un enlace a una fuente oficial, si la tienes.</li>
+        </ul>
+        <p>Revisamos cada reporte contra la fuente oficial antes de cambiar algo. Si un dato estaba mal, lo corregimos en el cálculo para que se arregle en todas las páginas, no solo en una.</p>
+        <h2>Retiros de tu auto</h2>
+        <p>No podemos revisar el VIN de tu auto ni ayudar con reparaciones. Para saber si tiene un retiro pendiente, consulta <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> (en inglés) o llama a un concesionario de la marca. Por favor no nos envíes tu VIN completo ni datos personales.</p>
+        <h2>Sugerencias y publicidad</h2>
+        <p>Respondemos en inglés o en español, normalmente en pocos días hábiles. No ofrecemos asesoría personalizada de compra ni financiamiento, pero sí leemos cada sugerencia sobre qué comparar o qué dato añadir.</p>
+        <p>Las ideas para nuevas herramientas o comparaciones son bienvenidas. {SITE_NAME} se financia con anuncios identificados como tales; no aceptamos pagos para cambiar datos, calificaciones ni la posición de ningún modelo. Lee cómo calculamos todo en <a href={to(lang, '/methodology')}>Metodología</a>.</p>
+      </article>
+    </Base>
+  ) : (
+    <Base title="Contact" description={`Contact ${SITE_NAME}: report a wrong figure, suggest a feature, or ask about advertising.`} lang={lang} alt="/es/contact">
+      <article class="prose">
+        <h1>Contact</h1>
+        <p>The best way to reach us is by email: {CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <b>{SITE_NAME}</b>}. We read every message, and reports from readers are one of the main ways we keep the data right.</p>
+        <h2>Reporting a wrong figure</h2>
+        <p>Our data comes from the EPA, NHTSA and Transport Canada, and matching those sources is automated, so a model can occasionally be grouped or split differently from how the manufacturer does it. If something doesn't match what you found, please tell us. It helps a lot if you include:</p>
+        <ul>
+          <li>the address (URL) of the page,</li>
+          <li>what the page says and what you found instead,</li>
+          <li>a link to an official source, if you have one.</li>
+        </ul>
+        <p>We check every report against the official source before changing anything. If a figure was wrong, we fix the calculation so it's corrected on every page, not just one.</p>
+        <h2>Recalls on your car</h2>
+        <p>We can't look up your car's VIN or help with repairs. To see whether it has an open recall, check <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> or call a dealer for the brand. Please don't send us your full VIN or personal details.</p>
+        <h2>Suggestions and advertising</h2>
+        <p>We reply in English or Spanish, usually within a few working days. We can't give personal buying or financing advice, but we do read every suggestion about what to compare or which data to add.</p>
+        <p>Ideas for new tools or comparisons are welcome. {SITE_NAME} is supported by ads that are labeled as such; we never accept payment to change data, ratings or how any model is placed. See how everything is calculated in our <a href="/methodology">Methodology</a>.</p>
+      </article>
+    </Base>
+  )
+}

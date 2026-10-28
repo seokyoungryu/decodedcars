@@ -156,6 +156,8 @@ async function photoFor(title, lead, extract, { key, make, model, firstYear, las
     license: pick.lic,
     licenseUrl: pick.md.LicenseUrl?.value,
     page: pick.ii.descriptionurl,
+    // direct thumbnail URL, so a fresh machine can restore the same file without API calls
+    url: pick.ii.thumburl,
   };
 }
 
@@ -167,6 +169,15 @@ export async function collectWiki(models, { budget = 1500, log }) {
   const titles = await readJson(TITLES, {});
   const cache = await readJson(FILE, {});
   await mkdir(PHOTO_DIR, { recursive: true });
+  // fresh machine (seeded cache, no photo files yet): restore chosen photos from their stored URLs
+  let restored = 0;
+  for (const [k, e] of Object.entries(cache)) {
+    if (!k.startsWith('#') || !e.photo?.url || existsSync(PHOTO_DIR + e.photo.file)) continue;
+    const res = await fetch(e.photo.url, { headers: { 'User-Agent': USER_AGENT } }).catch(() => null);
+    if (res?.ok) await writeFile(PHOTO_DIR + e.photo.file, Buffer.from(await res.arrayBuffer())), restored++;
+    await sleep(200);
+  }
+  if (restored) log(`  restored ${restored} photos from stored URLs`);
   const fresh = (e) => e && e.v === VERSION && Date.parse(today()) - Date.parse(e.at) < 30 * 86400e3;
   let calls = 0;
   let checked = 0;

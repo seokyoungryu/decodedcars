@@ -1,7 +1,7 @@
 ---
 import '@/styles/global.css';
 import { SITE_URL } from '@/config/site-url.mjs';
-import { ADSENSE_CLIENT, CONTACT_EMAIL, SITE_DESCRIPTION, SITE_NAME, VIN_LOOKUP } from '@/config/site';
+import { ADSENSE_CLIENT, SITE_DESCRIPTION, SITE_NAME, VIN_LOOKUP } from '@/config/site';
 import { type Lang, UI, to } from '@/i18n';
 
 interface Props {
@@ -14,7 +14,8 @@ interface Props {
   /** this page's path in the other language, when that version exists (hreflang + language switch) */
   alt?: string;
 }
-const { title, description = SITE_DESCRIPTION, noindex = false, section, jsonLd = [], lang = 'en', alt } = Astro.props;
+const { title, noindex = false, section, jsonLd = [], lang = 'en', alt } = Astro.props;
+const description = Astro.props.description ?? (lang === 'es' ? 'Ficha técnica, dimensiones, consumo, pruebas de choque, retiros y problemas reportados de cada auto, camioneta y SUV desde 2005, comparados año por año y actualizados a diario.' : SITE_DESCRIPTION);
 const t = UI[lang];
 const path = Astro.url.pathname.replace(/\.html$/, '').replace(/\/(index)?$/, '') || '/';
 const home = path === '/' || path === '/es';
@@ -85,7 +86,7 @@ const NAV = [
           </div>
           <div>
             <h4>{t.site}</h4>
-            <ul><li><a href={to(lang, '/about')}>{t.about}</a></li>{lang === 'en' && <li><a href="/guide">{t.guides}</a></li>}<li><a href={to(lang, '/terms')}>{t.terms}</a></li><li><a href={to(lang, '/privacy')}>{t.privacy}</a></li>{CONTACT_EMAIL && <li><a href={`mailto:${CONTACT_EMAIL}`}>{t.contact}</a></li>}<li><a href={VIN_LOOKUP} rel="noopener" target="_blank">{t.vinCheck}</a></li>{alt && <li><a href={alt} hreflang={lang === 'es' ? 'en' : 'es'}>{t.switchTo}</a></li>}</ul>
+            <ul><li><a href={to(lang, '/about')}>{t.about}</a></li>{lang === 'en' && <li><a href="/guide">{t.guides}</a></li>}<li><a href={to(lang, '/terms')}>{t.terms}</a></li><li><a href={to(lang, '/privacy')}>{t.privacy}</a></li><li><a href={to(lang, '/methodology')}>{lang === 'es' ? 'Metodología' : 'Methodology'}</a></li><li><a href={to(lang, '/contact')}>{t.contact}</a></li><li><a href={VIN_LOOKUP} rel="noopener" target="_blank">{t.vinCheck}</a></li>{alt && <li><a href={alt} hreflang={lang === 'es' ? 'en' : 'es'}>{t.switchTo}</a></li>}</ul>
           </div>
         </div>
         <p>{t.notice}</p>

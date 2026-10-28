@@ -268,6 +268,12 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   }
 
 
+  // A model page is thin when it can't say more than its year pages: no data-rich year, a single model year,
+  // or two years and no overview. Thin model pages are noindex (their year pages stay indexed).
+  for (const m of live) {
+    const ys = m.years.filter((y) => y.page);
+    if (!ys.some((y) => y.rich) || ys.length === 1 || (ys.length <= 2 && (!m.overview || !ys.some((y) => (y.similar?.length ?? 0) >= 3)))) m.thin = true;
+  }
   for (const m of live) m.verdict = verdict(m);
   for (const m of live) await writeJson(`${SITE}models/${m.makeSlug}/${m.slug}.json`, m);
   await buildBuyerData(live, log);
@@ -302,9 +308,11 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       views30: m.popularity?.views30 ?? 0,
       photo: m.photo?.file,
       cls: ys[0]?.cls,
+      ...(m.thin && { thin: true }),
     });
   }
-  const makeList = [...makes.values()].map((x) => ({ ...x, models: x.models.sort((a, b) => b.views30 - a.views30 || a.name.localeCompare(b.name)) })).sort((a, b) => a.name.localeCompare(b.name));
+  // a make page is thin with fewer than 4 models or fewer than 3 models that have their own indexable page
+  const makeList = [...makes.values()].map((x) => ({ ...x, models: x.models.sort((a, b) => b.views30 - a.views30 || a.name.localeCompare(b.name)), ...((x.models.length < 4 || x.models.filter((m) => !m.thin).length < 3) && { thin: true }) })).sort((a, b) => a.name.localeCompare(b.name));
   await writeJson(SITE + 'makes.json', makeList);
 
   // Rankings
@@ -347,6 +355,9 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
     newModels: live.flatMap((m) => m.years.filter((y) => y.page && y.added && y.added >= daysAgo(90)).map((y) => card(m, { year: y.year, added: y.added, mpg: y.mpg?.max, range: y.range }))).sort((a, b) => b.added.localeCompare(a.added)).slice(0, 40),
   };
   await writeJson(SITE + 'rankings.json', rankings);
+  // thin model and make pages (flags set above; the views mark them noindex too)
+  for (const m of live) if (m.thin) noindex.push(`/${m.makeSlug}/${m.slug}`, `/es/${m.makeSlug}/${m.slug}`);
+  for (const mk of makeList) if (mk.thin) noindex.push(`/${mk.slug}`, `/es/${mk.slug}`);
   await writeJson(SITE + 'noindex.json', noindex);
   await writeJson(SITE + 'meta.json', { updated: new Date().toISOString(), date: today(), models: live.length, yearPages: kept.size });
   log(`Aggregate: ${makeList.length} makes, ${live.length} models, ${kept.size} model-year pages (${noindex.length} noindex), ${usedCamps.size} recall campaigns, ${photoCount} photos`);

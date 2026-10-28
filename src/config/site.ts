@@ -6,8 +6,9 @@ export const SITE_DESCRIPTION =
 /** Contact email for the About page (fill in before applying to AdSense) */
 export const CONTACT_EMAIL = '';
 
-/** Set to 'ca-pub-…' after AdSense approval: turns on the ad script, ad slots and ads.txt */
-export const ADSENSE_CLIENT = '';
+/** Publisher ID (same account as the other sites): adds the site-verification tag, the AdSense script and ads.txt.
+ *  Ad units stay off until ADSENSE_SLOTS are filled in after approval. */
+export const ADSENSE_CLIENT = 'ca-pub-6097529637653954';
 /** Display ad unit IDs (data-ad-slot). Empty = Auto ads only */
 export const ADSENSE_SLOTS = { content: '', bottom: '' };
 

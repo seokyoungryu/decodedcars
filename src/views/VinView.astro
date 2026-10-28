@@ -61,6 +61,39 @@ const JS = es
     <p>{T.where}</p>
     <h2>{T.notH}</h2>
     <p>{T.not1} <b>{T.not2}</b>{T.not3} <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a>{es ? ' (en inglés)' : ''}.</p>
+    {
+      es ? (
+        <>
+          <h2>Qué significan los 17 caracteres</h2>
+          <ul>
+            <li><b>1–3 (WMI):</b> el fabricante y el país; por ejemplo, un VIN que empieza con 1, 4 o 5 se fabricó en EE. UU.</li>
+            <li><b>4–8:</b> el modelo, la carrocería, el motor y los sistemas de seguridad, según la codificación de cada marca.</li>
+            <li><b>9:</b> un dígito de control que detecta errores al copiar el VIN.</li>
+            <li><b>10:</b> el año modelo (por ejemplo, N = 2022, P = 2023, R = 2024, S = 2025).</li>
+            <li><b>11:</b> la planta de fabricación; <b>12–17:</b> el número de serie del vehículo.</li>
+          </ul>
+          <h2>Cuándo conviene decodificar un VIN</h2>
+          <p>Al comprar un auto usado, compara el resultado con el anuncio: el año, la versión y el motor deben coincidir. Si el VIN del parabrisas, el de la puerta y el del título no son iguales, o el decodificador no reconoce el número, pide explicaciones antes de seguir. Luego revisa los retiros con el mismo VIN y pide un reporte de antecedentes del vehículo.</p>
+          <p>Ten en cuenta que algunos datos (como la versión o la potencia) solo aparecen si el fabricante los reportó a la NHTSA, y que los autos fabricados para otros países pueden decodificarse de forma incompleta.</p>
+        </>
+      ) : (
+        <>
+          <h2>What the 17 characters mean</h2>
+          <ul>
+            <li><b>1–3 (WMI):</b> the manufacturer and country — a VIN starting with 1, 4 or 5 was built in the U.S.</li>
+            <li><b>4–8:</b> the model, body, engine and restraint systems, coded differently by each brand.</li>
+            <li><b>9:</b> a check digit that catches mistakes when the VIN is copied.</li>
+            <li><b>10:</b> the model year (for example N = 2022, P = 2023, R = 2024, S = 2025).</li>
+            <li><b>11:</b> the assembly plant; <b>12–17:</b> the vehicle's serial number.</li>
+          </ul>
+          <h2>When decoding a VIN helps</h2>
+          <p>When you buy a used car, compare the result with the listing: the year, trim and engine should match. If the VIN on the windshield, the door sticker and the title don't agree, or the decoder can't read the number, ask why before going further. Then check recalls with the same VIN and get a vehicle history report.</p>
+          <p>Keep in mind that some details, like trim or horsepower, only appear if the manufacturer reported them to NHTSA, and cars built for other countries may decode only partly.</p>
+          <p>The decoder works for cars, SUVs, pickups and vans from about 1981 on, when the 17-character format became standard.</p>
+          <p>Your VIN is safe to share with a mechanic or insurer, but avoid posting it publicly with photos of the title or registration.</p>
+        </>
+      )
+    }
   </section>
   <Ad place="bottom" lang={lang} />
 </Base>

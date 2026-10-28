@@ -9,6 +9,7 @@ import VerdictCard from '@/components/VerdictCard.astro';
 import { VIN_LOOKUP } from '@/config/site';
 import { type Model, campaigns, href, model as loadModel, vsFor } from '@/lib/data';
 import { changeLog } from '@/lib/changes';
+import { describeYear, describeYearEs } from '@/lib/describe';
 import { prosCons } from '@/lib/proscons';
 import { type Lang, num, to } from '@/i18n';
 import { classL, compL, engineL } from '@/i18n/terms';
@@ -56,6 +57,25 @@ const rivals = vsFor(m.makeSlug, m.slug)
 const yearLink = (year: number, hasEs?: boolean) => (es && hasEs ? to('es', href(m, year)) : href(m, year));
 const rated = years.find((y) => y.overall);
 const overview = es ? m.overviewEs : m.overview;
+const summary = es ? describeYearEs(m, pcYear) : describeYear(m, pcYear);
+const firstSummary = years.length >= 3 && first.year !== pcYear.year ? (es ? describeYearEs(m, first) : describeYear(m, first)).slice(0, 2) : [];
+// a written read-out across all years (unique to this model)
+const bestMpgY = [...years].filter((y) => y.mpg).sort((a, b) => b.mpg!.max - a.mpg!.max)[0];
+const mostRecallsY = [...years].sort((a, b) => b.recalls.length - a.recalls.length)[0];
+const history: string[] = [];
+if (es) {
+  history.push(`El ${title} tiene ${years.length} ${years.length === 1 ? 'año modelo' : 'años modelo'} en nuestros datos, de ${first.year} a ${latest.year}${classes.length > 1 ? `, en las clases ${classes.slice(0, 3).join(', ')}` : ''}.`);
+  if (bestMpgY && mpgs.length > 1) history.push(`Su mejor consumo lo logró el ${bestMpgY.year}, con ${bestMpgY.mpg!.max} MPG combinadas; el rango va de ${Math.min(...mpgs)} a ${Math.max(...mpgs)} MPG según el año.`);
+  if (topComps.length >= 2) history.push(`Los propietarios reportan sobre todo problemas de ${topComps.slice(0, 3).map(([c, k]) => `${compL(lang, c).toLowerCase()} (${num(lang, k)})`).join(', ')}.`);
+  if (m.verdict) history.push(`Si lo compras usado, el ${m.verdict.best.year} es el año con menos problemas en nuestros datos${m.verdict.worst ? ` y el ${m.verdict.worst.year} el que conviene evitar` : ''}.`);
+  if (mostRecallsY?.recalls.length) history.push(`El año con más retiros es el ${mostRecallsY.year} (${mostRecallsY.recalls.length}), y entre todos los años suman ${recallIds.size} campañas y ${num(lang, totalComplaints)} quejas de propietarios.`);
+} else {
+  history.push(`The ${title} has ${years.length} model year${years.length === 1 ? '' : 's'} in our data, from ${first.year} to ${latest.year}${classes.length > 1 ? `, classed as ${classes.slice(0, 3).join(', ')}` : ''}.`);
+  if (bestMpgY && mpgs.length > 1) history.push(`Its most efficient year was ${bestMpgY.year} at ${bestMpgY.mpg!.max} MPG combined; across all years the best version ranged from ${Math.min(...mpgs)} to ${Math.max(...mpgs)} MPG.`);
+  if (topComps.length >= 2) history.push(`Owners most often report problems with the ${topComps.slice(0, 3).map(([c, k]) => `${compL(lang, c).toLowerCase()} (${num(lang, k)})`).join(', ')}.`);
+  if (m.verdict) history.push(`Buying used? ${m.verdict.best.year} has the fewest problems in our data${m.verdict.worst ? `, and ${m.verdict.worst.year} is the year to avoid` : ''}.`);
+  if (mostRecallsY?.recalls.length) history.push(`${mostRecallsY.year} has the most recalls (${mostRecallsY.recalls.length}); all years together count ${recallIds.size} campaigns and ${num(lang, totalComplaints)} owner complaints.`);
+}
 
 const T = {
   en: {
@@ -67,11 +87,11 @@ const T = {
     about: `About the ${title}`, fromWiki: 'From the Wikipedia article', licensed: 'licensed under',
     pcH: `${pcYear.year} ${m.model} pros & cons`, full: `Full ${pcYear.year} details →`, good: "What's good", watch: 'Watch out for', noPros: 'Nothing stands out against similar models in the data.', noCons: 'No weak spots against similar models in the data.',
     h2h: 'Compare head to head', changesH: `${m.model} changes by model year`,
-    changesNote: 'Differences in engines, powertrains, drivetrains, size, EPA ratings and NHTSA crash ratings from one model year to the next. Years without a measurable change are left out.',
+    changesNote: 'Years without a measurable change are left out.',
     showAll: `Show all ${years.length} model years side by side`, year: 'Year', bestMpgRange: 'Best MPG / range', length: 'Length', weight: 'Weight', overall: 'Overall', complaints: 'Complaints',
     mpgChart: `Best combined MPG by model year — ${title}`, altH: `Alternatives to the ${alt.year} ${m.model}`, model: 'Model', nhtsaOverall: 'NHTSA overall',
     probH: 'Most common owner-reported problems', cmplChart: `Owner complaints by model year — ${title}`, vin: 'Check your VIN for open recalls ↗',
-    source: `Sources: EPA fuel economy data; NHTSA ratings, recalls and complaints; NHTSA vPIC; Transport Canada Canadian Vehicle Specifications (Open Government Licence – Canada); Wikipedia (CC BY-SA 4.0) and Wikimedia Commons. Comparisons calculated by CarRadar. Not affiliated with NHTSA, the EPA or ${m.make}.`,
+    source: `Sources: EPA, NHTSA, Transport Canada, Wikipedia, Wikimedia Commons. Not affiliated with NHTSA, the EPA or ${m.make}.`,
   },
   es: {
     title: `${title}: ficha técnica, consumo, seguridad y problemas por año`,
@@ -82,17 +102,17 @@ const T = {
     about: `Acerca del ${title}`, fromWiki: 'Del artículo de Wikipedia', licensed: 'con licencia',
     pcH: `${m.model} ${pcYear.year}: ventajas y desventajas`, full: `Todos los detalles del ${pcYear.year} →`, good: 'Lo bueno', watch: 'A tener en cuenta', noPros: 'Nada destaca frente a modelos similares en los datos.', noCons: 'Sin puntos débiles frente a modelos similares en los datos.',
     h2h: 'Comparar frente a frente (en inglés)', changesH: `Cambios del ${m.model} por año modelo`,
-    changesNote: 'Diferencias en motores, versiones, tracción, tamaño, consumo EPA y calificaciones NHTSA de un año modelo al siguiente. Se omiten los años sin cambios medibles.',
+    changesNote: 'Se omiten los años sin cambios medibles.',
     showAll: `Ver los ${years.length} años modelo lado a lado`, year: 'Año', bestMpgRange: 'Mejor MPG / autonomía', length: 'Largo', weight: 'Peso', overall: 'General', complaints: 'Quejas',
     mpgChart: `Mejor MPG combinadas por año modelo — ${title}`, altH: `Alternativas al ${m.model} ${alt.year}`, model: 'Modelo', nhtsaOverall: 'General NHTSA',
     probH: 'Problemas más reportados por propietarios', cmplChart: `Quejas de propietarios por año modelo — ${title}`, vin: 'Consulta tu VIN en NHTSA (en inglés) ↗',
-    source: `Fuentes: datos de consumo de la EPA; calificaciones, retiros y quejas de la NHTSA; NHTSA vPIC; Canadian Vehicle Specifications de Transport Canada (Open Government Licence – Canada); Wikipedia (CC BY-SA 4.0) y Wikimedia Commons. Comparaciones calculadas por CarRadar. Sin afiliación con la NHTSA, la EPA ni ${m.make}.`,
+    source: `Fuentes: EPA, NHTSA, Transport Canada, Wikipedia, Wikimedia Commons. Sin afiliación con la NHTSA, la EPA ni ${m.make}.`,
   },
 }[lang];
 const path = href(m);
 ---
 
-<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)}>
+<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)} noindex={!!m.thin}>
   <div class="crumbs"><a href={to(lang, '/makes')}>{T.makes}</a>›<a href={to(lang, `/${m.makeSlug}`)}>{m.make}</a>›<span>{m.model}</span></div>
   <h1>{title}</h1>
   <p class="lead">{T.lead}</p>
@@ -112,6 +132,13 @@ const path = href(m);
       {pop?.views30 ? (<><dt>{T.interest}</dt><dd>{num(lang, pop.views30)} {T.views}</dd></>) : null}
     </dl>
   </div>
+
+  <section class="section overview">
+    <h2 style="margin-bottom:10px">{es ? `El ${m.model} ${pcYear.year} en resumen` : `The ${pcYear.year} ${m.model} in brief`}</h2>
+    {summary.map((p) => <p>{p}</p>)}
+    {history.map((p) => <p>{p}</p>)}
+    {firstSummary.length > 0 && (<><h3 style="margin:18px 0 8px">{es ? `Cómo era el ${m.model} ${first.year}` : `How the ${first.year} ${m.model} compares`}</h3>{firstSummary.map((p) => <p>{p}</p>)}</>)}
+  </section>
 
   {
     overview && (
@@ -230,5 +257,5 @@ const path = href(m);
 
   <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">{T.vin}</a>
   <Ad place="bottom" lang={lang} />
-  <p class="source">{T.source}</p>
+  <p class="source">{T.source} <a href={to(lang, '/methodology')}>{es ? 'Cómo lo calculamos →' : 'How we calculate this →'}</a></p>
 </Base>

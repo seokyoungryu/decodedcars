@@ -81,6 +81,21 @@ const JS = es
   <section class="section prose">
     <h2>{T.roomH}</h2>
     <ul>{T.room.map(([k, v]) => <li><b>{k}</b> {v}</li>)}</ul>
+    {
+      es ? (
+        <>
+          <h2>Cómo medir tu garaje</h2>
+          <p>Mide el largo desde la puerta cerrada hasta la pared del fondo, a la altura de las defensas, y resta lo que ocupen estantes, refrigeradores o una mesa de trabajo. Mide el ancho entre los obstáculos más cercanos (escalones, columnas, botes de basura), no de pared a pared. Para la puerta, mide el hueco libre con la puerta abierta: el riel y el motor del abridor suelen quitar una o dos pulgadas de altura. Si dudas, deja un margen extra; es mejor descubrirlo aquí que con el espejo.</p>
+          <p>Si vas a estacionar dos autos, activa "lado a lado": la herramienta reparte el espacio sobrante en tres huecos iguales (a cada lado y entre los autos) y te avisa si alguno queda por debajo de las 30 pulgadas que hacen falta para abrir una puerta con comodidad.</p>
+        </>
+      ) : (
+        <>
+          <h2>How to measure your garage</h2>
+          <p>Measure the length from the closed door to the back wall at bumper height, then subtract anything that sticks out: shelves, a freezer or a workbench. Measure the width between the nearest obstacles — steps, posts, bins — rather than wall to wall. For the door, measure the clear opening with the door up: the track and opener often take an inch or two of height. When in doubt, leave extra room; it's better to find out here than with a mirror.</p>
+          <p>Parking two cars? Turn on "side by side": the tool splits the spare width into three equal gaps — each side and between the cars — and warns you if any gap is under the 30 inches you need to open a door comfortably.</p>
+        </>
+      )
+    }
     <p class="small muted">{T.dimsNote}</p>
   </section>
   <Ad place="bottom" lang={lang} />

@@ -383,3 +383,4 @@ details.all-years[open] > summary { margin-bottom: 12px; }
 .lang-switch { flex: none; padding: 6px 11px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .18); color: var(--chrome-ink); font-size: .8rem; font-weight: 750; letter-spacing: .06em; text-decoration: none; }
 .lang-switch:hover { border-color: var(--brand); color: #fff; }
 @media (max-width: 720px) { .lang-switch { position: absolute; right: 16px; top: 12px; } .site-header .wrap { position: relative; } }
+.pc li.minus::before { content: '–'; background: var(--bad-bg); color: var(--bad); }

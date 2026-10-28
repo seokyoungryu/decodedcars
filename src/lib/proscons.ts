@@ -73,7 +73,7 @@ export function prosCons(m: Model, y: Year, recalls: Campaign[], lang: Lang = 'e
   const f = y.specs?.features ?? {};
   const std = KEY_TECH.filter((t) => f[t] === 'std');
   if (std.length >= 4)
-    pros.push(es ? { title: 'Mucha tecnología de seguridad de serie', detail: `${list(lang, std.map((t) => featureL(lang, t)))} de serie en todas las versiones revisadas.` } : { title: 'Lots of standard safety tech', detail: `${list(lang, std)} standard on every version we checked.` });
+    pros.push(es ? { title: 'Mucha tecnología de seguridad de serie', detail: `${std.length} de las 5 asistencias clave, de serie en las versiones revisadas.` } : { title: 'Lots of standard safety tech', detail: `${std.length} of 5 key driver aids standard on the versions we checked.` });
   if (y.year >= 2019 && f['Automatic emergency braking'] && f['Automatic emergency braking'] !== 'std')
     cons.push(es ? { title: 'Frenado de emergencia no es de serie', detail: 'El frenado automático de emergencia es opcional o solo está en algunas versiones.' } : { title: 'Emergency braking not standard', detail: 'Automatic emergency braking is optional or limited to some trims.' });
 

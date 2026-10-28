@@ -9,13 +9,25 @@ export function getStaticPaths() {
 }
 const { r } = Astro.props as { r: RankDef };
 const rows = r.rows();
+// a written read-out of the list: leaders and which makes dominate it
+const nm = (x: (typeof rows)[number]) => `${r.yearLink && x.year ? `${x.year} ` : ''}${x.make} ${x.model}`;
+const makeCount = new Map<string, number>();
+for (const x of rows) makeCount.set(x.make, (makeCount.get(x.make) ?? 0) + 1);
+const topMakes = [...makeCount].sort((a, b) => b[1] - a[1]).filter(([, c]) => c > 1).slice(0, 3);
+const readout = rows.length >= 3 ? [
+  `The ${nm(rows[0])} leads this list (${r.value(rows[0])}), ahead of the ${nm(rows[1])} (${r.value(rows[1])}) and the ${nm(rows[2])} (${r.value(rows[2])}).`,
+  `The list covers ${rows.length} models from ${makeCount.size} makes.${topMakes.length ? ` ${topMakes.map(([m, c]) => `${m} has ${c}`).join(', ')}.` : ''}`,
+  rows.length >= 10 ? `Rounding out the top ten: ${rows.slice(3, 10).map(nm).join(', ')}.` : '',
+  rows.length >= 15 ? `Further down, places ${rows.length - 2} to ${rows.length} go to the ${rows.slice(-3).map(nm).join(', the ')} (${r.value(rows.at(-1)!)} for the last).` : '',
+].filter(Boolean) : [];
 ---
 
 <Base title={r.title} description={r.intro.slice(0, 155)} section="rankings" noindex={rows.length < 5}>
   <div class="crumbs"><a href="/rankings">Rankings</a></div>
   <h1>{r.title}</h1>
   <p class="lead">{r.intro}</p>
-  <p class="small muted">{updatedLabel()}</p>
+  <p class="small muted">{updatedLabel()} · <a href="/methodology">How we calculate this →</a></p>
+  {(readout.length > 0 || r.how) && <section class="section overview">{readout.map((p) => <p>{p}</p>)}{r.how && <p><b>How to use this list:</b> {r.how}</p>}</section>}
   {
     rows.length ? (
       <div class="table-wrap section">

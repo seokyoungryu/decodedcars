@@ -118,11 +118,13 @@ export interface Model {
   recent90: number;
   overview?: { title: string; text: string; url: string };
   overviewEs?: { title: string; text: string; url: string };
+  /** model page adds nothing beyond its year pages → noindex */
+  thin?: boolean;
   photo?: Photo;
   verdict?: Verdict;
 }
 export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
-export interface MakeEntry { slug: string; name: string; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string }[] }
+export interface MakeEntry { slug: string; name: string; thin?: boolean; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string; thin?: boolean }[] }
 type Card = { make: string; model: string; makeSlug: string; slug: string; latest?: number; year?: number; photo?: string; [k: string]: unknown };
 export interface Rankings {
   trending: Card[];

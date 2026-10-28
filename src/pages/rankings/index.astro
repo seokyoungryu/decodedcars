@@ -5,7 +5,7 @@ import { RANKINGS } from '@/lib/rankings';
 
 <Base title="Car Rankings" description="Trending and most-researched cars, best MPG, longest EV range, cheapest to fuel, 5-star safety and cars with the most new complaints — updated daily." section="rankings">
   <h1>Car rankings</h1>
-  <p class="lead">Updated every day from NHTSA, EPA and Wikipedia public data.</p>
+  <p class="lead">Updated every day from NHTSA, EPA and Wikipedia public data. Each list explains exactly how it is calculated, and every model links to its full page with specs, recalls and complaints.</p>
   <div class="grid section">
     {
       RANKINGS.map((r) => {
@@ -13,6 +13,7 @@ import { RANKINGS } from '@/lib/rankings';
         return (
           <a class="card" href={`/rankings/${r.slug}`}>
             <h2 style="font-size:1.05rem">{r.title}</h2>
+            <p class="small muted" style="margin:6px 0 0">{r.intro}</p>
             <ol class="small muted" style="margin:8px 0 0;padding-left:18px">{top.map((x) => <li>{x.make} {x.model}</li>)}</ol>
           </a>
         );

@@ -1,11 +1,13 @@
 ---
-// One make: current models as cards, past models as a table (English /make, Spanish /es/make)
+// One make: a written lineup summary, current models as cards + table, past models (English /make, Spanish /es/make).
+// Makes with fewer than 3 models are noindex: a one-model brand page can't say much that the model page doesn't.
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
 import ModelCard from '@/components/ModelCard.astro';
-import type { MakeEntry } from '@/lib/data';
+import { type MakeEntry, model as loadModel } from '@/lib/data';
+import { describeYear, describeYearEs } from '@/lib/describe';
 import { type Lang, num, to } from '@/i18n';
-import { classL } from '@/i18n/terms';
+import { classL, classNounL, compL } from '@/i18n/terms';
 
 interface Props {
   mk: MakeEntry;
@@ -18,38 +20,96 @@ const year = new Date().getUTCFullYear();
 const current = mk.models.filter((m) => m.to >= year - 1);
 const past = mk.models.filter((m) => !current.includes(m));
 const sub = (m: MakeEntry['models'][number]) => [m.from === m.to ? m.from : `${m.from}–${m.to}`, m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '', m.cls ? classL(lang, m.cls).replace(/ \([24]WD\)| [24]WD/, '') : ''].filter(Boolean).join(' · ');
+const name = (m: MakeEntry['models'][number]) => `${mk.name} ${m.name}`;
+const list = (a: string[]) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} ${es ? 'y' : 'and'} ${a.at(-1)}`);
+const from = Math.min(...mk.models.map((m) => m.from));
+const to_ = Math.max(...mk.models.map((m) => m.to));
+
+// facts for the written summary
+const lineup = current.length ? current : mk.models;
+const byMpg = lineup.filter((m) => m.mpg).sort((a, b) => b.mpg! - a.mpg!);
+const byRange = lineup.filter((m) => m.range).sort((a, b) => b.range! - a.range!);
+const byViews = [...mk.models].filter((m) => m.views30).sort((a, b) => b.views30 - a.views30);
+const byRecalls = [...mk.models].sort((a, b) => b.recalls - a.recalls);
+const byComplaints = [...mk.models].sort((a, b) => b.complaints - a.complaints);
+const clean = lineup.filter((m) => m.recalls === 0).map(name);
+const kinds = new Map<string, number>();
+for (const m of lineup) {
+  const k = classNounL('en', m.cls).replace(/^(small|midsize|large|standard|compact|subcompact|minicompact) /, '');
+  kinds.set(k, (kinds.get(k) ?? 0) + 1);
+}
+const KIND_ES: Record<string, [string, string]> = { SUV: ['SUV', 'SUV'], car: ['auto', 'autos'], 'pickup truck': ['pickup', 'pickups'], minivan: ['minivan', 'minivans'], van: ['van', 'vans'], wagon: ['familiar', 'familiares'], 'two seaters': ['deportivo', 'deportivos'], vehicle: ['vehículo', 'vehículos'] };
+const kindText = [...kinds].sort((a, b) => b[1] - a[1]).map(([k, c]) => (es ? `${c} ${(KIND_ES[k] ?? [k, k])[c === 1 ? 0 : 1]}` : `${c} ${k === 'two seaters' ? 'sports car' : k}${c === 1 ? '' : 's'}`));
+
+const P: string[] = [];
+if (es) {
+  P.push(`Tenemos ${mk.models.length} modelos de ${mk.name} con datos de los años modelo ${from} a ${to_}${current.length ? `; ${current.length} siguen a la venta: ${list(current.slice(0, 8).map((m) => m.name))}${current.length > 8 ? ' y otros' : ''}` : ''}.`);
+  if (kindText.length) P.push(`La gama ${current.length ? 'actual' : ''} incluye ${list(kindText)}.`.replace('  ', ' '));
+  if (byMpg.length > 1) P.push(`El ${name(byMpg[0])} es el más eficiente con ${byMpg[0].mpg} MPG combinadas en su mejor versión, y el ${name(byMpg.at(-1)!)} el que más consume, con ${byMpg.at(-1)!.mpg} MPG.`);
+  if (byRange.length) P.push(`Su eléctrico de mayor autonomía es el ${name(byRange[0])}, con hasta ${byRange[0].range} millas por carga según la EPA.`);
+  if (byViews.length > 1) P.push(`El ${mk.name} más investigado ahora es el ${byViews[0].name} (${num(lang, byViews[0].views30)} visitas en Wikipedia en 30 días)${byViews.length > 2 ? `, seguido del ${byViews[1].name} y el ${byViews[2].name}` : ''}.`);
+  if (recalls) P.push(`En total hay ${num(lang, recalls)} campañas de retiro registradas en la NHTSA. El ${name(byRecalls[0])} acumula más (${byRecalls[0].recalls})${byComplaints[0].complaints ? ` y el ${name(byComplaints[0])} reúne más quejas de propietarios (${num(lang, byComplaints[0].complaints)})` : ''}.${clean.length ? ` Sin retiros: ${list(clean.slice(0, 5))}.` : ''}`);
+} else {
+  P.push(`We have ${mk.models.length} ${mk.name} models on file, covering model years ${from} to ${to_}${current.length ? `; ${current.length} are on sale now: ${list(current.slice(0, 8).map((m) => m.name))}${current.length > 8 ? ' and more' : ''}` : ''}.`);
+  if (kindText.length) P.push(`The ${current.length ? 'current ' : ''}lineup is made up of ${list(kindText)}.`);
+  if (byMpg.length > 1) P.push(`The ${name(byMpg[0])} is the most fuel-efficient at ${byMpg[0].mpg} MPG combined in its best version, while the ${name(byMpg.at(-1)!)} is the thirstiest at ${byMpg.at(-1)!.mpg} MPG.`);
+  if (byRange.length) P.push(`Its longest-range EV is the ${name(byRange[0])}, with up to ${byRange[0].range} miles on a charge (EPA).`);
+  if (byViews.length > 1) P.push(`The most researched ${mk.name} right now is the ${byViews[0].name} (${num(lang, byViews[0].views30)} Wikipedia views in 30 days)${byViews.length > 2 ? `, followed by the ${byViews[1].name} and ${byViews[2].name}` : ''}.`);
+  if (recalls) P.push(`Across all models and years there are ${num(lang, recalls)} recall campaigns on file with NHTSA. The ${name(byRecalls[0])} has the most (${byRecalls[0].recalls})${byComplaints[0].complaints ? `, and the ${name(byComplaints[0])} has collected the most owner complaints (${num(lang, byComplaints[0].complaints)})` : ''}.${clean.length ? ` No recalls: ${list(clean.slice(0, 5))}.` : ''}`);
+}
+
+const avgMpg = byMpg.length ? Math.round(byMpg.reduce((s, m) => s + m.mpg!, 0) / byMpg.length) : 0;
+const gone = [...past].sort((a, b) => b.to - a.to).slice(0, 5);
+if (es) {
+  if (avgMpg && byMpg.length > 2) P.push(`En promedio, la mejor versión de cada modelo ${current.length ? 'actual' : ''} rinde ${avgMpg} MPG combinadas.`.replace('  ', ' '));
+  if (gone.length) P.push(`Entre los modelos que ya no se venden están ${list(gone.map((m) => `el ${m.name} (hasta ${m.to})`))}.`);
+} else {
+  if (avgMpg && byMpg.length > 2) P.push(`On average, the best version of each ${current.length ? 'current ' : ''}model returns ${avgMpg} MPG combined.`);
+  if (gone.length) P.push(`Discontinued models include the ${list(gone.map((m) => `${m.name} (last sold ${m.to})`))}.`);
+}
+// one line per current model: what it is, from its newest model year
+const profiles = [...current, ...past].slice(0, 12).flatMap((c) => {
+  const m = loadModel(mk.slug, c.slug);
+  const y = m?.years.find((x) => x.page && x.year <= year) ?? m?.years.find((x) => x.page);
+  return m && y ? [{ slug: c.slug, text: (es ? describeYearEs(m, y) : describeYear(m, y)).slice(0, 2).join(' ') }] : [];
+});
+const loaded = [...current, ...past].map((c) => loadModel(mk.slug, c.slug)).filter((m): m is NonNullable<typeof m> => !!m);
+const brandComps = new Map<string, number>();
+for (const m of loaded) for (const y of m.years) for (const [c, k] of y.complaints.comps) if (!/UNKNOWN/i.test(c)) brandComps.set(c, (brandComps.get(c) ?? 0) + k);
+const topBrand = [...brandComps].sort((a, b) => b[1] - a[1]).slice(0, 3);
+const fiveStar = loaded.filter((m) => m.years.find((y) => y.page && y.overall)?.overall === 5).map((m) => m.model);
+if (topBrand.length >= 2) P.push(es ? `Entre todos sus modelos, los propietarios reportan sobre todo problemas de ${list(topBrand.map(([c]) => compL(lang, c).toLowerCase()))}.` : `Across all its models, owners most often report problems with the ${list(topBrand.map(([c]) => compL(lang, c).toLowerCase()))}.`);
+const longest = [...mk.models].sort((a, b) => b.to - b.from - (a.to - a.from))[0];
+if (longest && longest.to > longest.from) P.push(es ? `Su modelo con más trayectoria en nuestros datos es el ${longest.name}, con años modelo de ${longest.from} a ${longest.to}.` : `Its longest-running model in our data is the ${longest.name}, with model years from ${longest.from} to ${longest.to}.`);
+if (byRange.length >= 2) P.push(es ? `Sus eléctricos actuales ofrecen en promedio ${Math.round(byRange.reduce((s, m) => s + m.range!, 0) / byRange.length)} millas de autonomía EPA en su mejor versión.` : `Its current EVs average ${Math.round(byRange.reduce((s, m) => s + m.range!, 0) / byRange.length)} miles of EPA range in their best versions.`);
+if (fiveStar.length) P.push(es ? `Con 5 estrellas NHTSA en su última prueba: ${list(fiveStar.slice(0, 6))}.` : `Five stars overall in their latest NHTSA test: ${list(fiveStar.slice(0, 6))}.`);
 const T = es
-  ? { title: `Modelos ${mk.name}: ficha técnica, consumo, seguridad y retiros`, desc: `Todos los modelos ${mk.name} desde 2005: ficha técnica, dimensiones, consumo, calificaciones NHTSA, retiros y quejas por año modelo.`, makes: 'Marcas', h1: `Modelos ${mk.name}`, lead: `${mk.models.length} modelos ${mk.name} desde 2005 · ${num(lang, recalls)} campañas de retiro registradas.`, current: 'Modelos actuales', past: 'Modelos anteriores', model: 'Modelo', years: 'Años', mpg: 'Mejor MPG', recalls: 'Retiros', complaints: 'Quejas' }
-  : { title: `${mk.name} Models: Specs, MPG, Safety & Recalls`, desc: `Every ${mk.name} model since 2005 — specs, dimensions, MPG, NHTSA safety ratings, recalls and owner complaints by model year.`, makes: 'Makes', h1: `${mk.name} models`, lead: `${mk.models.length} ${mk.name} models since 2005 · ${num(lang, recalls)} recall campaigns on file.`, current: 'Current models', past: 'Past models', model: 'Model', years: 'Years', mpg: 'Best MPG', recalls: 'Recalls', complaints: 'Complaints' };
+  ? { title: `Modelos ${mk.name}: ficha técnica, consumo, seguridad y retiros`, desc: `Todos los modelos ${mk.name} desde 2005: ficha técnica, dimensiones, consumo, calificaciones NHTSA, retiros y quejas por año modelo.`, makes: 'Marcas', h1: `Modelos ${mk.name}`, lead: `${mk.models.length} modelos ${mk.name} desde 2005 · ${num(lang, recalls)} campañas de retiro registradas.`, about: `${mk.name} en cifras`, current: 'Modelos actuales', glance: 'La gama actual de un vistazo', past: 'Modelos anteriores', model: 'Modelo', years: 'Años', mpg: 'Mejor MPG', recalls: 'Retiros', complaints: 'Quejas', views: 'Interés (30 días)' }
+  : { title: `${mk.name} Models: Specs, MPG, Safety & Recalls`, desc: `Every ${mk.name} model since 2005 — specs, dimensions, MPG, NHTSA safety ratings, recalls and owner complaints by model year.`, makes: 'Makes', h1: `${mk.name} models`, lead: `${mk.models.length} ${mk.name} models since 2005 · ${num(lang, recalls)} recall campaigns on file.`, about: `${mk.name} at a glance`, current: 'Current models', glance: 'Current lineup compared', past: 'Past models', model: 'Model', years: 'Years', mpg: 'Best MPG', recalls: 'Recalls', complaints: 'Complaints', views: 'Interest (30 days)' };
 const path = `/${mk.slug}`;
 ---
 
-<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)}>
+<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)} noindex={!!mk.thin}>
   <div class="crumbs"><a href={to(lang, '/makes')}>{T.makes}</a>›<span>{mk.name}</span></div>
   <h1>{T.h1}</h1>
   <p class="lead">{T.lead}</p>
-  {current.length > 0 && (<section class="section"><div class="section-head"><h2>{T.current}</h2></div><div class="mcards">{current.map((m) => <ModelCard href={to(lang, `/${mk.slug}/${m.slug}`)} title={`${mk.name} ${m.name}`} sub={sub(m)} photo={m.photo} />)}</div></section>)}
+  {current.length > 0 && (<section class="section"><div class="section-head"><h2>{T.current}</h2></div><div class="mcards">{current.map((m) => <ModelCard href={to(lang, `/${mk.slug}/${m.slug}`)} title={name(m)} sub={sub(m)} photo={m.photo} />)}</div></section>)}
+  {P.length > 0 && (<section class="section overview"><h2 style="margin-bottom:10px">{T.about}</h2>{P.map((p) => <p>{p}</p>)}</section>)}
+  {profiles.length > 0 && (<section class="section overview"><h2 style="margin-bottom:10px">{es ? `Cada modelo ${mk.name} en una línea` : `Every ${mk.name} model in one line`}</h2>{profiles.map((p) => <p><a href={to(lang, `/${mk.slug}/${p.slug}`)}>→</a> {p.text}</p>)}</section>)}
+  {
+    current.length > 1 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.glance}</h2></div>
+        <div class="table-wrap"><table><thead><tr><th>{T.model}</th><th>{T.years}</th><th class="num">{T.mpg}</th><th class="num">{T.recalls}</th><th class="num">{T.complaints}</th></tr></thead><tbody>{current.map((m) => <tr><td><a href={to(lang, `/${mk.slug}/${m.slug}`)}>{name(m)}</a></td><td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td><td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td><td class="num">{m.recalls}</td><td class="num">{num(lang, m.complaints)}</td></tr>)}</tbody></table></div>
+      </section>
+    )
+  }
   <Ad place="content" lang={lang} />
   {
     past.length > 0 && (
       <section class="section">
         <div class="section-head"><h2>{T.past}</h2></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>{T.model}</th><th>{T.years}</th><th class="num">{T.mpg}</th><th class="num">{T.recalls}</th><th class="num">{T.complaints}</th></tr></thead>
-            <tbody>
-              {past.map((m) => (
-                <tr>
-                  <td><a href={to(lang, `/${mk.slug}/${m.slug}`)}>{mk.name} {m.name}</a></td>
-                  <td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td>
-                  <td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td>
-                  <td class="num">{m.recalls}</td>
-                  <td class="num">{num(lang, m.complaints)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>{T.model}</th><th>{T.years}</th><th class="num">{T.mpg}</th><th class="num">{T.recalls}</th><th class="num">{T.complaints}</th></tr></thead><tbody>{past.map((m) => <tr><td><a href={to(lang, `/${mk.slug}/${m.slug}`)}>{name(m)}</a></td><td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td><td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td><td class="num">{m.recalls}</td><td class="num">{num(lang, m.complaints)}</td></tr>)}</tbody></table></div>
       </section>
     )
   }
