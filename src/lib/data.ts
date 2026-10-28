@@ -62,6 +62,19 @@ export interface Dims { name: string; length?: number; width?: number; height?: 
 export interface Similar { make: string; model: string; makeSlug: string; slug: string; year: number; mpg?: number; range?: number; overall?: number; recalls: number }
 export interface Photo { file: string; w?: number; h?: number; caption: string; artist: string; license: string; licenseUrl?: string; page: string }
 export interface Complaints { total: number; crash?: number; fire?: number; injured?: number; deaths?: number; comps: [string, number][]; miles?: number; months?: Record<string, number> }
+export interface Specs {
+  n: number;
+  trims: string[];
+  engines: { label: string; hp?: [number, number]; kw?: number }[];
+  hp?: [number, number];
+  trans: string[];
+  drive: string[];
+  seats?: [number, number];
+  rows?: number;
+  features?: Record<string, 'std' | 'some' | 'opt'>;
+  led?: boolean;
+  plants: string[];
+}
 export interface Year {
   year: number;
   cls?: string;
@@ -87,6 +100,10 @@ export interface Year {
   ghgScore?: number;
   save5?: number;
   similar?: Similar[];
+  /** U.S. specs from NHTSA vPIC (decoded VIN patterns ≈ trims/configurations) */
+  specs?: Specs;
+  /** medians of rival model years (same year, body, tier, size) */
+  peer?: { n: number; mpg?: number; complaints?: number; recalls?: number; hp?: number };
 }
 export interface Model {
   key: string;

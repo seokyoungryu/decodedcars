@@ -13,6 +13,7 @@ import { collectPageviews } from './lib/pageviews.mjs';
 import { collectSiteViews } from './lib/analytics.mjs';
 import { collectCvs } from './lib/cvs.mjs';
 import { collectWiki } from './lib/wiki.mjs';
+import { collectVinSpecs } from './lib/vinspecs.mjs';
 import { aggregate, displayName, resolver } from './lib/aggregate.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
@@ -39,7 +40,7 @@ if (!epa) {
   process.exit(1);
 }
 const recalls = await step('recalls', () => collectRecalls(log), { byModelYear: new Map(), campaigns: {} });
-const complaints = await step('complaints', () => collectComplaints(log, daysAgo(90)), { stats: new Map(), recent: new Map() });
+const complaints = await step('complaints', () => collectComplaints(log, daysAgo(90)), { stats: new Map(), recent: new Map(), patterns: new Map() });
 
 // Safety ratings use NHTSA spellings: find one NHTSA name per EPA model
 const resolve = resolver(epa);
@@ -59,12 +60,31 @@ const { titles, wiki } = await step('wiki', () => collectWiki(wikiModels, { budg
 const views = await step('pageviews', () => collectPageviews(recentModels.map((m) => ({ key: m.key })), titles, { log }), await readJson(CACHE + 'pageviews.json', {}));
 const siteViews = await step('analytics', () => collectSiteViews(log), {});
 
+// U.S. trims, horsepower and features: decode the most-reported VIN patterns of each model year (popular + recent first)
+const patternsBy = new Map();
+for (const [ky, pm] of complaints.patterns ?? []) {
+  const [mk, md, year] = ky.split('|');
+  const ek = resolve(`${mk}|${md}`);
+  if (!ek) continue;
+  const all = patternsBy.get(`${ek}|${year}`) ?? patternsBy.set(`${ek}|${year}`, new Map()).get(`${ek}|${year}`);
+  for (const [p, c] of pm) all.set(p, (all.get(p) ?? 0) + c);
+}
+const nowY = new Date().getUTCFullYear();
+const vinJobs = [...patternsBy]
+  .map(([ky, pm]) => {
+    const [mk, md, year] = ky.split('|');
+    const key = `${mk}|${md}`;
+    return { key, year: Number(year), patterns: [...pm].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([p]) => p), pri: (views[key]?.views30 ?? 0) / (1 + Math.max(0, nowY - Number(year))) };
+  })
+  .sort((a, b) => b.pri - a.pri);
+const vinspecs = await step('vinspecs', () => collectVinSpecs(vinJobs, { budget: Number(args.vin ?? 2500), log }), await collectVinSpecs(vinJobs, { budget: 0, log: () => {} }));
+
 // Dimensions: one vPIC call per make + model year
 const cvsJobs = [...new Set([...epa.values()].flatMap((m) => Object.keys(m.years).map((y) => `${m.make}|${y}`)))].map((s) => ({ make: s.split('|')[0], year: Number(s.split('|')[1]) }));
 const cvs = await step('cvs', () => collectCvs(cvsJobs, { budget: Number(args.cvs ?? 600), log }), await readJson(CACHE + 'cvs.json', {}));
 
 
-await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, log }));
+await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, vinspecs, log }));
 if (failed.length) {
   log('Failed:', failed.join(', '));
   process.exit(1);

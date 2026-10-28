@@ -8,6 +8,8 @@ import { VIN_LOOKUP } from '@/config/site';
 import VerdictCard from '@/components/VerdictCard.astro';
 import { type Model, comp, href, makes, model as loadModel, n, vsFor } from '@/lib/data';
 import { changeLog } from '@/lib/changes';
+import { prosCons } from '@/lib/proscons';
+import { campaigns } from '@/lib/data';
 
 export function getStaticPaths() {
   return makes().flatMap((mk) => mk.models.map((mm) => ({ params: { make: mk.slug, model: mm.slug }, props: { m: loadModel(mk.slug, mm.slug)! } })));
@@ -19,6 +21,10 @@ const first = years.at(-1)!;
 const log = changeLog(m).slice(0, 12);
 // alternatives from the newest year that has enough rivals (next-year models trickle in during the year)
 const alt = years.find((y) => y.year <= new Date().getFullYear() && (y.similar?.length ?? 0) >= 3) ?? latest;
+// pros & cons for the newest year that isn't next year's partial data
+const pcYear = years.find((y) => y.year <= new Date().getFullYear()) ?? latest;
+const C = campaigns();
+const pc = prosCons(m, pcYear, pcYear.recalls.map((id) => C[id]).filter(Boolean));
 const recallIds = new Set(years.flatMap((y) => y.recalls));
 const totalComplaints = years.reduce((s, y) => s + y.complaints.total, 0);
 const worst = [...years].sort((a, b) => b.complaints.total - a.complaints.total)[0];
@@ -76,6 +82,17 @@ const desc = `${title} by model year (${first.year}–${latest.year}): specs, si
     )
   }
 
+  {
+    (pc.pros.length > 0 || pc.cons.length > 0) && (
+      <section class="section">
+        <div class="section-head"><h2>{pcYear.year} {m.model} pros &amp; cons</h2><a href={href(m, pcYear.year)}>Full {pcYear.year} details →</a></div>
+        <div class="pc-grid">
+          <div class="pc pros"><h3>What's good</h3>{pc.pros.length ? <ul>{pc.pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">Nothing stands out against similar models in the data.</p>}</div>
+          <div class="pc cons"><h3>Watch out for</h3>{pc.cons.length ? <ul>{pc.cons.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">No weak spots against similar models in the data.</p>}</div>
+        </div>
+      </section>
+    )
+  }
   {m.verdict && <VerdictCard m={m} />}
 
   {

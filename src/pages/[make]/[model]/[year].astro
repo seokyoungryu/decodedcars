@@ -9,6 +9,7 @@ import { VIN_LOOKUP, campaignUrl } from '@/config/site';
 import { type Model, type Year, campaigns, comp, date, href, makes, model as loadModel, n, noindex, usd } from '@/lib/data';
 import { bodyName, classNoun, describeYear } from '@/lib/describe';
 import { changesBetween, previousYear } from '@/lib/changes';
+import { prosCons } from '@/lib/proscons';
 
 export function getStaticPaths() {
   return makes().flatMap((mk) =>
@@ -39,6 +40,10 @@ const bodies = y.dims.map((d) => bodyName(d.name, m.model)).filter(Boolean);
 const summary = describeYear(m, y);
 const prevY = previousYear(m, y);
 const changes = prevY ? changesBetween(prevY, y) : [];
+const pc = prosCons(m, y, recalls);
+const sp = y.specs;
+const hpText = (h?: [number, number]) => (h ? (h[0] === h[1] ? `${h[0]} hp` : `${h[0]}–${h[1]} hp`) : undefined);
+const FEAT: Record<string, [string, string]> = { std: ['Standard', 'good'], some: ['Some trims', 'warn'], opt: ['Optional', ''] };
 const ratingTop = y.rating?.find((r) => r.overall === y.overall) ?? y.rating?.[0];
 const crashPics = (y.rating ?? []).flatMap((r) => [r.frontPic && { src: r.frontPic, cap: `Frontal crash test — ${r.desc}` }, r.sidePic && { src: r.sidePic, cap: `Side crash test — ${r.desc}` }]).filter(Boolean).slice(0, 2) as { src: string; cap: string }[];
 const desc = `${name} specs, dimensions and MPG${y.range ? `, ${y.range}-mile range` : ''}${y.overall ? `, ${y.overall}-star NHTSA rating` : ''}, plus ${recalls.length} recall${recalls.length === 1 ? '' : 's'} and ${n(c.total)} owner complaints. Compare with other years and similar cars.`;
@@ -61,7 +66,7 @@ const jsonLd = [
 <Base title={`${name} Specs, MPG, Safety Rating & Recalls`} description={desc} section="makes" noindex={noindex().has(`/${m.makeSlug}/${m.slug}/${y.year}`)} jsonLd={jsonLd}>
   <div class="crumbs"><a href="/makes">Makes</a>›<a href={`/${m.makeSlug}`}>{m.make}</a>›<a href={href(m)}>{m.model}</a>›<span>{y.year}</span></div>
   <h1>{name}</h1>
-  <p class="lead">Specs, dimensions, fuel economy, safety ratings and known problems.</p>
+  <p class="lead">Trims, performance, features, fuel economy, safety and known problems — with the pros and cons against similar {y.year} models.</p>
 
   <div class="hero">
     <CarPhoto photo={m.photo} alt={`${m.make} ${m.model}`} eager />
@@ -69,7 +74,10 @@ const jsonLd = [
       <dt>Class</dt><dd>{y.cls ?? '–'}</dd>
       {bodies.length > 0 && (<><dt>Body styles</dt><dd>{bodies.slice(0, 4).join(', ')}</dd></>)}
       <dt>Engines</dt><dd>{y.engines.length ? y.engines.slice(0, 4).join(', ') : y.fuels.includes('EV') ? 'Electric motor' : '–'}</dd>
+      {sp?.hp && (<><dt>Horsepower</dt><dd><b>{hpText(sp.hp)}</b></dd></>)}
+      {sp?.trans.length ? (<><dt>Transmission</dt><dd>{sp.trans.join(', ')}</dd></>) : null}
       <dt>Drivetrain</dt><dd>{y.drives.join(', ') || '–'}</dd>
+      {sp?.seats && (<><dt>Seats</dt><dd>{sp.seats[0] === sp.seats[1] ? sp.seats[0] : `${sp.seats[0]}–${sp.seats[1]}`}</dd></>)}
       <dt>Fuel</dt><dd>{y.fuels.join(', ') || '–'}</dd>
       {y.mpg && (<><dt>MPG (best)</dt><dd><b>{y.mpg.max}</b> combined · {y.mpg.city} city / {y.mpg.hwy} hwy</dd></>)}
       {y.range && (<><dt>EV range</dt><dd><b>{y.range} mi</b>{y.charge ? ` · ${y.charge} h on 240 V` : ''}</dd></>)}
@@ -80,8 +88,21 @@ const jsonLd = [
     </dl>
   </div>
 
+  {
+    (pc.pros.length > 0 || pc.cons.length > 0) && (
+      <section class="section" id="proscons">
+        <div class="section-head"><h2>Pros &amp; cons</h2></div>
+        <div class="pc-grid">
+          <div class="pc pros"><h3>What's good</h3>{pc.pros.length ? <ul>{pc.pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">Nothing stands out against similar models in the data.</p>}</div>
+          <div class="pc cons"><h3>Watch out for</h3>{pc.cons.length ? <ul>{pc.cons.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">No weak spots against similar models in the data.</p>}</div>
+        </div>
+        <p class="small muted">Our comparison of EPA, NHTSA and manufacturer-reported (vPIC) data with the class average{y.peer ? ` and ${y.peer.n} similar ${y.year} models` : ''}. Not a road test or owner review; complaint counts grow with sales.</p>
+      </section>
+    )
+  }
+
   <nav class="tabs" aria-label="On this page">
-    <a href="#overview">Overview</a>{prevY && <a href="#changes">What changed</a>}{y.dims.length > 0 && <a href="#dimensions">Dimensions</a>}<a href="#engines">Engines &amp; MPG</a><a href="#safety">Safety</a>{(y.similar?.length ?? 0) > 0 && <a href="#similar">Similar cars</a>}<a href="#recalls">Recalls</a><a href="#problems">Problems</a>{y.year <= new Date().getUTCFullYear() - 1 && <a href="#checklist">Used buyer checklist</a>}
+    <a href="#proscons">Pros &amp; cons</a><a href="#overview">Overview</a>{prevY && <a href="#changes">What changed</a>}{sp && <a href="#trims">Trims &amp; features</a>}{y.dims.length > 0 && <a href="#dimensions">Dimensions</a>}<a href="#engines">Engines &amp; MPG</a><a href="#safety">Safety</a>{(y.similar?.length ?? 0) > 0 && <a href="#similar">Similar cars</a>}<a href="#recalls">Recalls</a><a href="#problems">Problems</a>{y.year <= new Date().getUTCFullYear() - 1 && <a href="#checklist">Used buyer checklist</a>}
   </nav>
 
   <section class="section overview" id="overview">
@@ -99,6 +120,38 @@ const jsonLd = [
           <p class="muted">No changes to engines, powertrains, drivetrains, size, EPA ratings or NHTSA crash rating compared with the {prevY.year} {m.model} — a carry-over year in the data.</p>
         )}
         <p class="small muted">Compared with the {prevY.year} model year, using EPA, Transport Canada and NHTSA data. Trim, feature and price changes are not covered.{prevY.page && <> <a href={href(m, prevY.year)}>See the {prevY.year} {m.model} →</a></>}</p>
+      </section>
+    )
+  }
+
+  {
+    sp && (
+      <section class="section" id="trims">
+        <div class="section-head"><h2>Trims, performance &amp; features</h2></div>
+        <div class="spec-grid">
+          {sp.engines.map((e) => (
+            <div class="spec-card">
+              <span class="eyebrow">{e.label === 'Electric motor' ? 'Powertrain' : 'Engine'}</span>
+              <b class="spec-big">{e.hp ? hpText(e.hp) : e.kw ? `${Math.round(e.kw * 1.341)} hp` : '–'}</b>
+              <span>{e.label}{e.kw && e.hp ? ` + ${Math.round(e.kw * 1.341)} hp electric motor` : ''}</span>
+            </div>
+          ))}
+          {sp.trans.length > 0 && <div class="spec-card"><span class="eyebrow">Transmission</span><b class="spec-mid">{sp.trans.join(' · ')}</b></div>}
+          {sp.drive.length > 0 && <div class="spec-card"><span class="eyebrow">Drive</span><b class="spec-mid">{sp.drive.join(' · ')}</b></div>}
+          {sp.seats && <div class="spec-card"><span class="eyebrow">Seating</span><b class="spec-mid">{sp.seats[0] === sp.seats[1] ? sp.seats[0] : `${sp.seats[0]}–${sp.seats[1]}`} seats{sp.rows ? ` · ${sp.rows} rows` : ''}</b></div>}
+        </div>
+        {sp.trims.length > 0 && (<><h3 style="margin:22px 0 10px">Trims</h3><div class="chips static">{sp.trims.map((t) => <span>{t}</span>)}</div></>)}
+        {sp.features && (
+          <>
+            <h3 style="margin:22px 0 10px">Safety &amp; driver-assist features</h3>
+            <div class="feat-grid">
+              {Object.entries(sp.features).map(([k, v]) => <div class="feat"><span>{k}</span><span class={`badge ${FEAT[v][1]}`}>{FEAT[v][0]}</span></div>)}
+              {sp.led && <div class="feat"><span>LED headlights</span><span class="badge good">Yes</span></div>}
+            </div>
+          </>
+        )}
+        {sp.plants.length > 0 && <p class="small" style="margin-top:16px"><b>Built in:</b> {sp.plants.join(' · ')}</p>}
+        <p class="small muted">Source: NHTSA vPIC, as reported by the manufacturer for {sp.n} {y.year} {m.model} configuration{sp.n === 1 ? '' : 's'} (the ones owners most often report to NHTSA), so the list may not include every trim or option package. "Some trims" means standard on some configurations and optional or missing on others. Horsepower is the gasoline engine's rating; hybrids also have electric motor power.</p>
       </section>
     )
   }

@@ -17,6 +17,7 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 | Fuel prices (calculator defaults) | fueleconomy.gov web service `/ws/rest/fuelprices` (EPA/DOE) | public domain, numbers only | one call per run |
 | VIN decoding | NHTSA vPIC `DecodeVinValues`, called **from the visitor's browser** | US Government work; CORS open | the VIN never reaches our server and is not stored |
 | Crash-test photos, safety tech | NHTSA NCAP | US Government work | part of the ratings calls |
+| Trims, horsepower, transmissions, seats, driver-assist features (standard/optional), assembly plant | NHTSA vPIC `DecodeVinValuesExtended` on **VIN patterns** (chars 1–8 + `*` + year/plant chars) taken from the complaint file | US Government work. **The pattern drops the check digit and serial number, so it describes a factory configuration, never one vehicle; patterns stay in data/cache and are never published** | 2,500 patterns/run, 350 ms apart, cached forever (≈18k patterns → about a week to fill) |
 | Trending / most researched | Wikimedia pageviews API | CC0; identifying User-Agent with contact required | gentle (one request per article per day) |
 | Most viewed on CarRadar | Cloudflare Web Analytics GraphQL | our own data | 300 queries / 5 min (we use 1) |
 
@@ -24,7 +25,8 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 
 - **Not a government site.** The disclaimer is on every page. No NHTSA, DOT or EPA logos or seals, and never "official".
 - **VIN check.** Every model-year page says recalls apply to specific vehicles and links to nhtsa.gov/recalls for a VIN lookup.
-- **No complaint narratives, no personal fields.** Only aggregated counts are kept.
+- **No complaint narratives, no personal fields.** Only aggregated counts are kept. VIN *patterns* (no serial number) are cached only to look up specs and are never published.
+- **Pros & cons are computed, not reviews.** They compare EPA/NHTSA/vPIC figures with the class average and rival model years, and the page says so. Third-party reviews and forum posts are not used (copyright / commercial-use terms).
 - **No thin pages** (Google scaled-content policy, AdSense low-value content):
   - Each model-year page adds class-average MPG comparison, year-over-year tables, problem areas and a monthly trend.
   - Model-years with no recalls, fewer than 3 complaints and no rating are `noindex` and left out of the sitemap.
@@ -43,6 +45,9 @@ scripts/lib/pageviews.mjs    Wikipedia title resolution (cached) + 60-day daily 
 scripts/lib/cvs.mjs          dimensions/weight (Transport Canada CVS via vPIC)
 scripts/lib/wiki.mjs         Wikipedia article per model (checked, not an index page or older namesake) + free Commons photo per model
 scripts/lib/photo-blocklist.json  Commons files rejected on manual review (interiors, race cars, wrong generation)
+scripts/lib/vinspecs.mjs     vPIC decoding of VIN patterns (trims, HP, features), budgeted and cached
+scripts/lib/specs.mjs        decoded patterns → per-year trims/engines/features summary
+src/lib/proscons.ts          data-based pros & cons vs class average and rivals
 scripts/lib/buyer.mjs        best/worst years, finder rows, head-to-head pairs, fuel prices → data/site
 scripts/lib/analytics.mjs    Cloudflare Web Analytics (optional, after launch)
 scripts/lib/aggregate.mjs    NHTSA→EPA name matching, comparisons, rankings, noindex list → data/site

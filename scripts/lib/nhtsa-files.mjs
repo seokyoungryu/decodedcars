@@ -4,6 +4,9 @@
 // US Government work. Complaint files also hold personal fields (city, partial VIN, operator name,
 // dealer contact) and owner-written narratives: we read only make/model/year/component/outcome
 // counts/dates and never store the narrative or any personal field.
+// Exception, not personal: the VIN *pattern* (characters 1–8 + model-year and plant characters, check digit and
+// serial number dropped). It describes a factory configuration shared by thousands of cars, never one vehicle, and
+// is only kept in the local cache to look up U.S. specs (trim, horsepower, features) in NHTSA vPIC.
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { CACHE, isoDate } from './store.mjs';
@@ -77,6 +80,8 @@ export async function collectRecalls(log) {
 export async function collectComplaints(log, since90) {
   const stats = new Map();
   const recent = new Map();
+  /** key|year → Map<VIN pattern, count> */
+  const patterns = new Map();
   let n = 0;
   for (const file of COMPLAINT_FILES) {
     const zip = CACHE + 'nhtsa/' + file.split('/')[1];
@@ -87,7 +92,7 @@ export async function collectComplaints(log, since90) {
       continue;
     }
     for await (const f of rows(zip)) {
-      // 2 ODINO 4 MAKE 5 MODEL 6 YEAR 7 CRASH 9 FIRE 10 INJURED 11 DEATHS 12 COMPDESC 17 LDATE 18 MILES 46 PROD_TYPE
+      // 2 ODINO 4 MAKE 5 MODEL 6 YEAR 7 CRASH 9 FIRE 10 INJURED 11 DEATHS 12 COMPDESC 15 VIN (partial) 17 LDATE 18 MILES 46 PROD_TYPE
       const odi = f[1];
       const year = Number(f[5]);
       if (f[45] !== 'V' || !(year >= MIN_YEAR && year < 9999)) continue;
@@ -102,6 +107,13 @@ export async function collectComplaints(log, since90) {
       if (s.ids.has(odi)) continue;
       s.ids.add(odi);
       n++;
+      const vin = String(f[14] ?? '').trim().toUpperCase();
+      if (/^[A-HJ-NPR-Z0-9]{11}/.test(vin)) {
+        const pk = `${k}|${year}`;
+        const pm = patterns.get(pk) ?? patterns.set(pk, new Map()).get(pk);
+        const pat = `${vin.slice(0, 8)}*${vin.slice(9, 11)}`;
+        pm.set(pat, (pm.get(pat) ?? 0) + 1);
+      }
       if (f[6] === 'Y') s.crash++;
       if (f[8] === 'Y') s.fire++;
       s.injured += Number(f[9]) || 0;
@@ -117,5 +129,5 @@ export async function collectComplaints(log, since90) {
     }
   }
   log(`Complaints: ${n} vehicle complaints`);
-  return { stats, recent };
+  return { stats, recent, patterns };
 }

@@ -6,6 +6,7 @@ import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PHOTO_DIR } from './wiki.mjs';
 import { buildBuyerData, verdict, yearBody } from './buyer.mjs';
+import { summarizeSpecs } from './specs.mjs';
 import { SITE, daysAgo, today, writeJson } from './store.mjs';
 import { norm, slug } from './keys.mjs';
 
@@ -75,7 +76,7 @@ function wikiFor(key) {
   return { overview: { title: t, text: w.extract, url: w.url }, photo: wikiCtx.wiki[`#${key}`]?.photo };
 }
 
-export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, log }) {
+export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, vinspecs = {}, log }) {
   rmSync(SITE, { recursive: true, force: true });
   wikiCtx = { wiki, titles };
   const resolve = resolver(epa);
@@ -236,8 +237,25 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   for (const m of live)
     for (const y of m.years)
       if (y.cls && y.page) (byBodyYear.get(`${yearBody(y)}|${y.year}`) ?? byBodyYear.set(`${yearBody(y)}|${y.year}`, []).get(`${yearBody(y)}|${y.year}`)).push({ m, y });
+  for (const m of live) for (const y of m.years) y.specs = summarizeSpecs(vinspecs[`${m.key}|${y.year}`]);
+  const mid = (a) => {
+    const v = a.filter((x) => x != null && !Number.isNaN(x)).sort((p, q) => p - q);
+    return v.length ? v[Math.floor(v.length / 2)] : undefined;
+  };
   for (const list of byBodyYear.values()) {
     list.sort((p, q) => (q.m.popularity?.views30 ?? 0) - (p.m.popularity?.views30 ?? 0) || q.y.complaints.total - p.y.complaints.total);
+    // rival medians for the data-based pros & cons (same year, body, tier and size as the "similar cars")
+    for (const a of list) {
+      const peers = list.filter((p) => p.m !== a.m && rivals(a, p));
+      if (peers.length >= 3)
+        a.y.peer = {
+          n: peers.length,
+          mpg: mid(peers.map((p) => p.y.mpg?.max)),
+          complaints: mid(peers.map((p) => p.y.complaints.total)),
+          recalls: mid(peers.map((p) => p.y.recalls.length)),
+          hp: mid(peers.map((p) => p.y.specs?.hp?.[1])),
+        };
+    }
     for (const a of list)
       a.y.similar = list
         .filter((p) => p.m !== a.m && p.m.make + p.m.model !== a.m.make + a.m.model && rivals(a, p))

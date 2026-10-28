@@ -355,3 +355,26 @@ details.all-years[open] > summary { margin-bottom: 12px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media print { .site-header, .site-footer, .tabs, .ad, .cta, .print-btn, nav, .band { display: none !important; } body { background: #fff; } }
+
+/* pros & cons */
+.pc-grid { display: grid; gap: 14px; }
+@media (min-width: 760px) { .pc-grid { grid-template-columns: 1fr 1fr; } }
+.pc { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; border-top: 4px solid var(--good); }
+.pc.cons { border-top-color: var(--bad); }
+.pc h3 { margin-bottom: 10px; }
+.pc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.pc li { position: relative; padding-left: 28px; }
+.pc li::before { content: '+'; position: absolute; left: 0; top: 0; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .85rem; line-height: 1; background: var(--good-bg); color: var(--good); }
+.pc.cons li::before { content: '–'; background: var(--bad-bg); color: var(--bad); }
+.pc li b { display: block; font-weight: 700; }
+.pc li span { display: block; color: var(--ink-soft); font-size: .9rem; margin-top: 2px; }
+
+/* trims & features */
+.spec-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+.spec-card { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.spec-card > span:last-child:not(.eyebrow) { color: var(--ink-mute); font-size: .86rem; }
+.spec-big { font-family: var(--font-display); font-stretch: 112%; font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.spec-mid { font-family: var(--font-display); font-stretch: 108%; font-size: 1.08rem; font-weight: 700; line-height: 1.3; }
+.chips.static span { padding: 6px 13px; border-radius: 999px; background: var(--bg-elev); border: 1px solid var(--line); font-size: .88rem; font-weight: 600; color: var(--ink-soft); }
+.feat-grid { display: grid; gap: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.feat { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: .92rem; }
