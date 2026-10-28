@@ -1,0 +1,195 @@
+---
+// Garage fit & size comparison (client-side, CVS dimensions from /finder-data.json)
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const T = es
+  ? {
+      title: '¿Cabe en mi garaje? Comparador de tamaño de autos',
+      desc: 'Comprueba si un auto, camioneta o SUV cabe en tu garaje y por la puerta, con espacio para caminar alrededor y abrir las puertas, y compara largo, ancho y alto de hasta tres vehículos.',
+      tools: 'Herramientas', h1: '¿Cabe en tu garaje? Comparador de tamaño', lead: 'Mide tu garaje una vez y mira cuánto espacio deja cada auto para caminar alrededor y abrir las puertas.',
+      typical: 'Típicos:', one: '1 auto', two: '2 autos', small2: '2 autos pequeño',
+      gl: 'Largo interior del garaje (in)', gw: 'Ancho interior del garaje (in)', dw: 'Ancho de la puerta (in)', dh: 'Alto de la puerta (in)',
+      c1: 'Auto 1', c2: 'Auto 2 (opcional)', c3: 'Auto 3 (opcional)', ph1: 'p. ej. Ford F-150', ph2: 'p. ej. Honda CR-V', ph3: 'p. ej. Toyota Camry', side: 'Estacionar los autos 1 y 2 lado a lado',
+      sizeH: 'Comparación de tamaño', roomH: '¿Cuánto espacio necesitas?',
+      room: [
+        ['Largo:', 'unos 2–3 pies (24–36 in) adelante o atrás para pasar caminando; más si hay mesa de trabajo o almacenamiento.'],
+        ['Ancho:', 'unos 2.5 pies (30 in) del lado del conductor para abrir la puerta y salir con comodidad; 2 pies es justo.'],
+        ['Puerta:', 'los espejos sobresalen más que la carrocería. Los anchos aquí son de la carrocería sin espejos, así que sumamos 9 in por ellos al pasar por la puerta.'],
+        ['Altura:', 'las puertas de garaje estándar miden 7 pies (84 in). Los racks y cajas de techo o los kits de elevación suman altura.'],
+      ],
+      dimsNote: 'Dimensiones: Canadian Vehicle Specifications de Transport Canada (Open Government Licence – Canada) para la carrocería más grande del año modelo más reciente disponible. Mide siempre tu garaje y el vehículo real.',
+    }
+  : {
+      title: 'Will It Fit My Garage? Car Size Comparison Tool',
+      desc: 'Check whether a car, truck or SUV fits your garage and garage door, with space left to walk around and open the doors — and compare the length, width and height of up to three vehicles.',
+      tools: 'Tools', h1: 'Garage fit & size comparison', lead: 'Measure your garage once, then see how much room each car leaves to walk around and open the doors.',
+      typical: 'Typical:', one: '1-car', two: '2-car', small2: 'Small 2-car',
+      gl: 'Garage inside length (in)', gw: 'Garage inside width (in)', dw: 'Door opening width (in)', dh: 'Door opening height (in)',
+      c1: 'Car 1', c2: 'Car 2 (optional)', c3: 'Car 3 (optional)', ph1: 'e.g. Ford F-150', ph2: 'e.g. Honda CR-V', ph3: 'e.g. Toyota Camry', side: 'Park cars 1 and 2 side by side',
+      sizeH: 'Size comparison', roomH: 'How much room do you need?',
+      room: [
+        ['Length:', 'about 2–3 ft (24–36 in) in front or behind to walk past, more if there is a workbench or storage.'],
+        ['Width:', "about 2.5 ft (30 in) on the driver's side to open a door and get out comfortably; 2 ft is tight."],
+        ['Door:', 'mirrors stick out further than the body. Widths here are body widths without mirrors, so we add 9 in for them at the garage door.'],
+        ['Height:', 'standard garage doors are 7 ft (84 in) tall. Roof racks, roof boxes and lift kits add height.'],
+      ],
+      dimsNote: 'Dimensions: Transport Canada Canadian Vehicle Specifications (Open Government Licence – Canada) for the largest body style of the newest model year we have. Always measure your own garage and the actual vehicle.',
+    };
+const JS = es
+  ? { pre: '/es', pick: 'Elige un auto para compararlo con tu garaje.', tight: 'Justo', fits: 'Cabe', big: 'Demasiado grande', top: 'Vista superior del garaje', door: 'puerta del garaje', lenS: 'Espacio adelante + atrás', total: 'en total', sideS: 'Espacio a cada lado', between: ' (entre autos)', doorS: 'Puerta, cada lado (con espejos)', head: 'Altura libre bajo la puerta', sideView: 'Siluetas laterales a escala', boxes: 'Siluetas laterales a escala (cajas, no la forma real).', length: 'Largo', width: 'Ancho (sin espejos)', height: 'Alto', wb: 'Distancia entre ejes' }
+  : { pre: '', pick: 'Pick a car to check it against your garage.', tight: 'Tight', fits: 'Fits', big: 'Too big', top: 'Top view of the garage', door: 'garage door', lenS: 'Front + back space', total: 'total', sideS: 'Space each side', between: ' (between cars)', doorS: 'Door, each side (with mirrors)', head: 'Headroom under door', sideView: 'Side view outlines to scale', boxes: 'Side-view outlines to scale (boxes, not the real shape).', length: 'Length', width: 'Width (no mirrors)', height: 'Height', wb: 'Wheelbase' };
+---
+
+<Base title={T.title} description={T.desc} section="tools" lang={lang} alt={es ? '/tools/garage-fit' : '/es/tools/garage-fit'}>
+  <div class="crumbs"><a href={to(lang, '/tools')}>{T.tools}</a></div>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+
+  <div class="tool-grid section">
+    <form class="card form" id="gf" onsubmit="return false">
+      <div class="presets small">
+        <span class="muted">{T.typical}</span>
+        <button type="button" class="chip" data-p="264,144,108,84">{T.one}</button>
+        <button type="button" class="chip" data-p="264,240,192,84">{T.two}</button>
+        <button type="button" class="chip" data-p="240,216,192,84">{T.small2}</button>
+      </div>
+      <label>{T.gl}<input name="gl" type="number" min="120" step="1" value="264" /></label>
+      <label>{T.gw}<input name="gw" type="number" min="72" step="1" value="240" /></label>
+      <label>{T.dw}<input name="dw" type="number" min="72" step="1" value="192" /></label>
+      <label>{T.dh}<input name="dh" type="number" min="72" step="1" value="84" /></label>
+      <label style="grid-column:1/-1">{T.c1}<input name="c1" list="cars" placeholder={T.ph1} /></label>
+      <label style="grid-column:1/-1">{T.c2}<input name="c2" list="cars" placeholder={T.ph2} /></label>
+      <label style="grid-column:1/-1">{T.c3}<input name="c3" list="cars" placeholder={T.ph3} /></label>
+      <label class="check" style="grid-column:1/-1"><input type="checkbox" name="side" /> {T.side}</label>
+      <datalist id="cars"></datalist>
+    </form>
+    <div id="out" aria-live="polite"></div>
+  </div>
+  <script type="application/json" id="i18n" set:html={JSON.stringify(JS)} />
+
+  <section class="section">
+    <div class="section-head"><h2>{T.sizeH}</h2></div>
+    <div id="cmp"></div>
+  </section>
+
+  <section class="section prose">
+    <h2>{T.roomH}</h2>
+    <ul>{T.room.map(([k, v]) => <li><b>{k}</b> {v}</li>)}</ul>
+    <p class="small muted">{T.dimsNote}</p>
+  </section>
+  <Ad place="bottom" lang={lang} />
+</Base>
+
+<script>
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; len?: number; wd?: number; ht?: number; wb?: number; dy?: number; pop: number };
+  const T = JSON.parse(document.getElementById('i18n')!.textContent!);
+  const MIRRORS = 9; // body width → width across the mirrors, roughly
+  const form = document.getElementById('gf') as HTMLFormElement;
+  const out = document.getElementById('out')!;
+  const cmp = document.getElementById('cmp')!;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const ftin = (v: number) => {
+    const s = v < 0 ? '−' : '';
+    const a = Math.abs(Math.round(v));
+    return a >= 12 ? `${s}${Math.floor(a / 12)} ft ${a % 12} in` : `${s}${a} in`;
+  };
+  let byName = new Map<string, Row>();
+  const COLORS = ['var(--brand)', 'var(--accent-2)', 'var(--accent-3)'];
+  // model pages exist in both languages; model-year pages may not exist in Spanish
+  const carLink = (c: Row) => (T.pre ? `${T.pre}/${c.ms}/${c.s}` : `/${c.ms}/${c.s}/${c.dy ?? c.y}`);
+  const carName = (c: Row) => (T.pre ? `${esc(c.mk)} ${esc(c.md)} ${c.dy ?? c.y}` : `${c.dy ?? c.y} ${esc(c.mk)} ${esc(c.md)}`);
+
+  function verdict(ok: boolean, tight: boolean) {
+    return ok ? (tight ? `<span class="badge warn">${T.tight}</span>` : `<span class="badge good">${T.fits}</span>`) : `<span class="badge bad">${T.big}</span>`;
+  }
+
+  function render() {
+    const f = new FormData(form);
+    const g = { l: +f.get('gl')!, w: +f.get('gw')!, dw: +f.get('dw')!, dh: +f.get('dh')! };
+    const cars = ['c1', 'c2', 'c3'].map((k) => byName.get(String(f.get(k)))).filter((r): r is Row => !!r?.len);
+    if (!cars.length) {
+      out.innerHTML = `<div class="result-card"><p class="muted">${T.pick}</p></div>`;
+      cmp.innerHTML = '';
+      return;
+    }
+    const side = !!f.get('side') && cars.length >= 2;
+    // top-down drawing, 1 in = s px
+    const s = 300 / Math.max(g.l, g.w);
+    const W = g.w * s, L = g.l * s;
+    let shapes = '';
+    const placed = side ? cars.slice(0, 2) : [cars[0]];
+    const gap = side ? (g.w - placed[0].wd! - placed[1].wd!) / 3 : (g.w - placed[0].wd!) / 2;
+    let x = gap;
+    placed.forEach((c, i) => {
+      shapes += `<rect x="${x * s}" y="${((g.l - c.len!) / 2) * s}" width="${c.wd! * s}" height="${c.len! * s}" rx="${8 * s}" fill="${COLORS[i]}" fill-opacity=".85"/><text x="${(x + c.wd! / 2) * s}" y="${(g.l / 2) * s}" text-anchor="middle" dominant-baseline="middle" class="svg-label">${esc(c.md)}</text>`;
+      x += c.wd! + gap;
+    });
+    const doorX = ((g.w - g.dw) / 2) * s;
+    const svg = `<svg viewBox="-12 -12 ${W + 24} ${L + 30}" class="garage-svg" role="img" aria-label="${T.top}">
+      <rect x="0" y="0" width="${W}" height="${L}" class="g-wall"/>
+      <line x1="${doorX}" y1="${L}" x2="${doorX + g.dw * s}" y2="${L}" class="g-door"/>
+      ${shapes}
+      <text x="${W / 2}" y="${L + 14}" text-anchor="middle" class="svg-note">${T.door}</text></svg>`;
+
+    const rows = cars.map((c, i) => {
+      const lenLeft = g.l - c.len!;
+      const sideLeft = side && i < 2 ? gap : (g.w - c.wd!) / 2;
+      const doorLeft = (g.dw - c.wd! - MIRRORS) / 2;
+      const hLeft = g.dh - c.ht!;
+      const ok = lenLeft > 0 && sideLeft > 0 && doorLeft > 0 && hLeft > 0;
+      const tight = lenLeft < 36 || sideLeft < 30 || doorLeft < 6 || hLeft < 4;
+      return `<div class="fit-row"><div class="fit-head"><i class="dot" style="background:${COLORS[i]}"></i><a href="${carLink(c)}">${carName(c)}</a> ${verdict(ok, tight)}</div>
+        <dl class="facts compact">
+          <dt>${T.lenS}</dt><dd class="${lenLeft < 0 ? 'neg' : lenLeft < 36 ? 'warn' : ''}">${ftin(lenLeft)} ${T.total}</dd>
+          <dt>${T.sideS}${side && i < 2 ? T.between : ''}</dt><dd class="${sideLeft < 0 ? 'neg' : sideLeft < 30 ? 'warn' : ''}">${ftin(sideLeft)}</dd>
+          <dt>${T.doorS}</dt><dd class="${doorLeft < 0 ? 'neg' : doorLeft < 6 ? 'warn' : ''}">${ftin(doorLeft)}</dd>
+          <dt>${T.head}</dt><dd class="${hLeft < 0 ? 'neg' : hLeft < 4 ? 'warn' : ''}">${ftin(hLeft)}</dd>
+        </dl></div>`;
+    });
+    out.innerHTML = `<div class="result-card garage">${svg}${rows.join('')}</div>`;
+
+    // size comparison: table + side-view silhouettes to scale
+    const maxL = Math.max(...cars.map((c) => c.len!));
+    const sv = 560 / maxL;
+    const maxH = Math.max(...cars.map((c) => c.ht!));
+    const sideSvg = `<svg viewBox="0 0 580 ${maxH * sv + 20}" class="size-svg" role="img" aria-label="${T.sideView}">${cars
+      .map((c, i) => `<rect x="10" y="${(maxH - c.ht!) * sv + 10}" width="${c.len! * sv}" height="${c.ht! * sv}" rx="${10 * sv}" fill="none" stroke="${COLORS[i]}" stroke-width="2.5"/>`)
+      .join('')}</svg>`;
+    const fmt = (v?: number) => (v ? `${v.toFixed(1)} in` : '–');
+    const rowsT: [string, (c: Row) => string][] = [
+      [T.length, (c) => fmt(c.len)],
+      [T.width, (c) => fmt(c.wd)],
+      [T.height, (c) => fmt(c.ht)],
+      [T.wb, (c) => fmt(c.wb)],
+    ];
+    cmp.innerHTML = `<div class="card">${sideSvg}<p class="small muted" style="margin:6px 0 0">${T.boxes}</p></div>
+      <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th></th>${cars.map((c, i) => `<th><i class="dot" style="background:${COLORS[i]}"></i> ${c.dy ?? c.y} ${esc(c.md)}</th>`).join('')}</tr></thead>
+      <tbody>${rowsT.map(([k, fn]) => `<tr><td>${k}</td>${cars.map((c) => `<td>${fn(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+
+  form.addEventListener('input', render);
+  form.querySelectorAll<HTMLButtonElement>('[data-p]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const [gl, gw, dw, dh] = b.dataset.p!.split(',');
+      Object.entries({ gl, gw, dw, dh }).forEach(([k, v]) => ((form.elements.namedItem(k) as HTMLInputElement).value = v));
+      render();
+    }),
+  );
+  fetch('/finder-data.json')
+    .then((r) => r.json())
+    .then((d) => {
+      const rows: Row[] = d.rows.filter((r: Row) => r.len && r.wd && r.ht).sort((p: Row, q: Row) => q.pop - p.pop);
+      byName = new Map(rows.map((r) => [`${r.mk} ${r.md}`, r]));
+      document.getElementById('cars')!.innerHTML = rows.map((r) => `<option value="${esc(`${r.mk} ${r.md}`)}">`).join('');
+      const p = new URLSearchParams(location.search);
+      (form.elements.namedItem('c1') as HTMLInputElement).value = p.get('a') ?? 'Ford F-150';
+      (form.elements.namedItem('c2') as HTMLInputElement).value = p.get('b') ?? 'Honda CR-V';
+      render();
+    });
+</script>

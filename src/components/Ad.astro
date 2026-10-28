@@ -2,16 +2,19 @@
 // One AdSense slot. Nothing renders until ADSENSE_CLIENT and a slot ID are set (Auto ads are handled in Base).
 // Policy: labeled "Advertisement", never next to navigation or the VIN-lookup button.
 import { ADSENSE_CLIENT, ADSENSE_SLOTS } from '@/config/site';
+import { type Lang, UI } from '@/i18n';
 interface Props {
   place: keyof typeof ADSENSE_SLOTS;
+  lang?: Lang;
 }
 const slot = ADSENSE_CLIENT && ADSENSE_SLOTS[Astro.props.place];
+const label = UI[Astro.props.lang ?? 'en'].ad;
 ---
 
 {
   slot && (
-    <aside class="ad" aria-label="Advertisement">
-      <span class="ad-label">Advertisement</span>
+    <aside class="ad" aria-label={label}>
+      <span class="ad-label">{label}</span>
       <ins class="adsbygoogle" style="display:block" data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot} data-ad-format="auto" data-full-width-responsive="true" />
       <script is:inline>(window.adsbygoogle = window.adsbygoogle || []).push({});</script>
     </aside>

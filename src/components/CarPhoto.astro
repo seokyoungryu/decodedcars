@@ -2,12 +2,15 @@
 // Free-licensed Wikimedia Commons photo with the attribution its license requires (author, license, source link).
 // The photo is of the model in general, not necessarily the exact model year — the caption says what it shows.
 import type { Photo } from '@/lib/data';
+import { type Lang, UI } from '@/i18n';
 interface Props {
   photo?: Photo;
   alt: string;
   eager?: boolean;
+  lang?: Lang;
 }
-const { photo, alt, eager = false } = Astro.props;
+const { photo, alt, eager = false, lang = 'en' } = Astro.props;
+const t = UI[lang];
 ---
 
 {
@@ -15,9 +18,9 @@ const { photo, alt, eager = false } = Astro.props;
     <figure class="photo">
       <img src={`/photos/${photo.file}`} alt={alt} width={photo.w} height={photo.h} loading={eager ? 'eager' : 'lazy'} decoding="async" />
       <figcaption>
-        Pictured: {photo.caption}. Photo:{' '}
+        {t.pictured}: {photo.caption}. {t.photo}:{' '}
         <a href={photo.page} rel="noopener" target="_blank">{photo.artist}</a>,{' '}
-        {photo.licenseUrl ? <a href={photo.licenseUrl} rel="noopener license" target="_blank">{photo.license}</a> : photo.license}, via Wikimedia Commons
+        {photo.licenseUrl ? <a href={photo.licenseUrl} rel="noopener license" target="_blank">{photo.license}</a> : photo.license}, {t.via}
       </figcaption>
     </figure>
   ) : (

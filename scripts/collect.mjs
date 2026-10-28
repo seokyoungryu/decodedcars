@@ -14,6 +14,7 @@ import { collectSiteViews } from './lib/analytics.mjs';
 import { collectCvs } from './lib/cvs.mjs';
 import { collectWiki } from './lib/wiki.mjs';
 import { collectVinSpecs } from './lib/vinspecs.mjs';
+import { collectWikiEs } from './lib/wiki-es.mjs';
 import { aggregate, displayName, resolver } from './lib/aggregate.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
@@ -59,6 +60,7 @@ const wikiModels = recentModels.map((m) => ({ key: m.key, make: m.make, model: d
 const { titles, wiki } = await step('wiki', () => collectWiki(wikiModels, { budget: Number(args.wiki ?? 1500), log }), { titles: await readJson(CACHE + 'wiki-titles.json', {}), wiki: await readJson(CACHE + 'wiki.json', {}) });
 const views = await step('pageviews', () => collectPageviews(recentModels.map((m) => ({ key: m.key })), titles, { log }), await readJson(CACHE + 'pageviews.json', {}));
 const siteViews = await step('analytics', () => collectSiteViews(log), {});
+const wikiEs = await step('wikies', () => collectWikiEs(Object.values(titles).filter(Boolean), { log }), await readJson(CACHE + 'wiki-es.json', {}).then((c) => Object.fromEntries(Object.entries(c).filter(([, v]) => v.extract))));
 
 // U.S. trims, horsepower and features: decode the most-reported VIN patterns of each model year (popular + recent first)
 const patternsBy = new Map();
@@ -84,7 +86,7 @@ const cvsJobs = [...new Set([...epa.values()].flatMap((m) => Object.keys(m.years
 const cvs = await step('cvs', () => collectCvs(cvsJobs, { budget: Number(args.cvs ?? 600), log }), await readJson(CACHE + 'cvs.json', {}));
 
 
-await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, vinspecs, log }));
+await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, vinspecs, wikiEs, log }));
 if (failed.length) {
   log('Failed:', failed.join(', '));
   process.exit(1);

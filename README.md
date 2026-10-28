@@ -12,7 +12,7 @@ Fully automatic: GitHub Actions collects, builds and deploys to Cloudflare Pages
 | Crash ratings | NHTSA NCAP API `api.nhtsa.gov/SafetyRatings` | US Government work | no published limit → slow, cached, ≤2,500 calls/day |
 | Specs, MPG, EV range, fuel cost | EPA `vehicles.csv.zip` (fueleconomy.gov) | EPA Data License: public domain. **fueleconomy.gov photos are manufacturer-copyrighted, page text is non-commercial — use numbers only** | – |
 | Dimensions, curb weight | Transport Canada Canadian Vehicle Specifications via NHTSA vPIC | **Open Government Licence – Canada: attribution required** (footer + under each dimensions table) | vPIC rate control → one call per make-year, 400 ms apart, cached 60 days for recent years |
-| Model overview text | Wikipedia REST page summary | **CC BY-SA 4.0: shown unmodified, with article link and license** | cached 30 days |
+| Model overview text | Wikipedia REST page summary (English; Spanish pages use the Spanish article linked from it via langlinks) | **CC BY-SA 4.0: shown unmodified, with article link and license** | cached 30 days; 1 langlinks call per 25 titles |
 | Model photo | Wikimedia Commons (the article's lead image, else another image of the article) | **Only free licenses (CC0/PD/CC BY/CC BY-SA); author, license and file link shown under the photo**; non-free enwiki images skipped | one Commons call per model, 1 s apart, cached 30 days |
 | Fuel prices (calculator defaults) | fueleconomy.gov web service `/ws/rest/fuelprices` (EPA/DOE) | public domain, numbers only | one call per run |
 | VIN decoding | NHTSA vPIC `DecodeVinValues`, called **from the visitor's browser** | US Government work; CORS open | the VIN never reaches our server and is not stored |
@@ -104,6 +104,15 @@ npm run build && npm run preview
 - Horsepower/torque: no free official dataset found (EPA and NCAP don't publish it).
 - Choosing a final brand name and domain ("CarRadar" is a working name).
 - More buyer tools: lease calculator, recall RSS per model.
+
+## Spanish (/es)
+
+Spanish (U.S.) version for Hispanic U.S. readers, same data:
+- Pages: home, makes, every make and model page, the top 5,000 indexable model-year pages (`ES_YEAR_PAGES` in aggregate.mjs), finder, all tools, about/terms/privacy. Comparisons, rankings, recalls and guides link to the English pages (labeled "en inglés").
+- Each page is one view in `src/views/` with a `lang` prop; `src/pages/…` and `src/pages/es/…` are thin routes. Shared words in `src/i18n/index.ts`, data labels (EPA classes, fuels, drives, NHTSA components, features) in `src/i18n/terms.ts`; sentence generators (describe, changes, pros & cons) take `lang`.
+- Our own sentences are translated by hand. NHTSA recall summaries stay in their official English, marked as such. Spanish legal pages say the English version prevails.
+- hreflang en/es/x-default on every page that exists in both languages, plus an EN/ES switch in the header.
+- File budget: about 15,500 files of Cloudflare's 20,000 (≈9,450 English + ≈6,000 Spanish).
 
 ## Design
 

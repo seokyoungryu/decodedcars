@@ -28,6 +28,7 @@ function rivals(a, b) {
 }
 const NOT_GAS = new Set(['EV', 'FCV']); // MPGe, not comparable with gasoline MPG
 const MAX_YEAR_PAGES = 15000; // Cloudflare Pages free plan: 20k files total
+const ES_YEAR_PAGES = 5000; // Spanish model-year pages: the most useful indexable ones (file budget shared with English)
 const median = (a) => {
   if (!a.length) return undefined;
   const s = [...a].sort((x, y) => x - y);
@@ -67,18 +68,19 @@ export function displayName(epaName, nhtsaName) {
 }
 
 /** Wikipedia overview + free photo for a model (via its resolved article title) */
-let wikiCtx = { wiki: {}, titles: {} };
+let wikiCtx = { wiki: {}, titles: {}, es: {} };
 function wikiFor(key) {
   const t = wikiCtx.titles[key];
   const w = t && wikiCtx.wiki[t];
   if (!w?.extract) return {};
   // the photo is chosen per model (an article can cover several models and generations)
-  return { overview: { title: t, text: w.extract, url: w.url }, photo: wikiCtx.wiki[`#${key}`]?.photo };
+  const e = wikiCtx.es[t];
+  return { overview: { title: t, text: w.extract, url: w.url }, ...(e && { overviewEs: { title: e.title, text: e.extract, url: e.url } }), photo: wikiCtx.wiki[`#${key}`]?.photo };
 }
 
-export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, vinspecs = {}, log }) {
+export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, vinspecs = {}, wikiEs = {}, log }) {
   rmSync(SITE, { recursive: true, force: true });
-  wikiCtx = { wiki, titles };
+  wikiCtx = { wiki, titles, es: wikiEs };
   const resolve = resolver(epa);
   const nowYear = new Date().getUTCFullYear();
 
@@ -221,6 +223,8 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
     p.y.page = kept.has(`${p.m.key}|${p.y.year}`);
     if (p.y.page && !p.y.rich) noindex.push(`/${p.m.makeSlug}/${p.m.slug}/${p.y.year}`);
   }
+  let esCount = 0;
+  for (const p of yearPages) if (p.y.page && p.y.rich && esCount < ES_YEAR_PAGES) (p.y.es = true), esCount++;
 
   // Slug collisions (two EPA base models that slugify the same) → keep the one with more data
   const seen = new Map();
@@ -260,7 +264,7 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       a.y.similar = list
         .filter((p) => p.m !== a.m && p.m.make + p.m.model !== a.m.make + a.m.model && rivals(a, p))
         .slice(0, 6)
-        .map((p) => ({ make: p.m.make, model: p.m.model, makeSlug: p.m.makeSlug, slug: p.m.slug, year: p.y.year, mpg: p.y.mpg?.max, range: p.y.range, overall: p.y.overall, recalls: p.y.recalls.length }));
+        .map((p) => ({ make: p.m.make, model: p.m.model, makeSlug: p.m.makeSlug, slug: p.m.slug, year: p.y.year, es: p.y.es, mpg: p.y.mpg?.max, range: p.y.range, overall: p.y.overall, recalls: p.y.recalls.length }));
   }
 
 

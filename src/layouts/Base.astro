@@ -1,7 +1,8 @@
 ---
 import '@/styles/global.css';
 import { SITE_URL } from '@/config/site-url.mjs';
-import { ADSENSE_CLIENT, CONTACT_EMAIL, NOTICE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, VIN_LOOKUP } from '@/config/site';
+import { ADSENSE_CLIENT, CONTACT_EMAIL, SITE_DESCRIPTION, SITE_NAME, VIN_LOOKUP } from '@/config/site';
+import { type Lang, UI, to } from '@/i18n';
 
 interface Props {
   title: string;
@@ -9,23 +10,32 @@ interface Props {
   noindex?: boolean;
   section?: 'makes' | 'recalls' | 'rankings' | 'guide' | 'finder' | 'compare' | 'tools';
   jsonLd?: Record<string, unknown>[];
+  lang?: Lang;
+  /** this page's path in the other language, when that version exists (hreflang + language switch) */
+  alt?: string;
 }
-const { title, description = SITE_DESCRIPTION, noindex = false, section, jsonLd = [] } = Astro.props;
+const { title, description = SITE_DESCRIPTION, noindex = false, section, jsonLd = [], lang = 'en', alt } = Astro.props;
+const t = UI[lang];
 const path = Astro.url.pathname.replace(/\.html$/, '').replace(/\/(index)?$/, '') || '/';
-const fullTitle = path === '/' ? `${SITE_NAME} — ${SITE_TAGLINE}` : `${title} | ${SITE_NAME}`;
+const home = path === '/' || path === '/es';
+const fullTitle = home ? `${SITE_NAME} — ${t.tagline}` : `${title} | ${SITE_NAME}`;
 const canonical = new URL(path, SITE_URL).href;
+const altUrl = alt ? new URL(alt, SITE_URL).href : undefined;
+const enUrl = lang === 'en' ? canonical : altUrl;
+const esUrl = lang === 'es' ? canonical : altUrl;
+// Spanish pages link to the English versions of sections that are not translated (yet)
 const NAV = [
-  { href: '/finder', key: 'finder', label: 'Car finder' },
-  { href: '/compare', key: 'compare', label: 'Compare' },
-  { href: '/makes', key: 'makes', label: 'Makes' },
-  { href: '/rankings', key: 'rankings', label: 'Rankings' },
-  { href: '/tools', key: 'tools', label: 'Tools' },
-  { href: '/recalls', key: 'recalls', label: 'Recalls' },
+  { href: to(lang, '/finder'), key: 'finder', label: t.finder },
+  { href: lang === 'es' ? '/compare' : '/compare', key: 'compare', label: t.compare },
+  { href: to(lang, '/makes'), key: 'makes', label: t.makes },
+  ...(lang === 'en' ? [{ href: '/rankings', key: 'rankings', label: t.rankings }] : []),
+  { href: to(lang, '/tools'), key: 'tools', label: t.tools },
+  { href: '/recalls', key: 'recalls', label: t.recalls },
 ];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang === 'es' ? 'es' : 'en'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -34,10 +44,12 @@ const NAV = [
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex, follow" />}
+    {enUrl && esUrl && !noindex && (<><link rel="alternate" hreflang="en" href={enUrl} /><link rel="alternate" hreflang="es" href={esUrl} /><link rel="alternate" hreflang="x-default" href={enUrl} /></>)}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content={lang === 'es' ? 'es_US' : 'en_US'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -48,10 +60,11 @@ const NAV = [
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a href="/" class="logo"><img src="/favicon.svg" alt="" width="28" height="28" />{SITE_NAME}</a>
-        <nav class="nav" aria-label="Main">
+        <a href={to(lang, '/')} class="logo"><img src="/favicon.svg" alt="" width="28" height="28" />{SITE_NAME}</a>
+        <nav class="nav" aria-label={lang === 'es' ? 'Principal' : 'Main'}>
           {NAV.map((n) => <a href={n.href} aria-current={section === n.key ? 'page' : undefined}>{n.label}</a>)}
         </nav>
+        {alt && <a class="lang-switch" href={alt} hreflang={lang === 'es' ? 'en' : 'es'} lang={lang === 'es' ? 'en' : 'es'} title={t.switchLabel}>{lang === 'es' ? 'EN' : 'ES'}</a>}
       </div>
     </header>
     <main><div class="wrap"><slot /></div></main>
@@ -59,24 +72,24 @@ const NAV = [
       <div class="wrap">
         <div class="footer-top">
           <div>
-            <a href="/" class="logo"><img src="/favicon.svg" alt="" width="28" height="28" />{SITE_NAME}</a>
-            <p>{SITE_TAGLINE}. Independent data from the EPA, NHTSA and Transport Canada, updated every day.</p>
+            <a href={to(lang, '/')} class="logo"><img src="/favicon.svg" alt="" width="28" height="28" />{SITE_NAME}</a>
+            <p>{t.tagline}. {t.footerAbout}</p>
           </div>
           <div>
-            <h4>Research</h4>
-            <ul><li><a href="/finder">Car finder</a></li><li><a href="/compare">Compare cars</a></li><li><a href="/makes">All makes</a></li><li><a href="/rankings">Rankings</a></li><li><a href="/recalls">New recalls</a></li></ul>
+            <h4>{t.research}</h4>
+            <ul><li><a href={to(lang, '/finder')}>{t.finder}</a></li><li><a href="/compare">{t.compareCars}</a></li><li><a href={to(lang, '/makes')}>{t.allMakes}</a></li>{lang === 'en' && <li><a href="/rankings">{t.rankings}</a></li>}<li><a href="/recalls">{t.newRecalls}</a></li></ul>
           </div>
           <div>
-            <h4>Tools</h4>
-            <ul><li><a href="/tools/vin-decoder">VIN decoder</a></li><li><a href="/tools/fuel-cost">Fuel cost calculator</a></li><li><a href="/tools/car-loan">Car loan calculator</a></li><li><a href="/tools/garage-fit">Garage fit</a></li></ul>
+            <h4>{t.tools}</h4>
+            <ul><li><a href={to(lang, '/tools/vin-decoder')}>{t.vinTool}</a></li><li><a href={to(lang, '/tools/fuel-cost')}>{t.fuelTool}</a></li><li><a href={to(lang, '/tools/car-loan')}>{t.loanTool}</a></li><li><a href={to(lang, '/tools/garage-fit')}>{t.garageTool}</a></li></ul>
           </div>
           <div>
-            <h4>Site</h4>
-            <ul><li><a href="/about">About</a></li><li><a href="/guide">Guides</a></li><li><a href="/terms">Terms &amp; disclaimer</a></li><li><a href="/privacy">Privacy</a></li>{CONTACT_EMAIL && <li><a href={`mailto:${CONTACT_EMAIL}`}>Contact</a></li>}<li><a href={VIN_LOOKUP} rel="noopener" target="_blank">Check your VIN at NHTSA ↗</a></li></ul>
+            <h4>{t.site}</h4>
+            <ul><li><a href={to(lang, '/about')}>{t.about}</a></li>{lang === 'en' && <li><a href="/guide">{t.guides}</a></li>}<li><a href={to(lang, '/terms')}>{t.terms}</a></li><li><a href={to(lang, '/privacy')}>{t.privacy}</a></li>{CONTACT_EMAIL && <li><a href={`mailto:${CONTACT_EMAIL}`}>{t.contact}</a></li>}<li><a href={VIN_LOOKUP} rel="noopener" target="_blank">{t.vinCheck}</a></li>{alt && <li><a href={alt} hreflang={lang === 'es' ? 'en' : 'es'}>{t.switchTo}</a></li>}</ul>
           </div>
         </div>
-        <p>{NOTICE}</p>
-        <p>Data: EPA fuel economy data; NHTSA recalls, consumer complaints and NCAP ratings; Transport Canada Canadian Vehicle Specifications — contains information licensed under the Open Government Licence – Canada; Wikipedia text (CC BY-SA 4.0), Wikimedia Commons photos (license shown under each photo) and pageview statistics (CC0). MPG figures are EPA estimates; your results will vary.</p>
+        <p>{t.notice}</p>
+        <p>{t.dataNote}</p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>
     </footer>

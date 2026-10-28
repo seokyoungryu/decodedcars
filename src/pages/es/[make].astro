@@ -1,0 +1,11 @@
+---
+import MakeView from '@/views/MakeView.astro';
+import { type MakeEntry, makes } from '@/lib/data';
+
+export function getStaticPaths() {
+  return makes().map((mk) => ({ params: { make: mk.slug }, props: { mk } }));
+}
+const { mk } = Astro.props as { mk: MakeEntry };
+---
+
+<MakeView mk={mk} lang="es" />

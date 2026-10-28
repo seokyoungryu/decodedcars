@@ -1,13 +1,5 @@
 ---
-import Base from '@/layouts/Base.astro';
-import { TOOLS } from '@/lib/tools';
+import ToolsView from '@/views/ToolsView.astro';
 ---
 
-<Base title="Car Buying Tools" description="Free car buying tools: car finder, head-to-head comparisons, VIN decoder, fuel cost and car loan calculators, and a garage fit and size comparison tool." section="tools">
-  <section class="band">
-    <span class="eyebrow">Free · no sign-up</span>
-    <h1 style="margin-top:10px">Car buying tools</h1>
-    <p class="lead">Shortlist, compare, check and budget for a car before you buy — all running right in your browser.</p>
-  </section>
-  <div class="tool-cards section">{TOOLS.map((t) => <a href={t.href}><span class="ic" set:html={t.icon} /><h2>{t.title}</h2><p>{t.text}</p></a>)}</div>
-</Base>
+<ToolsView lang="en" />

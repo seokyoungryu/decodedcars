@@ -1,0 +1,234 @@
+---
+// One model across all years (English at /make/model, Spanish at /es/make/model)
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import Stars from '@/components/Stars.astro';
+import Bars from '@/components/Bars.astro';
+import CarPhoto from '@/components/CarPhoto.astro';
+import VerdictCard from '@/components/VerdictCard.astro';
+import { VIN_LOOKUP } from '@/config/site';
+import { type Model, campaigns, href, model as loadModel, vsFor } from '@/lib/data';
+import { changeLog } from '@/lib/changes';
+import { prosCons } from '@/lib/proscons';
+import { type Lang, num, to } from '@/i18n';
+import { classL, compL, engineL } from '@/i18n/terms';
+
+interface Props {
+  m: Model;
+  lang: Lang;
+}
+const { m, lang } = Astro.props;
+const es = lang === 'es';
+const years = m.years.filter((y) => y.page);
+const latest = years[0];
+const first = years.at(-1)!;
+const log = changeLog(m, lang).slice(0, 12);
+const thisYear = new Date().getUTCFullYear();
+// alternatives from the newest year that has enough rivals (next-year models trickle in during the year)
+const alt = years.find((y) => y.year <= thisYear && (y.similar?.length ?? 0) >= 3) ?? latest;
+// pros & cons for the newest year that isn't next year's partial data
+const pcYear = years.find((y) => y.year <= thisYear) ?? latest;
+const C = campaigns();
+const pc = prosCons(m, pcYear, pcYear.recalls.map((id) => C[id]).filter(Boolean), lang);
+const recallIds = new Set(years.flatMap((y) => y.recalls));
+const totalComplaints = years.reduce((s, y) => s + y.complaints.total, 0);
+const worst = [...years].sort((a, b) => b.complaints.total - a.complaints.total)[0];
+// "best used year": 3+ years old, fewest problems (recalls weighted). Complaints are counted from 2015,
+// so older model years would look artificially clean — only compare 2015+.
+const fewest = [...years].filter((y) => y.year >= 2015 && y.year <= thisYear - 3).sort((a, b) => a.complaints.total + a.recalls.length * 20 - (b.complaints.total + b.recalls.length * 20))[0];
+const comps: Record<string, number> = {};
+for (const y of years) for (const [c, k] of y.complaints.comps) comps[c] = (comps[c] ?? 0) + k;
+const topComps = Object.entries(comps).sort((a, b) => b[1] - a[1]).slice(0, 8);
+const classes = [...new Set(years.map((y) => classL(lang, y.cls)).filter((c) => c && c !== '–'))];
+const mpgs = years.map((y) => y.mpg?.max).filter(Boolean) as number[];
+const ranges = years.map((y) => y.range).filter(Boolean) as number[];
+const len = (y: (typeof years)[number]) => y.dims.find((d) => d.length)?.length;
+const wt = (y: (typeof years)[number]) => y.dims.find((d) => d.weight)?.weight;
+const pop = m.popularity;
+const title = `${m.make} ${m.model}`;
+const nameOf = (mk: string, s: string) => {
+  const o = loadModel(mk, s);
+  return o ? `${o.make} ${o.model}` : s;
+};
+const rivals = vsFor(m.makeSlug, m.slug)
+  .slice(0, 6)
+  .map((p) => ({ id: p.id, other: p.a[0] === m.makeSlug && p.a[1] === m.slug ? nameOf(...p.b) : nameOf(...p.a) }));
+const yearLink = (year: number, hasEs?: boolean) => (es && hasEs ? to('es', href(m, year)) : href(m, year));
+const rated = years.find((y) => y.overall);
+const overview = es ? m.overviewEs : m.overview;
+
+const T = {
+  en: {
+    title: `${title}: Specs, MPG, Safety & Problems by Year`,
+    desc: `${title} by model year (${first.year}–${latest.year}): specs, size, MPG${ranges.length ? ', EV range' : ''}, NHTSA safety ratings, ${recallIds.size} recalls and ${num(lang, totalComplaints)} owner complaints compared${fewest ? `. Fewest problems: ${fewest.year}` : ''}.`,
+    makes: 'Makes', lead: `${years.length} model years from ${first.year} to ${latest.year}, compared on size, efficiency, safety and reliability.`,
+    years: 'Model years', cls: 'Class', engines: 'Latest engines', electric: 'Electric', bestMpg: 'Best MPG', byYear: 'combined, by year', evRange: 'EV range', upTo: 'up to',
+    rating: 'Latest rating', recalls: 'Recalls', campaignsAll: (k: number) => `${k} campaigns, all years`, most: 'Most complaints', fewest: 'Fewest problems', interest: 'Interest', views: 'Wikipedia views / 30 days',
+    about: `About the ${title}`, fromWiki: 'From the Wikipedia article', licensed: 'licensed under',
+    pcH: `${pcYear.year} ${m.model} pros & cons`, full: `Full ${pcYear.year} details →`, good: "What's good", watch: 'Watch out for', noPros: 'Nothing stands out against similar models in the data.', noCons: 'No weak spots against similar models in the data.',
+    h2h: 'Compare head to head', changesH: `${m.model} changes by model year`,
+    changesNote: 'Differences in engines, powertrains, drivetrains, size, EPA ratings and NHTSA crash ratings from one model year to the next. Years without a measurable change are left out.',
+    showAll: `Show all ${years.length} model years side by side`, year: 'Year', bestMpgRange: 'Best MPG / range', length: 'Length', weight: 'Weight', overall: 'Overall', complaints: 'Complaints',
+    mpgChart: `Best combined MPG by model year — ${title}`, altH: `Alternatives to the ${alt.year} ${m.model}`, model: 'Model', nhtsaOverall: 'NHTSA overall',
+    probH: 'Most common owner-reported problems', cmplChart: `Owner complaints by model year — ${title}`, vin: 'Check your VIN for open recalls ↗',
+    source: `Sources: EPA fuel economy data; NHTSA ratings, recalls and complaints; NHTSA vPIC; Transport Canada Canadian Vehicle Specifications (Open Government Licence – Canada); Wikipedia (CC BY-SA 4.0) and Wikimedia Commons. Comparisons calculated by CarRadar. Not affiliated with NHTSA, the EPA or ${m.make}.`,
+  },
+  es: {
+    title: `${title}: ficha técnica, consumo, seguridad y problemas por año`,
+    desc: `${title} por año modelo (${first.year}–${latest.year}): ficha técnica, tamaño, consumo${ranges.length ? ', autonomía eléctrica' : ''}, calificaciones de seguridad NHTSA, ${recallIds.size} retiros y ${num(lang, totalComplaints)} quejas de propietarios${fewest ? `. Menos problemas: ${fewest.year}` : ''}.`,
+    makes: 'Marcas', lead: `${years.length} años modelo de ${first.year} a ${latest.year}, comparados en tamaño, eficiencia, seguridad y confiabilidad.`,
+    years: 'Años modelo', cls: 'Clase', engines: 'Motores recientes', electric: 'Eléctrico', bestMpg: 'Mejor MPG', byYear: 'combinadas, según el año', evRange: 'Autonomía eléctrica', upTo: 'hasta',
+    rating: 'Última calificación', recalls: 'Retiros', campaignsAll: (k: number) => `${k} campañas, todos los años`, most: 'Más quejas', fewest: 'Menos problemas', interest: 'Interés', views: 'visitas en Wikipedia / 30 días',
+    about: `Acerca del ${title}`, fromWiki: 'Del artículo de Wikipedia', licensed: 'con licencia',
+    pcH: `${m.model} ${pcYear.year}: ventajas y desventajas`, full: `Todos los detalles del ${pcYear.year} →`, good: 'Lo bueno', watch: 'A tener en cuenta', noPros: 'Nada destaca frente a modelos similares en los datos.', noCons: 'Sin puntos débiles frente a modelos similares en los datos.',
+    h2h: 'Comparar frente a frente (en inglés)', changesH: `Cambios del ${m.model} por año modelo`,
+    changesNote: 'Diferencias en motores, versiones, tracción, tamaño, consumo EPA y calificaciones NHTSA de un año modelo al siguiente. Se omiten los años sin cambios medibles.',
+    showAll: `Ver los ${years.length} años modelo lado a lado`, year: 'Año', bestMpgRange: 'Mejor MPG / autonomía', length: 'Largo', weight: 'Peso', overall: 'General', complaints: 'Quejas',
+    mpgChart: `Mejor MPG combinadas por año modelo — ${title}`, altH: `Alternativas al ${m.model} ${alt.year}`, model: 'Modelo', nhtsaOverall: 'General NHTSA',
+    probH: 'Problemas más reportados por propietarios', cmplChart: `Quejas de propietarios por año modelo — ${title}`, vin: 'Consulta tu VIN en NHTSA (en inglés) ↗',
+    source: `Fuentes: datos de consumo de la EPA; calificaciones, retiros y quejas de la NHTSA; NHTSA vPIC; Canadian Vehicle Specifications de Transport Canada (Open Government Licence – Canada); Wikipedia (CC BY-SA 4.0) y Wikimedia Commons. Comparaciones calculadas por CarRadar. Sin afiliación con la NHTSA, la EPA ni ${m.make}.`,
+  },
+}[lang];
+const path = href(m);
+---
+
+<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)}>
+  <div class="crumbs"><a href={to(lang, '/makes')}>{T.makes}</a>›<a href={to(lang, `/${m.makeSlug}`)}>{m.make}</a>›<span>{m.model}</span></div>
+  <h1>{title}</h1>
+  <p class="lead">{T.lead}</p>
+
+  <div class="hero">
+    <CarPhoto photo={m.photo} alt={title} eager lang={lang} />
+    <dl class="facts">
+      <dt>{T.years}</dt><dd>{first.year}–{latest.year}</dd>
+      <dt>{T.cls}</dt><dd>{classes.slice(0, 3).join(', ') || '–'}</dd>
+      <dt>{T.engines}</dt><dd>{latest.engines.slice(0, 4).map((e) => engineL(lang, e)).join(', ') || (latest.fuels.includes('EV') ? T.electric : '–')}</dd>
+      {mpgs.length > 0 && (<><dt>{T.bestMpg}</dt><dd>{Math.min(...mpgs)}–{Math.max(...mpgs)} {T.byYear}</dd></>)}
+      {ranges.length > 0 && (<><dt>{T.evRange}</dt><dd>{T.upTo} {Math.max(...ranges)} mi</dd></>)}
+      <dt>{T.rating}</dt><dd><Stars value={rated?.overall} lang={lang} /> {rated ? `(${rated.year})` : ''}</dd>
+      <dt>{T.recalls}</dt><dd>{T.campaignsAll(recallIds.size)}</dd>
+      {worst?.complaints.total ? (<><dt>{T.most}</dt><dd class="bad">{worst.year} ({num(lang, worst.complaints.total)})</dd></>) : null}
+      {fewest && fewest !== worst ? (<><dt>{T.fewest}</dt><dd class="good">{fewest.year}</dd></>) : null}
+      {pop?.views30 ? (<><dt>{T.interest}</dt><dd>{num(lang, pop.views30)} {T.views}</dd></>) : null}
+    </dl>
+  </div>
+
+  {
+    overview && (
+      <section class="section overview">
+        <h2 style="margin-bottom:10px">{T.about}</h2>
+        <p>{overview.text}</p>
+        <p class="small muted">{T.fromWiki} "<a href={overview.url} rel="noopener" target="_blank">{overview.title}</a>", {T.licensed} <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener license" target="_blank">CC BY-SA 4.0</a>.</p>
+      </section>
+    )
+  }
+
+  {
+    (pc.pros.length > 0 || pc.cons.length > 0) && (
+      <section class="section">
+        <div class="section-head"><h2>{T.pcH}</h2><a href={yearLink(pcYear.year, pcYear.es)}>{T.full}</a></div>
+        <div class="pc-grid">
+          <div class="pc pros"><h3>{T.good}</h3>{pc.pros.length ? <ul>{pc.pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">{T.noPros}</p>}</div>
+          <div class="pc cons"><h3>{T.watch}</h3>{pc.cons.length ? <ul>{pc.cons.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}</ul> : <p class="muted small">{T.noCons}</p>}</div>
+        </div>
+      </section>
+    )
+  }
+  {m.verdict && <VerdictCard m={m} lang={lang} hasPage={(yr) => !!years.find((y) => y.year === yr)?.es} />}
+
+  {
+    rivals.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.h2h}</h2></div>
+        <div class="chips">{rivals.map((p) => <a href={`/compare/${p.id}`}>{title} vs {p.other}</a>)}</div>
+      </section>
+    )
+  }
+
+  {
+    log.length > 0 && (
+      <section class="section" id="changes">
+        <div class="section-head"><h2>{T.changesH}</h2></div>
+        <ol class="timeline">
+          {log.map((e) => (
+            <li class={e.changes.some((c) => c.redesign) ? 'big' : ''}>
+              <span class="tl-year">{e.page ? <a href={yearLink(e.year, years.find((y) => y.year === e.year)?.es)}>{e.year}</a> : e.year}</span>
+              <ul>{e.changes.map((c) => <li>{c.text}</li>)}</ul>
+            </li>
+          ))}
+        </ol>
+        <p class="small muted">{T.changesNote}</p>
+      </section>
+    )
+  }
+
+  <details class="section all-years">
+    <summary>{T.showAll}</summary>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>{T.year}</th><th>{T.engines}</th><th class="num">{T.bestMpgRange}</th><th class="num">{T.length}</th><th class="num">{T.weight}</th><th>{T.overall}</th><th class="num">{T.recalls}</th><th class="num">{T.complaints}</th></tr></thead>
+        <tbody>
+          {
+            years.map((y) => (
+              <tr>
+                <td><a href={yearLink(y.year, y.es)}>{y.year}</a></td>
+                <td class="small">{y.engines.slice(0, 3).map((e) => engineL(lang, e)).join(', ') || (y.fuels.includes('EV') ? T.electric : '–')}</td>
+                <td class="num">{y.mpg ? `${y.mpg.max} MPG` : y.range ? `${y.range} mi` : '–'}</td>
+                <td class="num">{len(y) ? `${len(y)} in` : '–'}</td>
+                <td class="num">{wt(y) ? `${num(lang, Math.round(wt(y)!))} lb` : '–'}</td>
+                <td><Stars value={y.overall} lang={lang} /></td>
+                <td class="num">{y.recalls.length}</td>
+                <td class="num">{num(lang, y.complaints.total)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  {mpgs.length > 1 && <Bars data={[...years].reverse().filter((y) => y.mpg).map((y) => [String(y.year), y.mpg!.max])} caption={T.mpgChart} fmt={(v) => `${v} MPG`} lang={lang} />}
+
+  <Ad place="content" lang={lang} />
+
+  {
+    (alt.similar?.length ?? 0) > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.altH}</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{T.model}</th><th class="num">{T.bestMpgRange}</th><th>{T.nhtsaOverall}</th><th class="num">{T.recalls}</th></tr></thead>
+            <tbody>
+              {alt.similar!.map((s) => (
+                <tr>
+                  <td><a href={es && s.es ? to('es', href(s, s.year)) : href(s, s.year)}>{es ? `${s.make} ${s.model} ${s.year}` : `${s.year} ${s.make} ${s.model}`}</a></td>
+                  <td class="num">{s.mpg ? `${s.mpg} MPG` : s.range ? `${s.range} mi` : '–'}</td>
+                  <td><Stars value={s.overall} lang={lang} /></td>
+                  <td class="num">{s.recalls}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    topComps.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.probH}</h2></div>
+        <div class="card bars">
+          {topComps.map(([cname, count]) => (
+            <div class="bar"><span>{compL(lang, cname)}</span><span class="muted">{num(lang, count)}</span><i style={`width:${Math.max(2, (count / topComps[0][1]) * 100)}%`} /></div>
+          ))}
+        </div>
+        <Bars data={[...years].reverse().map((y) => [String(y.year), y.complaints.total])} caption={T.cmplChart} lang={lang} />
+      </section>
+    )
+  }
+
+  <a class="cta" href={VIN_LOOKUP} target="_blank" rel="noopener">{T.vin}</a>
+  <Ad place="bottom" lang={lang} />
+  <p class="source">{T.source}</p>
+</Base>

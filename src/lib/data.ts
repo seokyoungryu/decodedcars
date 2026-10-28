@@ -59,7 +59,7 @@ export interface Rating {
   sidePic?: string;
 }
 export interface Dims { name: string; length?: number; width?: number; height?: number; wheelbase?: number; weight?: number; trackF?: number; trackR?: number; weightDist?: string }
-export interface Similar { make: string; model: string; makeSlug: string; slug: string; year: number; mpg?: number; range?: number; overall?: number; recalls: number }
+export interface Similar { make: string; model: string; makeSlug: string; slug: string; year: number; es?: boolean; mpg?: number; range?: number; overall?: number; recalls: number }
 export interface Photo { file: string; w?: number; h?: number; caption: string; artist: string; license: string; licenseUrl?: string; page: string }
 export interface Complaints { total: number; crash?: number; fire?: number; injured?: number; deaths?: number; comps: [string, number][]; miles?: number; months?: Record<string, number> }
 export interface Specs {
@@ -90,6 +90,8 @@ export interface Year {
   added?: string;
   rich: boolean;
   page: boolean;
+  /** also has a Spanish page (/es/…) */
+  es?: boolean;
   dims: Dims[];
   drives: string[];
   fuels: string[];
@@ -115,6 +117,7 @@ export interface Model {
   popularity?: { title: string; views30: number; week: number; prevWeek: number; change?: number; series: number[]; shared?: boolean };
   recent90: number;
   overview?: { title: string; text: string; url: string };
+  overviewEs?: { title: string; text: string; url: string };
   photo?: Photo;
   verdict?: Verdict;
 }
@@ -148,8 +151,11 @@ export const usd = (x?: number) => (x == null ? '–' : `$${x.toLocaleString('en
 export const date = (d?: string) => (d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }) : '–');
 export const title = (s: string) => s.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
 export const href = (c: { makeSlug: string; slug: string }, year?: number) => `/${c.makeSlug}/${c.slug}${year ? `/${year}` : ''}`;
-export function updatedLabel() {
-  return meta.updated ? `Updated ${new Date(meta.updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}` : '';
+/** 'Updated Oct 27, 2026'; with a language, just the date in that language */
+export function updatedLabel(lang?: 'en' | 'es') {
+  if (!meta.updated) return '';
+  const d = new Date(meta.updated).toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  return lang ? d : `Updated ${d}`;
 }
 /** "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP" → "Fuel System, Gasoline › Delivery › Fuel Pump" */
 export const comp = (s?: string) => (s ? title(s).replace(/:/g, ' › ') : '–');

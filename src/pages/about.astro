@@ -1,26 +1,5 @@
 ---
-import Base from '@/layouts/Base.astro';
-import { CONTACT_EMAIL, SITE_NAME } from '@/config/site';
+import AboutView from '@/views/AboutView.astro';
 ---
 
-<Base title="About" description={`${SITE_NAME} combines NHTSA and EPA public data to compare recalls, complaints, MPG and safety ratings by model year.`}>
-  <article class="prose">
-    <h1>About {SITE_NAME}</h1>
-    <p>{SITE_NAME} is an independent website that brings together public U.S. government vehicle data so you can compare cars model year by model year in one place. It is <b>not</b> affiliated with or endorsed by NHTSA, the EPA, the U.S. Department of Transportation or any manufacturer.</p>
-    <h2>Where the data comes from</h2>
-    <ul>
-      <li><b>Recalls and owner complaints</b> — NHTSA Office of Defects Investigation bulk data files, downloaded daily.</li>
-      <li><b>Crash-test ratings</b> — NHTSA New Car Assessment Program (5-Star Safety Ratings).</li>
-      <li><b>Engines, MPG, EV range, charging time, CO₂ and fuel cost</b> — EPA fuel economy data.</li>
-      <li><b>Dimensions and curb weight</b> — Canadian Vehicle Specifications, Transport Canada (Open Government Licence – Canada).</li>
-      <li><b>Model overviews and photos</b> — Wikipedia article summaries (CC BY-SA 4.0) and freely licensed Wikimedia Commons photos, credited under each photo.</li>
-      <li><b>Trending and most-researched rankings</b> — English Wikipedia article pageview counts (Wikimedia, CC0).</li>
-    </ul>
-    <p>Complaint breakdowns, class-average comparisons, year-by-year comparisons and rankings are calculated by {SITE_NAME}. We never publish owners' complaint narratives or any personal details from complaint records.</p>
-    <h2>Accuracy</h2>
-    <p>Pages are rebuilt automatically every day, so very recent changes may take a day to appear. Recalls apply to specific vehicles: always confirm your car's status with its VIN at nhtsa.gov/recalls or with a dealer. See <a href="/terms">Terms &amp; disclaimer</a>.</p>
-    <h2>Advertising</h2>
-    <p>{SITE_NAME} is free and supported by display advertising, which is labeled as such.</p>
-    {CONTACT_EMAIL && (<><h2>Contact</h2><p>Corrections and questions: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p></>)}
-  </article>
-</Base>
+<AboutView lang="en" />

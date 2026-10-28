@@ -1,0 +1,23 @@
+---
+import Base from '@/layouts/Base.astro';
+import { toolsFor } from '@/lib/tools';
+import type { Lang } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const TOOLS = toolsFor(lang);
+const T = es
+  ? { title: 'Herramientas para comprar auto', desc: 'Herramientas gratis para comprar auto: buscador, decodificador de VIN, calculadoras de combustible y de préstamo, y comparador de tamaño para tu garaje.', eyebrow: 'Gratis · sin registro', h1: 'Herramientas para comprar auto', lead: 'Elige, revisa y calcula el presupuesto de un auto antes de comprarlo; todo funciona directamente en tu navegador.' }
+  : { title: 'Car Buying Tools', desc: 'Free car buying tools: car finder, head-to-head comparisons, VIN decoder, fuel cost and car loan calculators, and a garage fit and size comparison tool.', eyebrow: 'Free · no sign-up', h1: 'Car buying tools', lead: 'Shortlist, compare, check and budget for a car before you buy — all running right in your browser.' };
+---
+
+<Base title={T.title} description={T.desc} section="tools" lang={lang} alt={es ? '/tools' : '/es/tools'}>
+  <section class="band">
+    <span class="eyebrow">{T.eyebrow}</span>
+    <h1 style="margin-top:10px">{T.h1}</h1>
+    <p class="lead">{T.lead}</p>
+  </section>
+  <div class="tool-cards section">{TOOLS.map((t) => <a href={t.href}><span class="ic" set:html={t.icon} /><h2>{t.title}</h2><p>{t.text}</p></a>)}</div>
+</Base>

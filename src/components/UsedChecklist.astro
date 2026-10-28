@@ -1,54 +1,69 @@
 ---
 // Printable pre-purchase checklist for one model year, generated from its recalls, complaints and ratings.
 import { VIN_LOOKUP } from '@/config/site';
-import { type Campaign, type Model, type Year, comp, n } from '@/lib/data';
+import type { Campaign, Model, Year } from '@/lib/data';
+import { type Lang, num } from '@/i18n';
+import { compL } from '@/i18n/terms';
 interface Props {
   m: Model;
   y: Year;
   recalls: Campaign[];
+  lang?: Lang;
 }
-const { m, y, recalls } = Astro.props;
-const name = `${y.year} ${m.make} ${m.model}`;
+const { m, y, recalls, lang = 'en' } = Astro.props;
+const es = lang === 'es';
+const name = es ? `${m.make} ${m.model} ${y.year}` : `${y.year} ${m.make} ${m.model}`;
 const ev = y.fuels.includes('EV');
 const hybrid = y.fuels.some((f) => /Hybrid/.test(f));
 const tops = y.complaints.comps.filter(([c]) => !/UNKNOWN/i.test(c)).slice(0, 3);
 // what to physically check for the most-reported systems
-const TIP: [RegExp, string][] = [
-  [/AIR BAG|SEAT BELT/i, 'confirm the airbag warning light turns off after start-up and any airbag recall was completed'],
-  [/FUEL/i, 'smell for fuel around the car and in the cabin, check that it starts easily when warm, and look at the oil dipstick for a fuel smell or rising level'],
-  [/ENGINE/i, 'cold-start the engine, listen for knocking, and watch for warning lights or hesitation on acceleration'],
-  [/TRANSMISSION|POWER TRAIN/i, 'test-drive through all gears, including reverse; note slipping, harsh or delayed shifts'],
-  [/BRAKE/i, 'brake firmly from speed; check for pulling, pulsing pedal or ABS warning light'],
-  [/STEERING/i, 'turn lock-to-lock while parked and on the road; listen for noises and feel for heavy or loose steering'],
-  [/ELECTRICAL|BATTERY/i, 'test every window, lock, light, screen and USB port; check the battery age'],
-  [/SUSPENSION/i, 'drive over bumps and listen for clunks; look for uneven tire wear'],
-  [/AIR CONDITIONING|CLIMATE|HVAC/i, 'run the A/C on max for several minutes and confirm it blows cold'],
-  [/COLLISION|LANE|BACK OVER|CAMERA/i, 'make sure driver-assist systems and the backup camera work without error messages'],
-  [/STRUCTURE|BODY|LATCH|DOOR/i, 'open and close every door, the hood and tailgate; look for rust or misaligned panels'],
-  [/VISIBILITY|WIPER|LIGHT/i, 'check all exterior lights, wipers and the windshield for cracks'],
+const TIP: [RegExp, string, string][] = [
+  [/AIR BAG|SEAT BELT/i, 'confirm the airbag warning light turns off after start-up and any airbag recall was completed', 'confirma que la luz de advertencia de las bolsas de aire se apague al arrancar y que cualquier retiro de bolsas de aire esté reparado'],
+  [/FUEL/i, 'smell for fuel around the car and in the cabin, check that it starts easily when warm, and look at the oil dipstick for a fuel smell or rising level', 'busca olor a combustible alrededor del auto y en la cabina, comprueba que arranque bien en caliente y revisa la varilla del aceite por olor a gasolina o nivel en aumento'],
+  [/ENGINE/i, 'cold-start the engine, listen for knocking, and watch for warning lights or hesitation on acceleration', 'arranca el motor en frío, escucha si golpetea y fíjate en luces de advertencia o titubeos al acelerar'],
+  [/TRANSMISSION|POWER TRAIN/i, 'test-drive through all gears, including reverse; note slipping, harsh or delayed shifts', 'prueba todas las marchas, incluida la reversa; nota patinazos o cambios bruscos o tardíos'],
+  [/BRAKE/i, 'brake firmly from speed; check for pulling, pulsing pedal or ABS warning light', 'frena con fuerza a velocidad; revisa si se jala hacia un lado, si el pedal vibra o si se enciende la luz del ABS'],
+  [/STEERING/i, 'turn lock-to-lock while parked and on the road; listen for noises and feel for heavy or loose steering', 'gira el volante de tope a tope estacionado y en marcha; escucha ruidos y nota si la dirección está dura o suelta'],
+  [/ELECTRICAL|BATTERY/i, 'test every window, lock, light, screen and USB port; check the battery age', 'prueba todas las ventanas, seguros, luces, pantallas y puertos USB; revisa la antigüedad de la batería'],
+  [/SUSPENSION/i, 'drive over bumps and listen for clunks; look for uneven tire wear', 'pasa por baches y escucha golpes; busca desgaste irregular en los neumáticos'],
+  [/AIR CONDITIONING|CLIMATE|HVAC/i, 'run the A/C on max for several minutes and confirm it blows cold', 'pon el aire acondicionado al máximo varios minutos y confirma que enfríe'],
+  [/COLLISION|LANE|BACK OVER|CAMERA/i, 'make sure driver-assist systems and the backup camera work without error messages', 'asegúrate de que los asistentes de manejo y la cámara de reversa funcionen sin mensajes de error'],
+  [/STRUCTURE|BODY|LATCH|DOOR/i, 'open and close every door, the hood and tailgate; look for rust or misaligned panels', 'abre y cierra todas las puertas, el cofre y la cajuela; busca óxido o paneles desalineados'],
+  [/VISIBILITY|WIPER|LIGHT/i, 'check all exterior lights, wipers and the windshield for cracks', 'revisa todas las luces exteriores, los limpiaparabrisas y que el parabrisas no tenga grietas'],
 ];
-const tipFor = (c: string) => TIP.find(([re]) => re.test(c))?.[1] ?? 'ask the seller and mechanic specifically about this system';
+const tipFor = (c: string) => {
+  const t = TIP.find(([re]) => re.test(c));
+  return t ? t[es ? 2 : 1] : es ? 'pregunta al vendedor y al mecánico específicamente por este sistema' : 'ask the seller and mechanic specifically about this system';
+};
+const cap = (s: string) => s.replace(/^./, (x) => x.toUpperCase());
 ---
 
 <section class="section" id="checklist">
-  <div class="section-head"><h2>Used {name} buyer's checklist</h2><button class="print-btn" type="button" onclick="window.print()">Print</button></div>
-  <ol class="card checklist">
-    <li><b>Run the VIN for open recalls.</b> {recalls.length ? `This model year has ${recalls.length} recall campaign${recalls.length > 1 ? 's' : ''}` : 'No recalls are on file for this model year, but check anyway'} — enter the VIN at <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> and ask the seller for proof that recall repairs were done.</li>
-    {
-      recalls.some((r) => r.doNotDrive || r.parkOutside) && (
-        <li><b>Safety-critical recall.</b> At least one recall carries a "Do Not Drive" or "Park Outside" warning. Do not buy until the VIN shows it was repaired.</li>
-      )
-    }
-    {
-      tops.map(([c, count]) => (
-        <li><b>{comp(c)}</b> — {n(count)} owner reports. {tipFor(c).replace(/^./, (x) => x.toUpperCase())}.</li>
-      ))
-    }
-    {y.complaints.miles && <li><b>Mileage to watch.</b> Owners typically reported problems around {n(y.complaints.miles)} miles; ask what was repaired near that point.</li>}
-    {ev && <li><b>Battery health.</b> Ask for a battery state-of-health report, check the remaining battery warranty, and compare the displayed range at 100% charge with the EPA's {y.range ?? '–'} miles.</li>}
-    {hybrid && !ev && <li><b>Hybrid system.</b> Check for hybrid-system warning lights and ask whether the high-voltage battery has been replaced or is still under warranty.</li>}
-    <li><b>Service records and history report.</b> Check maintenance records, accident history and title status before paying.</li>
-    <li><b>Independent inspection.</b> Have a mechanic you choose inspect the car before purchase.</li>
-  </ol>
-  <p class="small muted">Generated by CarRadar from NHTSA recalls and owner complaints for the {name}. Not a substitute for a professional inspection.</p>
+  <div class="section-head"><h2>{es ? `Lista para comprar un ${name} usado` : `Used ${name} buyer's checklist`}</h2><button class="print-btn" type="button" onclick="window.print()">{es ? 'Imprimir' : 'Print'}</button></div>
+  {
+    es ? (
+      <ol class="card checklist">
+        <li><b>Consulta el VIN por retiros pendientes.</b> {recalls.length ? `Este año modelo tiene ${recalls.length} ${recalls.length > 1 ? 'campañas de retiro' : 'campaña de retiro'}` : 'No hay retiros registrados para este año modelo, pero verifica de todos modos'}: ingresa el VIN en <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> (en inglés) y pide al vendedor comprobantes de las reparaciones.</li>
+        {recalls.some((r) => r.doNotDrive || r.parkOutside) && <li><b>Retiro crítico de seguridad.</b> Al menos un retiro tiene aviso de "no conducir" o "estacionar afuera". No lo compres hasta que el VIN muestre que se reparó.</li>}
+        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} reportes de propietarios. {cap(tipFor(c))}.</li>)}
+        {y.complaints.miles && <li><b>Millaje a vigilar.</b> Los propietarios suelen reportar problemas alrededor de las {num(lang, y.complaints.miles)} millas; pregunta qué se reparó cerca de ese punto.</li>}
+        {ev && <li><b>Salud de la batería.</b> Pide un reporte del estado de la batería, revisa la garantía restante y compara la autonomía al 100 % con las {y.range ?? '–'} millas de la EPA.</li>}
+        {hybrid && !ev && <li><b>Sistema híbrido.</b> Busca luces de advertencia del sistema híbrido y pregunta si la batería de alto voltaje se reemplazó o sigue en garantía.</li>}
+        <li><b>Historial de servicio y reporte de antecedentes.</b> Revisa mantenimientos, accidentes y estado del título antes de pagar.</li>
+        <li><b>Inspección independiente.</b> Haz que un mecánico de tu confianza revise el auto antes de comprarlo.</li>
+      </ol>
+    ) : (
+      <ol class="card checklist">
+        <li><b>Run the VIN for open recalls.</b> {recalls.length ? `This model year has ${recalls.length} recall campaign${recalls.length > 1 ? 's' : ''}` : 'No recalls are on file for this model year, but check anyway'} — enter the VIN at <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a> and ask the seller for proof that recall repairs were done.</li>
+        {recalls.some((r) => r.doNotDrive || r.parkOutside) && <li><b>Safety-critical recall.</b> At least one recall carries a "Do Not Drive" or "Park Outside" warning. Do not buy until the VIN shows it was repaired.</li>}
+        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} owner reports. {cap(tipFor(c))}.</li>)}
+        {y.complaints.miles && <li><b>Mileage to watch.</b> Owners typically reported problems around {num(lang, y.complaints.miles)} miles; ask what was repaired near that point.</li>}
+        {ev && <li><b>Battery health.</b> Ask for a battery state-of-health report, check the remaining battery warranty, and compare the displayed range at 100% charge with the EPA's {y.range ?? '–'} miles.</li>}
+        {hybrid && !ev && <li><b>Hybrid system.</b> Check for hybrid-system warning lights and ask whether the high-voltage battery has been replaced or is still under warranty.</li>}
+        <li><b>Service records and history report.</b> Check maintenance records, accident history and title status before paying.</li>
+        <li><b>Independent inspection.</b> Have a mechanic you choose inspect the car before purchase.</li>
+      </ol>
+    )
+  }
+  <p class="small muted">{es ? `Generado por CarRadar a partir de retiros y quejas de propietarios ante la NHTSA para el ${name}. No sustituye una inspección profesional.` : `Generated by CarRadar from NHTSA recalls and owner complaints for the ${name}. Not a substitute for a professional inspection.`}</p>
 </section>

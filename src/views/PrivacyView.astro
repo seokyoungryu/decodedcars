@@ -1,0 +1,46 @@
+---
+import Base from '@/layouts/Base.astro';
+import { CONTACT_EMAIL, SITE_NAME } from '@/config/site';
+import type { Lang } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const link = 'text-decoration:underline';
+---
+
+{
+  lang === 'es' ? (
+    <Base title="Política de privacidad" lang={lang} alt="/privacy">
+      <article class="prose">
+        <h1>Política de privacidad</h1>
+        <p>{SITE_NAME} no tiene cuentas, formularios ni comentarios y no pide información personal. No recibimos ni guardamos VIN: el decodificador envía el VIN que escribes directamente desde tu navegador al servicio público vPIC de la NHTSA, y los enlaces para revisar retiros llevan al sitio de la NHTSA. El buscador de autos y las calculadoras funcionan por completo en tu navegador.</p>
+        <h2>Analítica</h2>
+        <p>Usamos Cloudflare Web Analytics, que cuenta visitas sin cookies y sin rastrear a visitantes individuales, para saber qué páginas son populares. Nuestro proveedor de hosting (Cloudflare) procesa registros estándar de solicitudes, como la dirección IP y el tipo de navegador, por seguridad y para entregar el sitio.</p>
+        <h2>Publicidad y cookies</h2>
+        <p>Este sitio muestra anuncios de Google AdSense. Terceros, incluido Google, usan cookies para mostrar anuncios según las visitas anteriores de un usuario a este u otros sitios web. El uso de cookies publicitarias permite a Google y a sus socios mostrar anuncios según tus visitas a este y otros sitios de internet.</p>
+        <p>Puedes desactivar la publicidad personalizada en la <a href="https://www.google.com/settings/ads" rel="noopener" style={link}>Configuración de anuncios de Google</a>, o desactivar el uso de cookies de algunos terceros en <a href="https://www.aboutads.info/choices" rel="noopener" style={link}>www.aboutads.info</a>. A los visitantes del EEE, el Reino Unido y Suiza se les muestra un aviso de consentimiento antes de mostrar anuncios personalizados. Consulta <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" style={link}>cómo usa Google la información de los sitios que utilizan sus servicios</a>.</p>
+        <h2>Tus derechos</h2>
+        <p>No vendemos ni compartimos información personal. Como no recopilamos información personal, no hay nada que consultar, corregir o eliminar; usa los enlaces anteriores para las cookies de publicidad.</p>
+        {CONTACT_EMAIL && (<><h2>Contacto</h2><p><a href={`mailto:${CONTACT_EMAIL}`} style={link}>{CONTACT_EMAIL}</a></p></>)}
+        <p class="small muted">Vigente desde el 27 de octubre de 2026. Si hay diferencias con la versión en inglés, prevalece la versión en inglés.</p>
+      </article>
+    </Base>
+  ) : (
+    <Base title="Privacy Policy" lang={lang} alt="/es/privacy">
+      <article class="prose">
+        <h1>Privacy policy</h1>
+        <p>{SITE_NAME} has no accounts, forms or comments and does not ask for personal information. We do not receive or store VINs: the VIN decoder sends the VIN you type directly from your browser to NHTSA's public vPIC service, and the recall-check links take you to NHTSA's own website. The car finder and calculators run entirely in your browser.</p>
+        <h2>Analytics</h2>
+        <p>We use Cloudflare Web Analytics, which counts page views without cookies and without tracking individual visitors, to see which pages are popular. Our host (Cloudflare) processes standard request logs such as IP address and browser type for security and delivery.</p>
+        <h2>Advertising and cookies</h2>
+        <p>This site shows ads from Google AdSense. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visit to this site and/or other sites on the Internet.</p>
+        <p>You may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" rel="noopener" style={link}>Google Ads Settings</a>, or opt out of some third-party vendors' use of cookies at <a href="https://www.aboutads.info/choices" rel="noopener" style={link}>www.aboutads.info</a>. Visitors in the EEA, UK and Switzerland are shown a consent message before personalized ads are served. See <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" style={link}>how Google uses information from sites that use its services</a>.</p>
+        <h2>Your rights</h2>
+        <p>We do not sell or share personal information. Because we do not collect personal information ourselves, there is nothing for us to access, correct or delete; use the opt-out links above for advertising cookies.</p>
+        {CONTACT_EMAIL && (<><h2>Contact</h2><p><a href={`mailto:${CONTACT_EMAIL}`} style={link}>{CONTACT_EMAIL}</a></p></>)}
+        <p class="small muted">Effective October 27, 2026</p>
+      </article>
+    </Base>
+  )
+}

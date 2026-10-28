@@ -1,8 +1,11 @@
 ---
+import { type Lang, UI } from '@/i18n';
 interface Props {
   value?: number;
+  lang?: Lang;
 }
 const v = Astro.props.value;
+const lang = Astro.props.lang ?? 'en';
 ---
 
-{v ? <span class="stars" aria-label={`${v} out of 5 stars`}>{'★'.repeat(v)}<span class="off">{'★'.repeat(5 - v)}</span></span> : <span class="muted">Not rated</span>}
+{v ? <span class="stars" aria-label={lang === 'es' ? `${v} de 5 estrellas` : `${v} out of 5 stars`}>{'★'.repeat(v)}<span class="off">{'★'.repeat(5 - v)}</span></span> : <span class="muted">{UI[lang].notRated}</span>}

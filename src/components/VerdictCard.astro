@@ -1,40 +1,51 @@
 ---
 // "Which year should I buy?" — best and (if one clearly stands out) worst used model year, with the numbers behind it.
 import Stars from '@/components/Stars.astro';
-import { type Model, comp, href, n } from '@/lib/data';
+import { type Model, href } from '@/lib/data';
+import { type Lang, num, to } from '@/i18n';
+import { compL } from '@/i18n/terms';
 interface Props {
   m: Model;
+  lang?: Lang;
+  /** model years that have a page in this language */
+  hasPage?: (year: number) => boolean;
 }
-const { m } = Astro.props;
+const { m, lang = 'en', hasPage = () => true } = Astro.props;
+const es = lang === 'es';
 const v = m.verdict!;
+const pl = (k: number, en: string, sp: string) => `${num(lang, k)} ${es ? (k === 1 ? sp : `${sp}s`) : k === 1 ? en : `${en}s`}`;
 const reason = (y: NonNullable<typeof v.worst>) =>
-  [`${n(y.complaints)} owner complaint${y.complaints === 1 ? '' : 's'}`, `${y.recalls} recall${y.recalls === 1 ? '' : 's'}`, y.fire ? `${y.fire} fire report${y.fire === 1 ? '' : 's'}` : '', y.crash ? `${y.crash} crash report${y.crash === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+  [pl(y.complaints, 'owner complaint', 'queja'), pl(y.recalls, 'recall', 'retiro'), y.fire ? pl(y.fire, 'fire report', 'reporte de incendio') : '', y.crash ? pl(y.crash, 'crash report', 'reporte de choque') : ''].filter(Boolean).join(' · ');
+const link = (year: number) => (hasPage(year) ? to(lang, href(m, year)) : href(m, year));
+const t = es
+  ? { h: 'Mejores y peores años para comprar usado', best: 'Mejor año', avoid: 'Año a evitar', overall: 'General NHTSA', most: 'Más reportado', none: 'Ningún año destaca por problemas', noneText: `Ninguno de los ${v.compared} años modelo comparados destaca por quejas o retiros.`, note: `Basado en retiros y quejas de propietarios ante la NHTSA (recibidas desde 2015; choques e incendios pesan más) de ${v.compared} años modelo desde 2015 con al menos dos años de antigüedad. Las quejas no se ajustan por la cantidad de autos vendidos: úsalo junto con una inspección previa a la compra y el historial de servicio.` }
+  : { h: 'Best and worst years to buy used', best: 'Best year', avoid: 'Year to avoid', overall: 'NHTSA overall', most: 'Most reported', none: 'No clear problem year', noneText: `None of the ${v.compared} model years we compared stands out for complaints or recalls.`, note: `Based on NHTSA recalls and owner complaints (received since 2015, crashes and fires weighted more) for ${v.compared} model years from 2015 that are at least two years old. Complaint counts are not adjusted for how many cars were sold, so use this alongside a pre-purchase inspection and the car's service history.` };
 ---
 
 <section class="section" id="best-years">
-  <div class="section-head"><h2>Best and worst years to buy used</h2></div>
+  <div class="section-head"><h2>{t.h}</h2></div>
   <div class="grid">
-    <a class="card verdict good-card" href={href(m, v.best.year)}>
-      <span class="badge good">Best year</span>
-      <h3 style="font-size:1.4rem;margin:6px 0 4px">{v.best.year} {m.model}</h3>
+    <a class="card verdict good-card" href={link(v.best.year)}>
+      <span class="badge good">{t.best}</span>
+      <h3 style="font-size:1.4rem;margin:6px 0 4px">{es ? `${m.model} ${v.best.year}` : `${v.best.year} ${m.model}`}</h3>
       <p class="small muted" style="margin:0">{reason(v.best)}</p>
-      {v.best.overall && <p class="small" style="margin:6px 0 0">NHTSA overall: <Stars value={v.best.overall} /></p>}
+      {v.best.overall && <p class="small" style="margin:6px 0 0">{t.overall}: <Stars value={v.best.overall} lang={lang} /></p>}
     </a>
     {
       v.worst ? (
-        <a class="card verdict bad-card" href={href(m, v.worst.year)}>
-          <span class="badge bad">Year to avoid</span>
-          <h3 style="font-size:1.4rem;margin:6px 0 4px">{v.worst.year} {m.model}</h3>
+        <a class="card verdict bad-card" href={link(v.worst.year)}>
+          <span class="badge bad">{t.avoid}</span>
+          <h3 style="font-size:1.4rem;margin:6px 0 4px">{es ? `${m.model} ${v.worst.year}` : `${v.worst.year} ${m.model}`}</h3>
           <p class="small muted" style="margin:0">{reason(v.worst)}</p>
-          {v.worst.top && <p class="small" style="margin:6px 0 0">Most reported: {comp(v.worst.top)}</p>}
+          {v.worst.top && <p class="small" style="margin:6px 0 0">{t.most}: {compL(lang, v.worst.top)}</p>}
         </a>
       ) : (
         <div class="card">
-          <span class="badge">No clear problem year</span>
-          <p class="small muted" style="margin:8px 0 0">None of the {v.compared} model years we compared stands out for complaints or recalls.</p>
+          <span class="badge">{t.none}</span>
+          <p class="small muted" style="margin:8px 0 0">{t.noneText}</p>
         </div>
       )
     }
   </div>
-  <p class="small muted">Based on NHTSA recalls and owner complaints (received since 2015, crashes and fires weighted more) for {v.compared} model years from 2015 that are at least two years old. Complaint counts are not adjusted for how many cars were sold, so use this alongside a pre-purchase inspection and the car's service history.</p>
+  <p class="small muted">{t.note}</p>
 </section>

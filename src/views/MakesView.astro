@@ -1,0 +1,30 @@
+---
+import Base from '@/layouts/Base.astro';
+import { makes } from '@/lib/data';
+import { type Lang, num, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const all = makes();
+const models = all.reduce((s, m) => s + m.models.length, 0);
+const T = es
+  ? { title: 'Todas las marcas de autos', desc: 'Todas las marcas de autos, camionetas y SUV vendidas en EE. UU. desde 2005: retiros, quejas, consumo y seguridad por modelo y año.', h1: 'Todas las marcas', lead: `${all.length} marcas, ${num(lang, models)} modelos.`, card: (m: number, r: number) => `${m} modelos · ${num(lang, r)} retiros` }
+  : { title: 'All Car Makes', desc: 'Every car, truck and SUV brand sold in the U.S. since 2005 — recalls, complaints, MPG and safety ratings by model and year.', h1: 'All makes', lead: `${all.length} brands, ${num(lang, models)} models.`, card: (m: number, r: number) => `${m} models · ${num(lang, r)} recalls` };
+---
+
+<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? '/makes' : '/es/makes'}>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+  <div class="grid section">
+    {
+      all.map((mk) => (
+        <a class="card" href={to(lang, `/${mk.slug}`)}>
+          <h3>{mk.name}</h3>
+          <p class="small muted" style="margin:4px 0 0">{T.card(mk.models.length, mk.models.reduce((s, m) => s + m.recalls, 0))}</p>
+        </a>
+      ))
+    }
+  </div>
+</Base>

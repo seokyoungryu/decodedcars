@@ -1,0 +1,123 @@
+---
+// Car finder (client-side filtering of /finder-data.json). Option values are the data's own labels; only text is translated.
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import type { Lang } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const BODIES: [string, string][] = [['Car', 'Auto'], ['SUV', 'SUV'], ['Pickup', 'Pickup'], ['Minivan', 'Minivan'], ['Van', 'Van'], ['Wagon', 'Familiar'], ['Sports / 2-seat', 'Deportivo / biplaza']];
+const POWER: [string, string][] = [['Gas', 'Gasolina'], ['Hybrid', 'Híbrido'], ['Plug-in hybrid', 'Híbrido enchufable'], ['Electric', 'Eléctrico'], ['Diesel', 'Diésel']];
+const T = es
+  ? {
+      title: 'Buscador de autos: filtra por carrocería, consumo, seguridad y confiabilidad',
+      desc: 'Encuentra el auto ideal: filtra todos los modelos actuales por carrocería, gasolina/híbrido/eléctrico, AWD, consumo, autonomía, calificación de choque y retiros.',
+      h1: 'Buscador de autos',
+      lead: 'Filtra cada auto, camioneta y SUV actual según lo que te importa. Los resultados usan el año modelo más reciente de cada modelo.',
+      body: 'Carrocería', any: 'Cualquiera', pw: 'Tipo de motor', mpg: 'MPG combinadas mín.', range: 'Autonomía eléctrica mín.', sort: 'Ordenar por',
+      sorts: ['Más investigados', 'Mejor consumo', 'Mayor autonomía', 'Menor costo de combustible', 'Calificación de seguridad', 'Menos retiros y quejas'],
+      awd: 'Con AWD / 4x4', five: '5 estrellas NHTSA', clean: 'Sin retiros (último año)', loading: 'Cargando…',
+      source: 'Datos: consumo de la EPA; calificaciones, retiros y quejas de la NHTSA; dimensiones de Transport Canada. No incluye precios.',
+    }
+  : {
+      title: 'Car Finder: Filter by Body, MPG, Safety & Reliability',
+      desc: 'Find the right car: filter every current model by body style, gas/hybrid/electric, AWD, fuel economy, EV range, crash rating and recalls.',
+      h1: 'Car finder',
+      lead: "Filter every current car, truck and SUV by what matters to you. Results use each model's latest model year.",
+      body: 'Body style', any: 'Any', pw: 'Powertrain', mpg: 'Min. combined MPG', range: 'Min. EV range', sort: 'Sort by',
+      sorts: ['Most researched', 'Best MPG', 'Longest EV range', 'Lowest fuel cost', 'Safety rating', 'Fewest recalls & complaints'],
+      awd: 'AWD / 4WD available', five: '5-star NHTSA overall', clean: 'No recalls (latest year)', loading: 'Loading…',
+      source: 'Data: EPA fuel economy, NHTSA ratings, recalls and complaints, Transport Canada dimensions. Prices are not included.',
+    };
+// strings the client script needs
+const JS = es
+  ? { pre: '/es', match: ['modelo coincide', 'modelos coinciden'], range: 'mi de autonomía', recall: ['retiro', 'retiros'], body: Object.fromEntries(BODIES), pw: { ...Object.fromEntries(POWER), 'Gas + EV versions': 'Gasolina y eléctrico' } }
+  : { pre: '', match: ['model matches', 'models match'], range: 'mi range', recall: ['recall', 'recalls'], body: {}, pw: {} };
+const SORTS = ['pop', 'mpg', 'range', 'cost', 'safety', 'problems'];
+---
+
+<Base title={T.title} description={T.desc} section="finder" lang={lang} alt={es ? '/finder' : '/es/finder'}>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+
+  <form class="card form section" id="f" onsubmit="return false">
+    <label>{T.body}
+      <select name="body"><option value="">{T.any}</option>{BODIES.map(([v, s]) => <option value={v}>{es ? s : v}</option>)}</select>
+    </label>
+    <label>{T.pw}
+      <select name="pw"><option value="">{T.any}</option>{POWER.map(([v, s]) => <option value={v}>{es ? s : v}</option>)}</select>
+    </label>
+    <label>{T.mpg}
+      <select name="mpg"><option value="0">{T.any}</option>{[20, 25, 30, 35, 40, 45].map((v) => <option>{v}</option>)}</select>
+    </label>
+    <label>{T.range}
+      <select name="range"><option value="0">{T.any}</option>{[200, 250, 300, 350].map((v) => <option>{v}</option>)}</select>
+    </label>
+    <label>{T.sort}
+      <select name="sort">{SORTS.map((v, i) => <option value={v}>{T.sorts[i]}</option>)}</select>
+    </label>
+    <div>
+      <label class="check"><input type="checkbox" name="awd" /> {T.awd}</label>
+      <label class="check"><input type="checkbox" name="five" /> {T.five}</label>
+      <label class="check"><input type="checkbox" name="clean" /> {T.clean}</label>
+    </div>
+  </form>
+  <p id="count" class="small muted" aria-live="polite">{T.loading}</p>
+  <div id="out" class="mcards"></div>
+  <script type="application/json" id="i18n" set:html={JSON.stringify(JS)} />
+  <Ad place="bottom" lang={lang} />
+  <p class="source">{T.source}</p>
+</Base>
+
+<script>
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; body: string; cls?: string; pw: string; awd?: boolean; mpg?: number; range?: number; cost?: number; st?: number; rc: number; cp: number; pop: number; ph?: string; es?: boolean };
+  const L = JSON.parse(document.getElementById('i18n')!.textContent!) as { pre: string; match: [string, string]; range: string; recall: [string, string]; body: Record<string, string>; pw: Record<string, string> };
+  const form = document.getElementById('f') as HTMLFormElement;
+  const out = document.getElementById('out')!;
+  const count = document.getElementById('count')!;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  let rows: Row[] = [];
+  const thisYear = new Date().getUTCFullYear();
+
+  function render() {
+    const f = new FormData(form);
+    const g = (k: string) => String(f.get(k) ?? '');
+    let list = rows.filter((r) => r.y >= thisYear - 1);
+    if (g('body')) list = list.filter((r) => r.body === g('body'));
+    if (g('pw')) list = list.filter((r) => r.pw === g('pw') || (g('pw') === 'Electric' && r.pw === 'Gas + EV versions'));
+    if (+g('mpg')) list = list.filter((r) => (r.mpg ?? 0) >= +g('mpg'));
+    if (+g('range')) list = list.filter((r) => (r.range ?? 0) >= +g('range'));
+    if (f.get('awd')) list = list.filter((r) => r.awd);
+    if (f.get('five')) list = list.filter((r) => r.st === 5);
+    if (f.get('clean')) list = list.filter((r) => r.rc === 0);
+    const by: Record<string, (a: Row, b: Row) => number> = {
+      pop: (a, b) => b.pop - a.pop,
+      mpg: (a, b) => (b.mpg ?? 0) - (a.mpg ?? 0),
+      range: (a, b) => (b.range ?? 0) - (a.range ?? 0),
+      cost: (a, b) => (a.cost ?? 1e9) - (b.cost ?? 1e9),
+      safety: (a, b) => (b.st ?? 0) - (a.st ?? 0) || b.pop - a.pop,
+      problems: (a, b) => a.rc * 20 + a.cp - (b.rc * 20 + b.cp) || b.pop - a.pop,
+    };
+    list.sort(by[g('sort')] ?? by.pop);
+    count.textContent = `${list.length} ${L.match[list.length === 1 ? 0 : 1]}`;
+    out.innerHTML = list
+      .slice(0, 60)
+      .map((r) => {
+        const facts = [r.mpg ? `${r.mpg} MPG` : '', r.range ? `${r.range} ${L.range}` : '', r.st ? `${'★'.repeat(r.st)}` : '', `${r.rc} ${L.recall[r.rc === 1 ? 0 : 1]}`].filter(Boolean).join(' · ');
+        // Spanish: the model-year page if it exists in Spanish, else the Spanish model page
+        const link = L.pre ? (r.es ? `${L.pre}/${r.ms}/${r.s}/${r.y}` : `${L.pre}/${r.ms}/${r.s}`) : `/${r.ms}/${r.s}/${r.y}`;
+        const title = L.pre ? `${esc(r.mk)} ${esc(r.md)} ${r.y}` : `${r.y} ${esc(r.mk)} ${esc(r.md)}`;
+        return `<a class="mcard" href="${link}"><div class="img">${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="" loading="lazy">` : '<span>🚗</span>'}</div><div class="body"><h3>${title}</h3><p>${esc(L.body[r.body] ?? r.body)} · ${esc(L.pw[r.pw] ?? r.pw)}</p><p>${facts}</p></div></a>`;
+      })
+      .join('');
+  }
+  form.addEventListener('input', render);
+  fetch('/finder-data.json')
+    .then((r) => r.json())
+    .then((d) => {
+      rows = d.rows;
+      render();
+    });
+</script>

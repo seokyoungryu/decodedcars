@@ -1,0 +1,56 @@
+---
+import Base from '@/layouts/Base.astro';
+import { SITE_NAME } from '@/config/site';
+import type { Lang } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+{
+  lang === 'es' ? (
+    <Base title="Términos y aviso legal" description={`Cómo usar la información de ${SITE_NAME} y sus límites.`} lang={lang} alt="/terms">
+      <article class="prose">
+        <h1>Términos y aviso legal</h1>
+        <h2>Sitio independiente</h2>
+        <p>{SITE_NAME} no es un sitio del gobierno y no está afiliado, respaldado ni patrocinado por la NHTSA, la EPA, el Departamento de Transporte de EE. UU., Wikipedia/Wikimedia ni ningún fabricante de vehículos. Los nombres de marcas y modelos se usan solo para identificar vehículos.</p>
+        <h2>Solo información</h2>
+        <p>Todo en {SITE_NAME} se ofrece como información general. No es asesoría mecánica, legal, de seguridad ni de compra. La cobertura de un retiro depende de cada vehículo: la única forma confiable de saber si tu auto tiene un retiro pendiente es consultar su VIN en nhtsa.gov/recalls o con un concesionario autorizado.</p>
+        <h2>Límites de los datos</h2>
+        <ul>
+          <li>Las quejas de propietarios son reportes sin verificar y no prueban un defecto.</li>
+          <li>El consumo, la autonomía y el costo de combustible son estimaciones de la EPA; los resultados reales varían.</li>
+          <li>Las versiones y el equipamiento provienen de lo que reportan los fabricantes a la NHTSA y pueden no incluir todas las versiones.</li>
+          <li>Las ventajas y desventajas son comparaciones calculadas a partir de datos, no reseñas ni pruebas de manejo.</li>
+          <li>La correspondencia entre registros de la NHTSA y la EPA es automática y a veces puede agrupar o separar modelos de forma distinta al fabricante.</li>
+          <li>Los datos se actualizan una vez al día y pueden ir con retraso respecto a las fuentes oficiales.</li>
+        </ul>
+        <h2>Sin garantía</h2>
+        <p>La información se ofrece "tal cual", sin garantía de ningún tipo. {SITE_NAME} no se hace responsable de las decisiones tomadas con base en ella.</p>
+        <p class="small muted">Si hay diferencias entre esta versión y la versión en inglés, prevalece la versión en inglés.</p>
+      </article>
+    </Base>
+  ) : (
+    <Base title="Terms & Disclaimer" description={`How to use ${SITE_NAME} information and its limits.`} lang={lang} alt="/es/terms">
+      <article class="prose">
+        <h1>Terms &amp; disclaimer</h1>
+        <h2>Independent site</h2>
+        <p>{SITE_NAME} is not a government website and is not affiliated with, endorsed by or sponsored by NHTSA, the EPA, the U.S. Department of Transportation, Wikipedia/Wikimedia or any vehicle manufacturer. Brand and model names are used only to identify vehicles.</p>
+        <h2>Information only</h2>
+        <p>Everything on {SITE_NAME} is provided for general information. It is not mechanical, legal, safety or purchasing advice. Recall coverage depends on the individual vehicle: the only reliable way to know whether your car has an open recall is a VIN check at nhtsa.gov/recalls or with an authorized dealer.</p>
+        <h2>Data limits</h2>
+        <ul>
+          <li>Owner complaints are unverified reports and do not prove a defect.</li>
+          <li>MPG, range and fuel cost are EPA estimates; real-world results vary.</li>
+          <li>Trims and equipment come from what manufacturers report to NHTSA and may not include every version.</li>
+          <li>Pros and cons are calculated comparisons of data, not reviews or road tests.</li>
+          <li>Matching between NHTSA and EPA records is automated and can occasionally group or split models differently from the manufacturer.</li>
+          <li>Data is refreshed once a day and may lag the official sources.</li>
+        </ul>
+        <h2>No warranty</h2>
+        <p>Information is provided "as is" without warranty of any kind. {SITE_NAME} is not liable for decisions made or actions taken based on it.</p>
+      </article>
+    </Base>
+  )
+}

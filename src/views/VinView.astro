@@ -1,0 +1,123 @@
+---
+// VIN decoder: the browser calls NHTSA vPIC directly; we never receive or store the VIN.
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { VIN_LOOKUP } from '@/config/site';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const T = es
+  ? {
+      title: 'Decodificador de VIN gratis: año, motor, planta y retiros',
+      desc: 'Decodifica gratis cualquier VIN de 17 caracteres: año modelo, marca, modelo, versión, motor, potencia, transmisión y dónde se fabricó; luego revisa retiros y problemas conocidos.',
+      tools: 'Herramientas', h1: 'Decodificador de VIN', lead: 'Ingresa un número de identificación vehicular (VIN) de 17 caracteres para saber qué auto es realmente, y ve a sus retiros, problemas y ficha técnica.',
+      btn: 'Decodificar VIN', privacy: 'El VIN se envía directamente desde tu navegador al decodificador gratuito vPIC de la NHTSA. CarRadar no lo recibe ni lo guarda.',
+      whereH: 'Dónde encontrar el VIN', where: 'Mira a través del parabrisas en la esquina inferior del lado del conductor, en la etiqueta del marco de la puerta del conductor, o en el registro, el título o la tarjeta del seguro. Los VIN nunca llevan las letras I, O ni Q.',
+      notH: 'Decodificar no es revisar retiros', not1: 'Un decodificador te dice cómo se fabricó el auto. Para saber si tiene un retiro', not2: 'pendiente', not3: ', ingresa el mismo VIN en',
+    }
+  : {
+      title: 'Free VIN Decoder: Year, Engine, Plant & Recall Check',
+      desc: 'Decode any 17-character VIN for free: model year, make, model, trim, engine, horsepower, transmission and where it was built — then check recalls and known problems.',
+      tools: 'Tools', h1: 'VIN decoder', lead: 'Enter a 17-character Vehicle Identification Number to see what the car really is — then jump to its recalls, problems and specs.',
+      btn: 'Decode VIN', privacy: "The VIN is sent directly from your browser to NHTSA's free vPIC decoder. CarRadar does not receive or store it.",
+      whereH: 'Where to find the VIN', where: "Look through the windshield at the lower driver-side corner, on the sticker in the driver's door jamb, or on the registration, title or insurance card. VINs never contain the letters I, O or Q.",
+      notH: 'Decoding is not a recall check', not1: 'A decoder tells you how the car was built. To see whether it has an', not2: 'open', not3: ' recall, enter the same VIN at',
+    };
+const JS = es
+  ? {
+      pre: '/es', invalid: 'Un VIN tiene exactamente 17 letras y números, sin I, O ni Q.', decoding: 'Decodificando…', fail: 'La NHTSA no pudo decodificar este VIN. Revisa que no tenga errores.', down: 'El decodificador de la NHTSA no respondió. Inténtalo de nuevo en un momento.',
+      labels: ['Año modelo', 'Marca', 'Modelo', 'Versión', 'Carrocería', 'Puertas', 'Motor', 'Combustible', 'Tracción', 'Transmisión', 'Fabricado en', 'Fabricante'],
+      next: 'Siguientes pasos', recalls: 'Revisa retiros pendientes de este VIN en la NHTSA (en inglés) ↗', yearLink: 'retiros, problemas y lista para comprar usado →', allYears: 'Todos los años del', allYears2: ': mejores y peores para comprar →',
+      none: 'Todavía no tenemos una página de este modelo.', note: 'Nota de la NHTSA:', cyl: 'cil.', speed: 'vel.', turbo: 'turbo',
+    }
+  : {
+      pre: '', invalid: 'A VIN has exactly 17 letters and numbers, without I, O or Q.', decoding: 'Decoding…', fail: 'NHTSA could not decode this VIN. Check it for typos.', down: 'The NHTSA decoder did not respond. Please try again in a moment.',
+      labels: ['Model year', 'Make', 'Model', 'Trim', 'Body', 'Doors', 'Engine', 'Fuel', 'Drive', 'Transmission', 'Built in', 'Manufacturer'],
+      next: 'Next steps', recalls: 'Check open recalls for this VIN at NHTSA ↗', yearLink: 'recalls, problems & buyer checklist →', allYears: 'All', allYears2: ' years: best & worst to buy →',
+      none: "We don't have a page for this model yet.", note: 'NHTSA note:', cyl: 'cyl', speed: 'speed', turbo: 'turbo',
+    };
+---
+
+<Base title={T.title} description={T.desc} section="tools" lang={lang} alt={es ? '/tools/vin-decoder' : '/es/tools/vin-decoder'}>
+  <div class="crumbs"><a href={to(lang, '/tools')}>{T.tools}</a></div>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+
+  <form class="card form section" id="vf">
+    <label style="grid-column:1/-1">VIN
+      <input name="vin" id="vin" maxlength="17" autocomplete="off" spellcheck="false" placeholder="1HGCV1F30LA000000" style="font-family:ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em" />
+    </label>
+    <div><button class="btn" type="submit">{T.btn}</button></div>
+  </form>
+  <p id="msg" class="small muted" aria-live="polite">{T.privacy}</p>
+  <div id="res"></div>
+  <script type="application/json" id="i18n" set:html={JSON.stringify({ ...JS, vinLookup: VIN_LOOKUP })} />
+
+  <section class="section prose">
+    <h2>{T.whereH}</h2>
+    <p>{T.where}</p>
+    <h2>{T.notH}</h2>
+    <p>{T.not1} <b>{T.not2}</b>{T.not3} <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a>{es ? ' (en inglés)' : ''}.</p>
+  </section>
+  <Ad place="bottom" lang={lang} />
+</Base>
+
+<script>
+  const L = JSON.parse(document.getElementById('i18n')!.textContent!);
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const norm = (s: unknown) => String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  type Row = { mk: string; md: string; ms: string; s: string; years: number[]; es?: boolean; y: number };
+  let rows: Row[] | null = null;
+
+  function findPage(make: string, model: string, year: string) {
+    const mk = norm(make).replace(/^MERCEDES$/, 'MERCEDESBENZ');
+    const md = norm(model);
+    const same = rows!.filter((r) => norm(r.mk) === mk);
+    const hit = same.find((r) => norm(r.md) === md) ?? same.sort((a, b) => norm(b.md).length - norm(a.md).length).find((r) => md.startsWith(norm(r.md)) || norm(r.md).startsWith(md));
+    if (!hit) return null;
+    // Spanish year pages exist only for some years, so the year link goes to the English page; the Spanish model page always exists
+    const yearUrl = hit.years.includes(Number(year)) ? `/${hit.ms}/${hit.s}/${year}` : null;
+    return { model: `${L.pre}/${hit.ms}/${hit.s}`, year: yearUrl, name: `${hit.mk} ${hit.md}` };
+  }
+
+  ($('vf') as HTMLFormElement).addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const vin = ($('vin') as HTMLInputElement).value.trim().toUpperCase();
+    if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) {
+      $('msg').textContent = L.invalid;
+      return;
+    }
+    $('msg').textContent = L.decoding;
+    try {
+      const [d, data] = await Promise.all([
+        fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`).then((r) => r.json()),
+        rows ? Promise.resolve(null) : fetch('/finder-data.json').then((r) => r.json()),
+      ]);
+      if (data) rows = data.rows;
+      const x = d.Results?.[0] ?? {};
+      if (!x.Make) {
+        $('msg').textContent = L.fail;
+        $('res').innerHTML = '';
+        return;
+      }
+      const eng = [x.DisplacementL && `${(+x.DisplacementL).toFixed(1)}L`, x.EngineCylinders && `${x.EngineCylinders} ${L.cyl}`, x.EngineConfiguration, x.EngineHP && `${Math.round(+x.EngineHP)} hp`, x.Turbo === 'Yes' && L.turbo].filter(Boolean).join(' ');
+      const vals = [x.ModelYear, x.Make, x.Model, [x.Trim, x.Series].filter(Boolean).join(' '), x.BodyClass, x.Doors, eng, [x.FuelTypePrimary, x.ElectrificationLevel].filter(Boolean).join(' · '), x.DriveType, [x.TransmissionStyle, x.TransmissionSpeeds && `${x.TransmissionSpeeds} ${L.speed}`].filter(Boolean).join(' '), [x.PlantCity, x.PlantState, x.PlantCountry].filter(Boolean).join(', '), x.Manufacturer];
+      const facts = L.labels.map((k: string, i: number) => [k, vals[i]]).filter(([, v]: [string, unknown]) => v && String(v).trim());
+      const page = findPage(x.Make, x.Model, x.ModelYear);
+      const warn = x.ErrorCode && x.ErrorCode !== '0' ? `<p class="note">${esc(L.note)} ${esc(x.ErrorText)}</p>` : '';
+      const yearName = L.pre ? `${esc(page?.name)} ${esc(x.ModelYear)}` : `${esc(x.ModelYear)} ${esc(page?.name)}`;
+      $('res').innerHTML = `<div class="hero" style="margin-top:0"><dl class="facts">${facts.map(([k, v]: [string, unknown]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="card">
+        <h2 style="font-size:1.1rem">${esc(L.next)}</h2>
+        <p><a class="cta" href="${L.vinLookup}" target="_blank" rel="noopener">${esc(L.recalls)}</a></p>
+        ${page ? `<p>${page.year ? `<a href="${page.year}"><b>${yearName}</b>: ${esc(L.yearLink)}</a><br>` : ''}<a href="${page.model}">${esc(L.allYears)} ${esc(page.name)}${esc(L.allYears2)}</a></p>` : `<p class="small muted">${esc(L.none)}</p>`}
+      </div></div>${warn}`;
+      $('msg').textContent = '';
+    } catch {
+      $('msg').textContent = L.down;
+    }
+  });
+</script>

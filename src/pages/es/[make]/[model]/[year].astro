@@ -1,0 +1,17 @@
+---
+// Spanish model-year pages: only the most useful indexable years (see ES_YEAR_PAGES in aggregate.mjs)
+import YearView from '@/views/YearView.astro';
+import { type Model, type Year, makes, model as loadModel } from '@/lib/data';
+
+export function getStaticPaths() {
+  return makes().flatMap((mk) =>
+    mk.models.flatMap((mm) => {
+      const m = loadModel(mk.slug, mm.slug)!;
+      return m.years.filter((y) => y.es).map((y) => ({ params: { make: mk.slug, model: mm.slug, year: String(y.year) }, props: { m, y } }));
+    }),
+  );
+}
+const { m, y } = Astro.props as { m: Model; y: Year };
+---
+
+<YearView m={m} y={y} lang="es" />

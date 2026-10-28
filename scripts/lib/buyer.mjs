@@ -101,6 +101,7 @@ export async function buildBuyerData(live, log) {
       ...dimsOf(m, y),
       pop: m.popularity?.views30 ?? 0,
       ph: m.photo?.file,
+      es: y.es || undefined,
     });
   }
   await writeJson(SITE + 'finder.json', finder);

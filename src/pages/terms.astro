@@ -1,23 +1,5 @@
 ---
-import Base from '@/layouts/Base.astro';
-import { SITE_NAME } from '@/config/site';
+import TermsView from '@/views/TermsView.astro';
 ---
 
-<Base title="Terms & Disclaimer" description={`How to use ${SITE_NAME} information and its limits.`}>
-  <article class="prose">
-    <h1>Terms &amp; disclaimer</h1>
-    <h2>Independent site</h2>
-    <p>{SITE_NAME} is not a government website and is not affiliated with, endorsed by or sponsored by NHTSA, the EPA, the U.S. Department of Transportation, Wikipedia/Wikimedia or any vehicle manufacturer. Brand and model names are used only to identify vehicles.</p>
-    <h2>Information only</h2>
-    <p>Everything on {SITE_NAME} is provided for general information. It is not mechanical, legal, safety or purchasing advice. Recall coverage depends on the individual vehicle: the only reliable way to know whether your car has an open recall is a VIN check at nhtsa.gov/recalls or with an authorized dealer.</p>
-    <h2>Data limits</h2>
-    <ul>
-      <li>Owner complaints are unverified reports and do not prove a defect.</li>
-      <li>MPG, range and fuel cost are EPA estimates; real-world results vary.</li>
-      <li>Matching between NHTSA and EPA records is automated and can occasionally group or split models differently from the manufacturer.</li>
-      <li>Data is refreshed once a day and may lag the official sources.</li>
-    </ul>
-    <h2>No warranty</h2>
-    <p>Information is provided "as is" without warranty of any kind. {SITE_NAME} is not liable for decisions made or actions taken based on it.</p>
-  </article>
-</Base>
+<TermsView lang="en" />

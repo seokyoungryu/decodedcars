@@ -1,0 +1,109 @@
+---
+// Fuel / charging cost of two cars for the visitor's own mileage and prices (client-side)
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { fuelPrices } from '@/lib/data';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const P = fuelPrices();
+const T = es
+  ? {
+      title: 'Calculadora de costo de combustible: gasolina vs híbrido vs eléctrico',
+      desc: 'Compara el costo anual y a 5 años de combustible o recarga de dos autos según tu millaje y precios locales, y cuánto tarda en pagarse un híbrido o eléctrico.',
+      tools: 'Herramientas', h1: 'Calculadora de costo de combustible', lead: 'Gasolina vs híbrido vs eléctrico: ¿cuánto te costará realmente cada auto en combustible? Elige dos autos e ingresa cómo manejas.',
+      a: 'Auto A', b: 'Auto B', phA: 'Empieza a escribir, p. ej. Toyota Camry', phB: 'p. ej. Tesla Model 3', miles: 'Millas al año', gas: 'Gasolina ($/gal)', prem: 'Premium ($/gal)', kwh: 'Electricidad ($/kWh)', years: 'Años', diff: 'Diferencia de precio, opcional ($)', phDiff: 'cuánto más cuesta el auto eficiente',
+      note: 'Los precios predeterminados son los promedios de EE. UU. que usa fueleconomy.gov (EPA/DOE). La eficiencia es la calificación combinada EPA de la versión más eficiente del año más reciente; los híbridos enchufables se calculan solo con gasolina. Solo recarga en casa: la carga rápida pública suele costar más.',
+    }
+  : {
+      title: 'Fuel Cost Calculator: Gas vs Hybrid vs Electric',
+      desc: 'Compare the yearly and 5-year fuel or charging cost of any two cars for your own mileage and local prices, and see how long a hybrid or EV takes to pay back.',
+      tools: 'Tools', h1: 'Fuel cost calculator', lead: 'Gas vs hybrid vs electric: what will each car really cost you to fuel? Pick two cars and enter your own driving.',
+      a: 'Car A', b: 'Car B', phA: 'Start typing, e.g. Toyota Camry', phB: 'e.g. Tesla Model 3', miles: 'Miles per year', gas: 'Gas price ($/gal)', prem: 'Premium ($/gal)', kwh: 'Electricity ($/kWh)', years: 'Years', diff: 'Price difference, optional ($)', phDiff: 'how much more the efficient car costs',
+      note: "Default prices are the U.S. averages used by fueleconomy.gov (EPA/DOE). Efficiency is the EPA combined rating of each model's most efficient latest-year version; plug-in hybrids are counted on gasoline only. Home charging only — public fast charging usually costs more.",
+    };
+const JS = es
+  ? { pre: '/es', locale: 'es-US', choose: 'Elige al menos un auto.', perYear: 'al año', over: (n: number) => `en ${n} años`, overT: 'en {n} años', perMile: 'por milla', noData: 'Sin datos de eficiencia de la EPA.', premium: ' (premium)', saves: 'El <b>{car}</b> ahorra unos <b>{y} al año</b> y <b>{t} en {n} años</b>.', payback: ' Un precio {d} más alto se recuperaría en unos <b>{p} años</b>.' }
+  : { pre: '', locale: 'en-US', choose: 'Choose at least one car.', perYear: 'per year', overT: 'over {n} years', perMile: 'per mile', noData: 'No EPA efficiency data.', premium: ' (premium)', saves: 'The <b>{car}</b> saves about <b>{y} a year</b> and <b>{t} over {n} years</b>.', payback: ' A {d} higher price would pay back in about <b>{p} years</b>.' };
+---
+
+<Base title={T.title} description={T.desc} section="tools" lang={lang} alt={es ? '/tools/fuel-cost' : '/es/tools/fuel-cost'}>
+  <div class="crumbs"><a href={to(lang, '/tools')}>{T.tools}</a></div>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+
+  <form class="card form section" id="cf" onsubmit="return false">
+    <label>{T.a}<input name="a" list="cars" placeholder={T.phA} /></label>
+    <label>{T.b}<input name="b" list="cars" placeholder={T.phB} /></label>
+    <label>{T.miles}<input name="miles" type="number" min="1000" step="500" value="13500" /></label>
+    <label>{T.gas}<input name="gas" type="number" step="0.01" value={P.regular ?? '3.50'} /></label>
+    <label>{T.prem}<input name="prem" type="number" step="0.01" value={P.premium ?? '4.30'} /></label>
+    <label>{T.kwh}<input name="kwh" type="number" step="0.01" value={P.electric ?? '0.17'} /></label>
+    <label>{T.years}<input name="years" type="number" min="1" max="15" value="5" /></label>
+    <label>{T.diff}<input name="diff" type="number" step="100" placeholder={T.phDiff} /></label>
+    <datalist id="cars"></datalist>
+  </form>
+  <div id="out" class="section"></div>
+  <script type="application/json" id="i18n" set:html={JSON.stringify({ ...JS, over: undefined })} />
+  <p class="small muted">{T.note}</p>
+  <Ad place="bottom" lang={lang} />
+</Base>
+
+<script>
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; gal?: number; premium?: boolean; kwh?: number; pw: string; pop: number; es?: boolean };
+  const L = JSON.parse(document.getElementById('i18n')!.textContent!);
+  const fill = (t: string, v: Record<string, string | number>) => t.replace(/\{(\w+)\}/g, (_, k) => String(v[k]));
+  const form = document.getElementById('cf') as HTMLFormElement;
+  const out = document.getElementById('out')!;
+  const usd = (v: number) => `$${Math.round(v).toLocaleString(L.locale)}`;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  let byName = new Map<string, Row>();
+  const label = (r: Row) => (L.pre ? `${r.mk} ${r.md} ${r.y}` : `${r.y} ${r.mk} ${r.md}`);
+
+  function cost(r: Row, f: FormData) {
+    const miles = +(f.get('miles') ?? 0);
+    if (r.kwh && (!r.gal || r.pw === 'Electric')) return { per100: r.kwh * +(f.get('kwh') ?? 0), unit: `${Math.round(r.kwh * 10) / 10} kWh/100 mi`, year: (miles / 100) * r.kwh * +(f.get('kwh') ?? 0) };
+    if (r.gal) {
+      const price = r.premium ? +(f.get('prem') ?? 0) : +(f.get('gas') ?? 0);
+      return { per100: r.gal * price, unit: `${Math.round(100 / r.gal)} MPG${r.premium ? L.premium : ''}`, year: (miles / 100) * r.gal * price };
+    }
+    return null;
+  }
+
+  function render() {
+    const f = new FormData(form);
+    const a = byName.get(String(f.get('a'))), b = byName.get(String(f.get('b')));
+    const picks = [a, b].filter(Boolean) as Row[];
+    if (!picks.length) {
+      out.innerHTML = `<p class="muted">${L.choose}</p>`;
+      return;
+    }
+    const years = Math.max(1, +(f.get('years') ?? 5));
+    const res = picks.map((r) => ({ r, c: cost(r, f) }));
+    const link = (r: Row) => (L.pre ? (r.es ? `${L.pre}/${r.ms}/${r.s}/${r.y}` : `${L.pre}/${r.ms}/${r.s}`) : `/${r.ms}/${r.s}/${r.y}`);
+    let html = '<div class="grid">' + res.map(({ r, c }) => `<div class="card"><h3><a href="${link(r)}" style="color:var(--brand);text-decoration:none">${esc(label(r))}</a></h3>${c ? `<p class="small muted" style="margin:4px 0 8px">${c.unit}</p><div class="stats" style="margin-top:0"><div class="stat"><b>${usd(c.year)}</b><span>${L.perYear}</span></div><div class="stat"><b>${usd(c.year * years)}</b><span>${fill(L.overT, { n: years })}</span></div><div class="stat"><b>${c.per100.toFixed(1)}¢</b><span>${L.perMile}</span></div></div>` : `<p class="muted">${L.noData}</p>`}</div>`).join('') + '</div>';
+    if (res.length === 2 && res[0].c && res[1].c) {
+      const [x, y] = res[0].c.year <= res[1].c.year ? [res[0], res[1]] : [res[1], res[0]];
+      const save = y.c!.year - x.c!.year;
+      const diff = +(f.get('diff') ?? 0);
+      html += `<div class="note" style="margin-top:14px">${fill(L.saves, { car: esc(`${x.r.mk} ${x.r.md}`), y: usd(save), t: usd(save * years), n: years })}${diff > 0 && save > 0 ? fill(L.payback, { d: usd(diff), p: (diff / save).toFixed(1) }) : ''}</div>`;
+    }
+    out.innerHTML = html;
+  }
+  form.addEventListener('input', render);
+  fetch('/finder-data.json')
+    .then((r) => r.json())
+    .then((d) => {
+      const rows: Row[] = d.rows.filter((r: Row) => r.gal || r.kwh).sort((p: Row, q: Row) => q.pop - p.pop);
+      byName = new Map(rows.map((r) => [label(r), r]));
+      document.getElementById('cars')!.innerHTML = rows.map((r) => `<option value="${esc(label(r))}">`).join('');
+      const params = new URLSearchParams(location.search);
+      const def = (md: string) => rows.find((r) => r.md === md);
+      (form.elements.namedItem('a') as HTMLInputElement).value = params.get('a') ?? (def('Camry') ? label(def('Camry')!) : '');
+      (form.elements.namedItem('b') as HTMLInputElement).value = params.get('b') ?? (def('Model 3') ? label(def('Model 3')!) : '');
+      render();
+    });
+</script>

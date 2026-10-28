@@ -378,3 +378,8 @@ details.all-years[open] > summary { margin-bottom: 12px; }
 .chips.static span { padding: 6px 13px; border-radius: 999px; background: var(--bg-elev); border: 1px solid var(--line); font-size: .88rem; font-weight: 600; color: var(--ink-soft); }
 .feat-grid { display: grid; gap: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .feat { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: .92rem; }
+
+/* language switch */
+.lang-switch { flex: none; padding: 6px 11px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .18); color: var(--chrome-ink); font-size: .8rem; font-weight: 750; letter-spacing: .06em; text-decoration: none; }
+.lang-switch:hover { border-color: var(--brand); color: #fff; }
+@media (max-width: 720px) { .lang-switch { position: absolute; right: 16px; top: 12px; } .site-header .wrap { position: relative; } }

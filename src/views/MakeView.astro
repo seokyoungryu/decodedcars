@@ -1,0 +1,57 @@
+---
+// One make: current models as cards, past models as a table (English /make, Spanish /es/make)
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import ModelCard from '@/components/ModelCard.astro';
+import type { MakeEntry } from '@/lib/data';
+import { type Lang, num, to } from '@/i18n';
+import { classL } from '@/i18n/terms';
+
+interface Props {
+  mk: MakeEntry;
+  lang: Lang;
+}
+const { mk, lang } = Astro.props;
+const es = lang === 'es';
+const recalls = mk.models.reduce((s, m) => s + m.recalls, 0);
+const year = new Date().getUTCFullYear();
+const current = mk.models.filter((m) => m.to >= year - 1);
+const past = mk.models.filter((m) => !current.includes(m));
+const sub = (m: MakeEntry['models'][number]) => [m.from === m.to ? m.from : `${m.from}–${m.to}`, m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '', m.cls ? classL(lang, m.cls).replace(/ \([24]WD\)| [24]WD/, '') : ''].filter(Boolean).join(' · ');
+const T = es
+  ? { title: `Modelos ${mk.name}: ficha técnica, consumo, seguridad y retiros`, desc: `Todos los modelos ${mk.name} desde 2005: ficha técnica, dimensiones, consumo, calificaciones NHTSA, retiros y quejas por año modelo.`, makes: 'Marcas', h1: `Modelos ${mk.name}`, lead: `${mk.models.length} modelos ${mk.name} desde 2005 · ${num(lang, recalls)} campañas de retiro registradas.`, current: 'Modelos actuales', past: 'Modelos anteriores', model: 'Modelo', years: 'Años', mpg: 'Mejor MPG', recalls: 'Retiros', complaints: 'Quejas' }
+  : { title: `${mk.name} Models: Specs, MPG, Safety & Recalls`, desc: `Every ${mk.name} model since 2005 — specs, dimensions, MPG, NHTSA safety ratings, recalls and owner complaints by model year.`, makes: 'Makes', h1: `${mk.name} models`, lead: `${mk.models.length} ${mk.name} models since 2005 · ${num(lang, recalls)} recall campaigns on file.`, current: 'Current models', past: 'Past models', model: 'Model', years: 'Years', mpg: 'Best MPG', recalls: 'Recalls', complaints: 'Complaints' };
+const path = `/${mk.slug}`;
+---
+
+<Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)}>
+  <div class="crumbs"><a href={to(lang, '/makes')}>{T.makes}</a>›<span>{mk.name}</span></div>
+  <h1>{T.h1}</h1>
+  <p class="lead">{T.lead}</p>
+  {current.length > 0 && (<section class="section"><div class="section-head"><h2>{T.current}</h2></div><div class="mcards">{current.map((m) => <ModelCard href={to(lang, `/${mk.slug}/${m.slug}`)} title={`${mk.name} ${m.name}`} sub={sub(m)} photo={m.photo} />)}</div></section>)}
+  <Ad place="content" lang={lang} />
+  {
+    past.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.past}</h2></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{T.model}</th><th>{T.years}</th><th class="num">{T.mpg}</th><th class="num">{T.recalls}</th><th class="num">{T.complaints}</th></tr></thead>
+            <tbody>
+              {past.map((m) => (
+                <tr>
+                  <td><a href={to(lang, `/${mk.slug}/${m.slug}`)}>{mk.name} {m.name}</a></td>
+                  <td>{m.from === m.to ? m.from : `${m.from}–${m.to}`}</td>
+                  <td class="num">{m.mpg ? `${m.mpg} MPG` : m.range ? `${m.range} mi` : '–'}</td>
+                  <td class="num">{m.recalls}</td>
+                  <td class="num">{num(lang, m.complaints)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+  <Ad place="bottom" lang={lang} />
+</Base>
