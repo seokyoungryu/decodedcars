@@ -4,7 +4,7 @@ export const SITE_DESCRIPTION =
   'Specs, dimensions, fuel economy, crash-test ratings, recalls and owner-reported problems for every car, truck and SUV since 2005 — compared year by year and updated daily.';
 
 /** Contact email for the About page (fill in before applying to AdSense) */
-export const CONTACT_EMAIL = '';
+export const CONTACT_EMAIL = 'hello@decodedcars.com';
 
 /** Publisher ID (same account as the other sites): adds the site-verification tag, the AdSense script and ads.txt.
  *  Ad units stay off until ADSENSE_SLOTS are filled in after approval. */
