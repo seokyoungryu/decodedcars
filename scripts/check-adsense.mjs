@@ -12,7 +12,7 @@ if (!existsSync(OUT)) {
 }
 
 // 신청 기준
-const LAUNCH = process.env.SITE_LAUNCH || ''; // 실제 공개일 (YYYY-MM-DD). 배포 후 package.json 스크립트나 환경 변수로 지정
+const LAUNCH = process.env.SITE_LAUNCH || '2026-10-28'; // decodedcars.com went live 2026-10-28 (first deploy)
 const MIN_SITE_DAYS = 28;
 const THIN = 300; // 본문 영어 단어 수가 이보다 적으면 빈약한 페이지
 const ABOUT_MIN = 400;
