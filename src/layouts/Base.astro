@@ -27,7 +27,7 @@ const esUrl = lang === 'es' ? canonical : altUrl;
 // Spanish pages link to the English versions of sections that are not translated (yet)
 const NAV = [
   { href: to(lang, '/finder'), key: 'finder', label: t.finder },
-  { href: lang === 'es' ? '/compare' : '/compare', key: 'compare', label: t.compare },
+  { href: to(lang, '/compare'), key: 'compare', label: t.compare },
   { href: to(lang, '/makes'), key: 'makes', label: t.makes },
   ...(lang === 'en' ? [{ href: '/rankings', key: 'rankings', label: t.rankings }] : []),
   { href: to(lang, '/tools'), key: 'tools', label: t.tools },
@@ -78,7 +78,7 @@ const NAV = [
           </div>
           <div>
             <h4>{t.research}</h4>
-            <ul><li><a href={to(lang, '/finder')}>{t.finder}</a></li><li><a href="/compare">{t.compareCars}</a></li><li><a href={to(lang, '/makes')}>{t.allMakes}</a></li>{lang === 'en' && <li><a href="/rankings">{t.rankings}</a></li>}<li><a href="/recalls">{t.newRecalls}</a></li></ul>
+            <ul><li><a href={to(lang, '/finder')}>{t.finder}</a></li><li><a href={to(lang, '/compare')}>{t.compareCars}</a></li><li><a href={to(lang, '/makes')}>{t.allMakes}</a></li>{lang === 'en' && <li><a href="/rankings">{t.rankings}</a></li>}<li><a href="/recalls">{t.newRecalls}</a></li></ul>
           </div>
           <div>
             <h4>{t.tools}</h4>

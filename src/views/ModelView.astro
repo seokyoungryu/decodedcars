@@ -53,7 +53,13 @@ const nameOf = (mk: string, s: string) => {
 };
 const rivals = vsFor(m.makeSlug, m.slug)
   .slice(0, 6)
-  .map((p) => ({ id: p.id, other: p.a[0] === m.makeSlug && p.a[1] === m.slug ? nameOf(...p.b) : nameOf(...p.a) }));
+  .map((p) => {
+    const [oMk, oS] = p.a[0] === m.makeSlug && p.a[1] === m.slug ? p.b : p.a;
+    const o = loadModel(oMk, oS);
+    return { id: p.id, other: nameOf(oMk, oS), photo: o?.photo?.file, path: `${oMk}/${oS}` };
+  });
+const self = `${m.makeSlug}/${m.slug}`;
+const vsHref = (p: (typeof rivals)[number]) => (es ? `/es/compare?a=${self}&b=${p.path}` : `/compare/${p.id}`);
 const yearLink = (year: number, hasEs?: boolean) => (es && hasEs ? to('es', href(m, year)) : href(m, year));
 const rated = years.find((y) => y.overall);
 const overview = es ? m.overviewEs : m.overview;
@@ -101,7 +107,7 @@ const T = {
     rating: 'Última calificación', recalls: 'Retiros', campaignsAll: (k: number) => `${k} campañas, todos los años`, most: 'Más quejas', fewest: 'Menos problemas', interest: 'Interés', views: 'visitas en Wikipedia / 30 días',
     about: `Acerca del ${title}`, fromWiki: 'Del artículo de Wikipedia', licensed: 'con licencia',
     pcH: `${m.model} ${pcYear.year}: ventajas y desventajas`, full: `Todos los detalles del ${pcYear.year} →`, good: 'Lo bueno', watch: 'A tener en cuenta', noPros: 'Nada destaca frente a modelos similares en los datos.', noCons: 'Sin puntos débiles frente a modelos similares en los datos.',
-    h2h: 'Comparar frente a frente (en inglés)', changesH: `Cambios del ${m.model} por año modelo`,
+    h2h: 'Comparar frente a frente', changesH: `Cambios del ${m.model} por año modelo`,
     changesNote: 'Se omiten los años sin cambios medibles.',
     showAll: `Ver los ${years.length} años modelo lado a lado`, year: 'Año', bestMpgRange: 'Mejor MPG / autonomía', length: 'Largo', weight: 'Peso', overall: 'General', complaints: 'Quejas',
     mpgChart: `Mejor MPG combinadas por año modelo — ${title}`, altH: `Alternativas al ${m.model} ${alt.year}`, model: 'Modelo', nhtsaOverall: 'General NHTSA',
@@ -167,7 +173,19 @@ const path = href(m);
     rivals.length > 0 && (
       <section class="section">
         <div class="section-head"><h2>{T.h2h}</h2></div>
-        <div class="chips">{rivals.map((p) => <a href={`/compare/${p.id}`}>{title} vs {p.other}</a>)}</div>
+        <div class="vs-cards">
+          {rivals.map((p) => (
+            <a class="vs-card" href={vsHref(p)}>
+              <div class="vs-photos">
+                {m.photo ? <img src={`/photos/${m.photo.file}`} alt="" loading="lazy" decoding="async" /> : <i />}
+                {p.photo ? <img src={`/photos/${p.photo}`} alt="" loading="lazy" decoding="async" /> : <i />}
+                <span class="vs-badge">VS</span>
+              </div>
+              <div class="vs-names"><b>{title}</b><span>vs</span><b>{p.other}</b></div>
+            </a>
+          ))}
+        </div>
+        <p style="margin-top:14px"><a class="btn ghost" href={`${es ? '/es' : ''}/compare?a=${self}`}>{es ? `Comparar el ${m.model} con otro auto →` : `Compare the ${m.model} with any other car →`}</a></p>
       </section>
     )
   }

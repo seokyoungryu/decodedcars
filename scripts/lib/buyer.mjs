@@ -99,6 +99,13 @@ export async function buildBuyerData(live, log) {
       rc: y.recalls.length,
       cp: y.complaints.total,
       ...dimsOf(m, y),
+      // U.S. specs from vPIC (when decoded): most powerful engine, most seats, driver aids standard on every version
+      // (the newest years are decoded last, so fall back to the closest decoded year within two years)
+      ...((sp) => ({
+        hp: sp?.hp?.[1],
+        seats: sp?.seats?.[1],
+        std: sp?.features ? Object.values(sp.features).filter((v) => v === 'std').length : undefined,
+      }))(y.specs ?? m.years.filter((x) => x.specs && Math.abs(x.year - y.year) <= 2).sort((p, q) => Math.abs(p.year - y.year) - Math.abs(q.year - y.year))[0]?.specs),
       pop: m.popularity?.views30 ?? 0,
       ph: m.photo?.file,
       es: y.es || undefined,

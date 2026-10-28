@@ -167,7 +167,7 @@ export interface VerdictYear { year: number; complaints: number; recalls: number
 export interface Verdict { best: VerdictYear; worst?: VerdictYear; compared: number }
 export interface FinderRow {
   mk: string; md: string; ms: string; s: string; y: number; years: number[]; body: string; cls?: string; pw: string; awd?: boolean;
-  mpg?: number; range?: number; gal?: number; premium?: boolean; kwh?: number; cost?: number; st?: number; rc: number; cp: number; len?: number; wd?: number; ht?: number; wb?: number; dy?: number; pop: number; ph?: string;
+  mpg?: number; range?: number; gal?: number; premium?: boolean; kwh?: number; cost?: number; st?: number; rc: number; cp: number; len?: number; wd?: number; ht?: number; wb?: number; dy?: number; hp?: number; seats?: number; std?: number; es?: boolean; pop: number; ph?: string;
 }
 export interface VsPair { id: string; a: [string, string]; b: [string, string]; pop: number }
 export const finder = () => load('finder.json', [] as FinderRow[]);

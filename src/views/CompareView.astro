@@ -1,0 +1,291 @@
+---
+// Compare any two cars (English /compare, Spanish /es/compare). The picker and the side-by-side layout run in the browser
+// on /finder-data.json (newest model year of each model); popular rivals are server-rendered cards that link to the
+// written comparison pages (English) or open the picker pre-filled (Spanish).
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { model as loadModel, vsPairs } from '@/lib/data';
+import { type Lang, to } from '@/i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const es = lang === 'es';
+const info = (mk: string, s: string) => {
+  const m = loadModel(mk, s);
+  return { name: m ? `${m.make} ${m.model}` : s, model: m?.model ?? s, photo: m?.photo?.file, path: `${mk}/${s}` };
+};
+const pairs = vsPairs().map((p) => ({ id: p.id, a: info(...p.a), b: info(...p.b) }));
+const featured = pairs.filter((p) => p.a.photo && p.b.photo).slice(0, 12);
+const more = pairs.filter((p) => !featured.includes(p)).slice(0, 48);
+const pairHref = (p: (typeof pairs)[number]) => (es ? `/es/compare?a=${p.a.path}&b=${p.b.path}` : `/compare/${p.id}`);
+
+const T = es
+  ? {
+      title: 'Comparar autos: consumo, tamaño, seguridad y confiabilidad lado a lado',
+      desc: 'Elige dos autos y compáralos lado a lado: consumo, costo de combustible, potencia, tamaño, calificación NHTSA, asistencias de serie, retiros y quejas.',
+      eyebrow: 'Comparador', h1: 'Compara dos autos', lead: 'Elige cualquier par de modelos y mira quién gana en cada categoría, con datos oficiales de la EPA y la NHTSA.',
+      pick: 'Elige un auto', search: 'Busca un modelo: p. ej. RAV4', change: 'Cambiar', swap: 'Intercambiar autos',
+      popular: 'Comparaciones populares', popularLead: 'Los rivales que más se comparan, por clase.', more: 'Más comparaciones',
+      note: 'Se usa el año modelo más reciente de cada modelo. Verde = mejor dato cuando más alto o más bajo es claramente mejor. No incluye precios.',
+    }
+  : {
+      title: 'Compare Cars Side by Side: MPG, Size, Safety & Reliability',
+      desc: 'Pick any two cars and compare them side by side: MPG, fuel cost, horsepower, size, NHTSA rating, standard driver aids, recalls and owner complaints.',
+      eyebrow: 'Car comparison', h1: 'Compare two cars', lead: 'Pick any two models and see who wins each category, using official EPA and NHTSA data.',
+      pick: 'Choose a car', search: 'Search a model — e.g. RAV4', change: 'Change', swap: 'Swap cars',
+      popular: 'Popular comparisons', popularLead: 'The rivals people compare most, by class.', more: 'More comparisons',
+      note: "Uses each model's newest model year. Green = the better figure where higher or lower is clearly better. Prices are not included.",
+    };
+// strings for the client script
+const JS = {
+  pre: es ? '/es' : '',
+  locale: es ? 'es-US' : 'en-US',
+  vs: 'VS',
+  wins: es ? 'gana en {w} de {n} categorías' : 'wins {w} of {n} categories',
+  tie: es ? 'Empate: {w} categorías cada uno' : 'Tie: {w} categories each',
+  chooseIf: es ? 'Elige el {car} si quieres…' : 'Choose the {car} if you want…',
+  nothing: es ? 'No supera al otro en ninguna categoría medida.' : "It doesn't beat the other car on any measured category.",
+  same: es ? 'Elige dos modelos distintos.' : 'Pick two different models.',
+  pickTwo: es ? 'Elige dos autos para compararlos.' : 'Pick two cars to compare them.',
+  noMatch: es ? 'Sin resultados' : 'No match',
+  specs: es ? 'Ficha completa →' : 'Full specs →',
+  fuel: es ? 'Comparar costo de combustible' : 'Compare fuel costs',
+  garage: es ? 'Comparar tamaño y garaje' : 'Compare size & garage fit',
+  article: es ? 'Comparación completa (en inglés)' : 'Read the full comparison',
+  groups: es ? ['Eficiencia', 'Desempeño y espacio', 'Seguridad y confiabilidad', 'Interés'] : ['Efficiency', 'Performance & space', 'Safety & reliability', 'Interest'],
+  labels: es
+    ? { mpg: 'Mejor consumo combinado', cost: 'Combustible al año (EPA)', range: 'Autonomía eléctrica', hp: 'Potencia máxima', seats: 'Asientos', len: 'Largo', wd: 'Ancho (sin espejos)', ht: 'Alto', st: 'Calificación NHTSA', std: 'Asistencias de serie', rc: 'Retiros (último año)', cp: 'Quejas (último año)', pop: 'Visitas en Wikipedia (30 días)' }
+    : { mpg: 'Best combined MPG', cost: 'Fuel cost per year (EPA)', range: 'EV range', hp: 'Horsepower (top)', seats: 'Seats', len: 'Length', wd: 'Width (no mirrors)', ht: 'Height', st: 'NHTSA overall rating', std: 'Standard driver aids', rc: 'Recalls (latest year)', cp: 'Owner complaints (latest year)', pop: 'Wikipedia views (30 days)' },
+  want: es
+    ? { mpg: 'gastar menos en combustible', cost: 'gastar menos en combustible', range: 'más autonomía eléctrica', hp: 'más potencia', seats: 'más asientos', st: 'mejor calificación de choque', std: 'más asistencias de serie', rc: 'menos retiros', cp: 'menos quejas de propietarios' }
+    : { mpg: 'lower fuel bills', cost: 'lower fuel bills', range: 'more EV range', hp: 'more power', seats: 'more seats', st: 'a better crash rating', std: 'more standard driver aids', rc: 'fewer recalls', cp: 'fewer owner complaints' },
+  body: es ? { Car: 'Auto', SUV: 'SUV', Pickup: 'Pickup', Minivan: 'Minivan', Van: 'Van', Wagon: 'Familiar', 'Sports / 2-seat': 'Deportivo', Other: 'Otro' } : {},
+  pw: es ? { Gas: 'Gasolina', Hybrid: 'Híbrido', 'Plug-in hybrid': 'Híbrido enchufable', Electric: 'Eléctrico', Diesel: 'Diésel', 'Gas + EV versions': 'Gasolina y eléctrico' } : {},
+  pairs: Object.fromEntries(vsPairs().map((p) => [`${p.a.join('/')}|${p.b.join('/')}`, p.id])),
+};
+---
+
+<Base title={T.title} description={T.desc} section="compare" lang={lang} alt={es ? '/compare' : '/es/compare'}>
+  <section class="band cmp-band">
+    <span class="eyebrow">{T.eyebrow}</span>
+    <h1 style="margin-top:10px">{T.h1}</h1>
+    <p class="lead">{T.lead}</p>
+    <div class="cmp-picker" id="picker">
+      {['a', 'b'].map((side) => (
+        <div class="cmp-slot" data-side={side}>
+          <div class="cmp-chosen" hidden></div>
+          <div class="cmp-find">
+            <span class="eyebrow">{T.pick}</span>
+            <input type="search" placeholder={T.search} aria-label={T.pick} autocomplete="off" />
+            <div class="search-results" hidden></div>
+          </div>
+        </div>
+      ))}
+      <button type="button" class="cmp-swap" id="swap" aria-label={T.swap} title={T.swap}>⇄</button>
+    </div>
+  </section>
+
+  <div id="result" class="section" aria-live="polite"></div>
+  <p class="small muted">{T.note} <a href={to(lang, '/methodology')}>{es ? 'Cómo lo calculamos →' : 'How we calculate this →'}</a></p>
+  <script type="application/json" id="i18n" set:html={JSON.stringify({ ...JS, change: T.change, search: T.search })} />
+
+  <Ad place="content" lang={lang} />
+
+  <section class="section">
+    <div class="section-head"><h2>{T.popular}</h2></div>
+    <p class="muted small" style="margin:-8px 0 14px">{T.popularLead}</p>
+    <div class="vs-cards">
+      {featured.map((p) => (
+        <a class="vs-card" href={pairHref(p)}>
+          <div class="vs-photos">
+            <img src={`/photos/${p.a.photo}`} alt="" loading="lazy" decoding="async" />
+            <img src={`/photos/${p.b.photo}`} alt="" loading="lazy" decoding="async" />
+            <span class="vs-badge">VS</span>
+          </div>
+          <div class="vs-names"><b>{p.a.name}</b><span>vs</span><b>{p.b.name}</b></div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {
+    more.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{T.more}</h2></div>
+        <div class="vs-list">
+          {more.map((p) => (
+            <a href={pairHref(p)}>
+              <span class="vs-thumbs">{p.a.photo ? <img src={`/photos/${p.a.photo}`} alt="" loading="lazy" /> : <i />}{p.b.photo ? <img src={`/photos/${p.b.photo}`} alt="" loading="lazy" /> : <i />}</span>
+              <span class="vs-text"><b>{p.a.model}</b> vs <b>{p.b.model}</b><small>{p.a.name.replace(` ${p.a.model}`, '')} · {p.b.name.replace(` ${p.b.model}`, '')}</small></span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )
+  }
+  <Ad place="bottom" lang={lang} />
+</Base>
+
+<script>
+  type Row = { mk: string; md: string; ms: string; s: string; y: number; body: string; pw: string; awd?: boolean; mpg?: number; range?: number; cost?: number; st?: number; rc: number; cp: number; len?: number; wd?: number; ht?: number; hp?: number; seats?: number; std?: number; pop: number; ph?: string; es?: boolean };
+  const L = JSON.parse(document.getElementById('i18n')!.textContent!);
+  const fill = (t: string, v: Record<string, string | number>) => t.replace(/\{(\w+)\}/g, (_, k) => String(v[k]));
+  const esc = (s: unknown = '') => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const nf = (v: number) => v.toLocaleString(L.locale);
+  const key = (r: Row) => `${r.ms}/${r.s}`;
+  const name = (r: Row) => `${r.mk} ${r.md}`;
+  const yearName = (r: Row) => (L.pre ? `${name(r)} ${r.y}` : `${r.y} ${name(r)}`);
+  const thisYear = new Date().getUTCFullYear();
+  let rows: Row[] = [];
+  let byKey = new Map<string, Row>();
+  const picked: Record<'a' | 'b', Row | undefined> = { a: undefined, b: undefined };
+
+  // metric definitions: group, key, format, which direction wins
+  type Metric = { g: number; k: keyof Row; fmt: (v: number) => string; better?: 'high' | 'low' };
+  const M: Metric[] = [
+    { g: 0, k: 'mpg', fmt: (v) => `${v} MPG`, better: 'high' },
+    { g: 0, k: 'cost', fmt: (v) => `$${nf(v)}`, better: 'low' },
+    { g: 0, k: 'range', fmt: (v) => `${v} mi`, better: 'high' },
+    { g: 1, k: 'hp', fmt: (v) => `${v} hp`, better: 'high' },
+    { g: 1, k: 'seats', fmt: (v) => String(v), better: 'high' },
+    { g: 1, k: 'len', fmt: (v) => `${v.toFixed(1)} in` },
+    { g: 1, k: 'wd', fmt: (v) => `${v.toFixed(1)} in` },
+    { g: 1, k: 'ht', fmt: (v) => `${v.toFixed(1)} in` },
+    { g: 2, k: 'st', fmt: (v) => '★'.repeat(v), better: 'high' },
+    { g: 2, k: 'std', fmt: (v) => String(v), better: 'high' },
+    { g: 2, k: 'rc', fmt: (v) => String(v), better: 'low' },
+    { g: 2, k: 'cp', fmt: (v) => nf(v), better: 'low' },
+    { g: 3, k: 'pop', fmt: (v) => nf(v) },
+  ];
+
+  function carHead(r: Row) {
+    const yearUrl = L.pre ? (r.es ? `${L.pre}/${r.ms}/${r.s}/${r.y}` : `${L.pre}/${r.ms}/${r.s}`) : `/${r.ms}/${r.s}/${r.y}`;
+    const tags = [L.body[r.body] ?? r.body, L.pw[r.pw] ?? r.pw, r.awd ? 'AWD' : ''].filter(Boolean);
+    return `<div class="cmp-car">
+      <div class="cmp-photo">${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="">` : '<span>🚗</span>'}</div>
+      <h2><a href="${yearUrl}">${esc(yearName(r))}</a></h2>
+      <div class="cmp-tags">${tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
+      <a class="small" href="${yearUrl}">${esc(L.specs)}</a>
+    </div>`;
+  }
+
+  function render() {
+    const out = document.getElementById('result')!;
+    const a = picked.a, b = picked.b;
+    if (!a || !b) return void (out.innerHTML = `<p class="muted">${esc(L.pickTwo)}</p>`);
+    if (key(a) === key(b)) return void (out.innerHTML = `<p class="muted">${esc(L.same)}</p>`);
+    let winsA = 0, winsB = 0, contests = 0;
+    const wantA: string[] = [], wantB: string[] = [];
+    const groups = L.groups.map((title: string, gi: number) => {
+      const lines = M.filter((m) => m.g === gi && (a[m.k] != null || b[m.k] != null)).map((m) => {
+        const va = a[m.k] as number | undefined, vb = b[m.k] as number | undefined;
+        let wa = false, wb = false;
+        if (m.better && va != null && vb != null && va !== vb) {
+          contests++;
+          wa = m.better === 'high' ? va > vb : va < vb;
+          wb = !wa;
+          if (wa) winsA++, wantA.push(L.want[m.k as string]);
+          else winsB++, wantB.push(L.want[m.k as string]);
+        }
+        const max = Math.max(va ?? 0, vb ?? 0) || 1;
+        const bar = (v: number | undefined) => (v == null ? 0 : Math.max(4, (v / max) * 100));
+        return `<div class="cmp-row">
+          <div class="cmp-val left${wa ? ' win' : ''}"><span>${va == null ? '–' : esc(m.fmt(va))}</span><i style="width:${bar(va)}%"></i></div>
+          <div class="cmp-label">${esc(L.labels[m.k as string])}</div>
+          <div class="cmp-val right${wb ? ' win' : ''}"><i style="width:${bar(vb)}%"></i><span>${vb == null ? '–' : esc(m.fmt(vb))}</span></div>
+        </div>`;
+      });
+      return lines.length ? `<div class="cmp-group"><h3>${esc(title)}</h3>${lines.join('')}</div>` : '';
+    });
+    const uniq = (x: string[]) => [...new Set(x)];
+    const verdict = winsA === winsB ? fill(L.tie, { w: winsA }) : fill(L.wins, { w: Math.max(winsA, winsB), n: contests });
+    const leader = winsA === winsB ? '' : esc(name(winsA > winsB ? a : b));
+    const choose = (r: Row, want: string[]) => `<div class="pc pros"><h3>${esc(fill(L.chooseIf, { car: r.md }))}</h3>${want.length ? `<ul>${uniq(want).map((w) => `<li><b>${esc(w[0].toUpperCase() + w.slice(1))}</b></li>`).join('')}</ul>` : `<p class="muted small">${esc(L.nothing)}</p>`}</div>`;
+    const pair = L.pairs[`${key(a)}|${key(b)}`] ?? L.pairs[`${key(b)}|${key(a)}`];
+    const label = (r: Row) => encodeURIComponent(L.pre ? `${name(r)} ${r.y}` : `${r.y} ${name(r)}`);
+    out.innerHTML = `
+      <div class="cmp-heads">${carHead(a)}<div class="cmp-score"><span class="vs-badge big">VS</span><b>${winsA} – ${winsB}</b><small>${leader ? `${leader} ` : ''}${esc(verdict)}</small></div>${carHead(b)}</div>
+      ${groups.join('')}
+      <div class="pc-grid" style="margin-top:22px">${choose(a, wantA)}${choose(b, wantB)}</div>
+      <div class="chips section">
+        ${pair && !L.pre ? `<a href="/compare/${pair}">${esc(L.article)} →</a>` : ''}
+        <a href="${L.pre}/tools/fuel-cost?a=${label(a)}&b=${label(b)}">${esc(L.fuel)} →</a>
+        <a href="${L.pre}/tools/garage-fit?a=${encodeURIComponent(name(a))}&b=${encodeURIComponent(name(b))}">${esc(L.garage)} →</a>
+      </div>`;
+  }
+
+  // one picker slot: chosen car card, or a search box with instant results
+  function slot(side: 'a' | 'b') {
+    const el = document.querySelector<HTMLElement>(`.cmp-slot[data-side="${side}"]`)!;
+    const chosen = el.querySelector<HTMLElement>('.cmp-chosen')!;
+    const find = el.querySelector<HTMLElement>('.cmp-find')!;
+    const input = el.querySelector('input')!;
+    const list = el.querySelector<HTMLElement>('.search-results')!;
+    let hits: Row[] = [];
+    const show = () => {
+      const r = picked[side];
+      chosen.hidden = !r;
+      find.hidden = !!r;
+      if (r) chosen.innerHTML = `${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="">` : '<i class="ph"></i>'}<span><b>${esc(name(r))}</b><small>${r.y} · ${esc(L.body[r.body] ?? r.body)}</small></span><button type="button">${esc(L.change)}</button>`;
+    };
+    chosen.addEventListener('click', () => {
+      picked[side] = undefined;
+      show();
+      input.value = '';
+      input.focus();
+      render();
+    });
+    input.addEventListener('input', () => {
+      const q = norm(input.value);
+      if (!q) return void (list.hidden = true);
+      hits = rows.filter((r) => r.y >= thisYear - 1 && (norm(`${r.mk}${r.md}`).includes(q) || norm(r.md).startsWith(q))).sort((p, q2) => q2.pop - p.pop).slice(0, 8);
+      list.innerHTML = hits.length ? hits.map((r, i) => `<a href="#" data-i="${i}">${r.ph ? `<img src="/photos/${encodeURIComponent(r.ph)}" alt="">` : '<i class="ph"></i>'}${esc(name(r))}<span>${r.y}</span></a>`).join('') : `<a>${esc(L.noMatch)}</a>`;
+      list.hidden = false;
+    });
+    list.addEventListener('click', (e) => {
+      e.preventDefault();
+      const i = (e.target as HTMLElement).closest('a')?.dataset.i;
+      if (i == null) return;
+      picked[side] = hits[+i];
+      list.hidden = true;
+      show();
+      sync();
+    });
+    input.addEventListener('keydown', (e) => e.key === 'Enter' && hits[0] && (e.preventDefault(), (picked[side] = hits[0]), (list.hidden = true), show(), sync()));
+    return show;
+  }
+
+  // keep the choice in the address so a comparison can be shared
+  function sync() {
+    const p = new URLSearchParams();
+    if (picked.a) p.set('a', key(picked.a));
+    if (picked.b) p.set('b', key(picked.b));
+    history.replaceState(null, '', `${location.pathname}${p.size ? `?${String(p).replace(/%2F/g, '/')}` : ''}`);
+    render();
+  }
+
+  fetch('/finder-data.json')
+    .then((r) => r.json())
+    .then((d) => {
+      rows = d.rows;
+      byKey = new Map(rows.map((r) => [key(r), r]));
+      const p = new URLSearchParams(location.search);
+      // an example pair on a bare visit; a link from a model page fills only the first slot
+      const bare = !p.has('a') && !p.has('b');
+      picked.a = byKey.get(p.get('a') ?? (bare ? 'honda/cr-v' : ''));
+      picked.b = byKey.get(p.get('b') ?? (bare ? 'toyota/rav4' : ''));
+      const showA = slot('a'), showB = slot('b');
+      showA();
+      showB();
+      document.getElementById('swap')!.addEventListener('click', () => {
+        [picked.a, picked.b] = [picked.b, picked.a];
+        showA();
+        showB();
+        sync();
+      });
+      render();
+    });
+</script>
