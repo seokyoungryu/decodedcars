@@ -10,10 +10,8 @@ import { summarizeSpecs } from './specs.mjs';
 import { SITE, daysAgo, today, writeJson } from './store.mjs';
 import { norm, slug } from './keys.mjs';
 
-// EPA classes are by size only; compare mainstream with mainstream and luxury with luxury first
-const LUXURY = new Set(['ACURA', 'ALFAROMEO', 'ASTONMARTIN', 'AUDI', 'BENTLEY', 'BMW', 'BMWALPINA', 'BUGATTI', 'CADILLAC', 'FERRARI', 'GENESIS', 'INFINITI', 'JAGUAR', 'LAMBORGHINI', 'LANDROVER', 'LEXUS', 'LINCOLN', 'LOTUS', 'LUCID', 'MASERATI', 'MCLARENAUTOMOTIVE', 'MERCEDESBENZ', 'POLESTAR', 'PORSCHE', 'ROLLSROYCE', 'ROLLSROYCEMOTORCARSLTD', 'TESLA', 'VOLVO']);
-const EXOTIC = new Set(['ASTONMARTIN', 'BENTLEY', 'BUGATTI', 'FERRARI', 'LAMBORGHINI', 'LOTUS', 'MCLARENAUTOMOTIVE', 'ROLLSROYCE', 'ROLLSROYCEMOTORCARSLTD']);
-const tier = (key) => (EXOTIC.has(key.split('|')[0]) ? 2 : LUXURY.has(key.split('|')[0]) ? 1 : 0);
+import { tier } from './tiers.mjs';
+import { buildBest } from './best.mjs';
 // EPA size classes in order, used when exterior length is unknown
 const SIZE = (cls = '') => (/minicompact/i.test(cls) ? 0 : /subcompact|small/i.test(cls) ? 1 : /compact/i.test(cls) ? 2 : /midsize/i.test(cls) ? 3 : /large|standard/i.test(cls) ? 4 : 2);
 const lengthOf = (y) => y.dims?.find((d) => d.length)?.length;
@@ -277,6 +275,7 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
   for (const m of live) m.verdict = verdict(m);
   for (const m of live) await writeJson(`${SITE}models/${m.makeSlug}/${m.slug}.json`, m);
   await buildBuyerData(live, log);
+  await buildBest(live, log);
 
   // Photos → public/photos (served as static files; attribution is stored with each model)
   const PUBLIC_PHOTOS = fileURLToPath(new URL('../../public/photos/', import.meta.url));

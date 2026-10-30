@@ -1,0 +1,113 @@
+---
+// One "best by class" list: current models ranked on fuel cost, crash rating, recall history and standard driver aids.
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { type BestClass, type BestRow, best, href, n, updatedLabel, usd } from '@/lib/data';
+
+export function getStaticPaths() {
+  return best().classes.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props as { c: BestClass };
+const rows = c.rows;
+const others = best().classes.filter((x) => x.slug !== c.slug);
+const nm = (r: BestRow) => `${r.year} ${r.make} ${r.model}`;
+const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? '' : 's'}`;
+const recallTxt = (v?: number) => (v == null ? 'too new for a recall history' : `${v} recall${v === 1 ? '' : 's'} per model year`);
+const PARTS = [
+  { k: 'fuel', label: 'Fuel cost', w: 30, val: (r: BestRow) => (r.fuel != null ? `${usd(r.fuel)}/yr` : undefined) },
+  { k: 'safety', label: 'Crash rating', w: 25, val: (r: BestRow) => (r.safety ? `${'★'.repeat(r.safety)}` : undefined) },
+  { k: 'recalls', label: 'Recall history', w: 30, val: (r: BestRow) => (r.recalls != null ? `${r.recalls}/yr` : undefined) },
+  { k: 'tech', label: 'Standard tech', w: 15, val: (r: BestRow) => (r.tech ? `${r.tech} aids` : undefined) },
+] as const;
+
+// a written read-out built from this list's own numbers
+const [a, b, d] = rows;
+const by = <K extends keyof BestRow>(k: K, low: boolean) => rows.filter((r) => r[k] != null).sort((x, y) => ((x[k] as number) - (y[k] as number)) * (low ? 1 : -1));
+const cheap = by('fuel', true)[0];
+const fewest = by('recalls', true);
+const tech = by('tech', false)[0];
+const five = rows.filter((r) => r.safety === 5);
+const rated = rows.filter((r) => r.safety);
+const pwCount = new Map<string, number>();
+for (const r of rows) pwCount.set(r.pw, (pwCount.get(r.pw) ?? 0) + 1);
+const text = [
+  `We ranked ${c.total} ${c.noun}s on sale for the ${a.year <= new Date().getUTCFullYear() ? a.year : a.year - 1}–${a.year} model years. The ${nm(a)} comes out on top with ${a.score} out of 100${b ? `, ahead of the ${nm(b)} (${b.score})` : ''}${d ? ` and the ${nm(d)} (${d.score})` : ''}. ${a.fuel != null ? `The leader costs about ${usd(a.fuel)} a year to fuel, ` : ''}${a.safety ? `earned ${a.safety} stars overall from NHTSA in ${a.safetyYear}` : 'has no recent NHTSA overall rating yet'}, and has averaged ${recallTxt(a.recalls)}.`,
+  cheap && `Cheapest to run: the ${nm(cheap)} at about ${usd(cheap.fuel)} a year for 15,000 miles${cheap.mpg ? ` (${cheap.mpg} MPG combined in its most efficient version)` : cheap.range ? ` (${cheap.range} miles of EPA range)` : ''}. ${rows.length > 1 ? `The most expensive here, the ${nm(by('fuel', false)[0])}, costs ${usd(by('fuel', false)[0].fuel)}.` : ''}`,
+  rated.length
+    ? `${rated.length} of the ${rows.length} ranked ${c.noun}s have an NHTSA overall rating from the last few model years${five.length ? `; ${five.length === rated.length ? 'all of them' : plural(five.length, 'model')} earned five stars, including the ${five.slice(0, 3).map(nm).join(', the ')}` : ''}. Models without a recent rating are scored as average on safety, not penalized.`
+    : `None of the ranked ${c.noun}s has a recent NHTSA overall rating yet, so safety counts as average for all of them until the crash tests are published.`,
+  fewest.length >= 2 && `Fewest recalls: the ${nm(fewest[0])} has averaged ${recallTxt(fewest[0].recalls)} over recent years, while the ${nm(fewest.at(-1)!)} has averaged ${fewest.at(-1)!.recalls}. Brand-new models have no history yet and count as average.`,
+  tech && `Most standard driver-assist features: the ${nm(tech)}, with ${tech.tech} aids such as automatic emergency braking standard on every version.`,
+  `By powertrain, the list includes ${[...pwCount].map(([p, k]) => `${k} ${p === 'Gas' ? 'gasoline' : p.toLowerCase()}`).join(', ')} model${rows.length === 1 ? '' : 's'}.`,
+].filter(Boolean) as string[];
+const how = `How the ${c.noun} score works: each model is compared only with the other ${c.total - 1} ${c.noun}s. Fuel cost counts 30%, NHTSA crash rating 25%, recalls per model year 30% and standard driver aids 15%, each as a percentile from 0 to 100. Prices are not included.`;
+---
+
+<Base title={`${c.title} for ${a.year}: Ranked on Real Data`} description={`${c.title} ranked on fuel cost, NHTSA crash ratings, recall history and standard safety tech. ${a.make} ${a.model} leads ${c.total} ${c.noun}s.`.slice(0, 158)} section="rankings">
+  <section class="band rk-hero" style="--rk:#e8590c">
+    <div class="crumbs"><a href="/best">Best by class</a></div>
+    <h1 style="margin-top:6px">{c.title}</h1>
+    <p class="lead">{c.total} {c.noun}s on sale now, scored out of 100 on fuel cost, crash rating, recall history and standard safety tech — public NHTSA and EPA data, no paid placements.</p>
+    <p class="small" style="color:var(--chrome-mute)">{updatedLabel()} · <a href="/methodology">How we calculate this →</a></p>
+    <nav class="rk-nav" aria-label="Classes">
+      {best().classes.map((x) => <a href={`/best/${x.slug}`} style="--rk:#e8590c" aria-current={x.slug === c.slug ? 'page' : undefined}>{x.title.replace(/^Best /, '')}</a>)}
+    </nav>
+  </section>
+
+  {
+    rows.length >= 3 && (
+      <div class="rk-podium section" style="--rk:#e8590c">
+        {[1, 0, 2].map((i) => {
+          const x = rows[i];
+          return (
+            <a class={`rk-pod p${i + 1}`} href={href(x, x.year)}>
+              <div class="rk-pod-img">{x.photo ? <img src={`/photos/${x.photo}`} alt="" loading={i ? 'lazy' : 'eager'} decoding="async" /> : <span>🚗</span>}<span class="rk-medal">{i + 1}</span></div>
+              <b>{nm(x)}</b>
+              <span class="rk-big">{x.score}</span>
+              <small>out of 100</small>
+            </a>
+          );
+        })}
+      </div>
+    )
+  }
+
+  <ol class="best-list section">
+    {rows.map((r, i) => (
+      <li>
+        <a class="best-row" href={href(r, r.year)}>
+          <span class={`rk-n${i < 3 ? ' top' : ''}`}>{i + 1}</span>
+          {r.photo ? <img src={`/photos/${r.photo}`} alt="" loading="lazy" decoding="async" /> : <i class="ph" />}
+          <span class="best-name"><b>{nm(r)}</b><small>{[r.pw === 'Gas' ? 'Gasoline' : r.pw, r.mpg ? `${r.mpg} MPG` : r.range ? `${r.range} mi range` : '', r.complaints != null ? `${n(r.complaints)} complaints/yr` : ''].filter(Boolean).join(' · ')}</small></span>
+          <span class="best-parts">
+            {PARTS.map((p) => (
+              <span class="best-part" title={`${p.label}: counts ${p.w}%`}>
+                <small>{p.label}</small>
+                <b>{p.val(r) ?? <em>n/a</em>}</b>
+                <span class="rk-bar"><i style={`width:${r.p[p.k] ?? 0}%`} /></span>
+              </span>
+            ))}
+          </span>
+          <span class="best-score" style={`--s:${r.score}`}><b>{r.score}</b></span>
+        </a>
+      </li>
+    ))}
+  </ol>
+
+  <section class="section overview">
+    {text.map((p) => <p>{p}</p>)}
+    <p><b>{how}</b></p>
+  </section>
+  <Ad place="bottom" />
+  <section class="section">
+    <div class="section-head"><h2>Other classes</h2><a href="/best">All classes →</a></div>
+    <div class="vs-list">
+      {others.map((x) => (
+        <a href={`/best/${x.slug}`}>
+          <span class="vs-thumbs">{x.rows[0].photo ? <img src={`/photos/${x.rows[0].photo}`} alt="" loading="lazy" /> : <i />}</span>
+          <span class="vs-text"><b>{x.title}</b><small>#1 {x.rows[0].make} {x.rows[0].model} · {x.total} ranked</small></span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>

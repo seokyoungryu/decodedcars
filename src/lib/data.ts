@@ -175,3 +175,9 @@ export const vsPairs = () => load('vs.json', [] as VsPair[]);
 export const fuelPrices = () => load('fuelprices.json', {} as Record<string, string>);
 /** comparison pages that include this model */
 export const vsFor = (makeSlug: string, slug: string) => vsPairs().filter((p) => (p.a[0] === makeSlug && p.a[1] === slug) || (p.b[0] === makeSlug && p.b[1] === slug));
+
+/* ── best by class (scripts/lib/best.mjs) ── */
+export type BestPart = 'fuel' | 'safety' | 'recalls' | 'tech';
+export interface BestRow { make: string; model: string; makeSlug: string; slug: string; year: number; photo?: string; cls: string; pw: string; mpg?: number; range?: number; fuel?: number; safety?: number; safetyYear?: number; recalls?: number; complaints?: number; tech?: number; p: Partial<Record<BestPart, number>>; score: number; views: number }
+export interface BestClass { slug: string; title: string; noun: string; total: number; rows: BestRow[] }
+export const best = () => load('best.json', { classes: [] as BestClass[], byModel: {} as Record<string, { slug: string; title: string; rank: number; of: number }[]> });

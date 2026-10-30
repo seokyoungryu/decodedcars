@@ -78,7 +78,7 @@ const NAV = [
           </div>
           <div>
             <h4>{t.research}</h4>
-            <ul><li><a href={to(lang, '/finder')}>{t.finder}</a></li><li><a href={to(lang, '/compare')}>{t.compareCars}</a></li><li><a href={to(lang, '/makes')}>{t.allMakes}</a></li>{lang === 'en' && <li><a href="/rankings">{t.rankings}</a></li>}<li><a href="/recalls">{t.newRecalls}</a></li></ul>
+            <ul><li><a href={to(lang, '/finder')}>{t.finder}</a></li><li><a href={to(lang, '/compare')}>{t.compareCars}</a></li><li><a href={to(lang, '/makes')}>{t.allMakes}</a></li>{lang === 'en' && <li><a href="/rankings">{t.rankings}</a></li>}{lang === 'en' && <li><a href="/best">Best by class</a></li>}<li><a href="/recalls">{t.newRecalls}</a></li></ul>
           </div>
           <div>
             <h4>{t.tools}</h4>

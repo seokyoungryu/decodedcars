@@ -20,6 +20,7 @@ const M = meta;
         <a href={`/rankings/${r.slug}`} style={`--rk:${r.accent}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={r.icon} /></svg>{r.short}</a>
       ))}
     </nav>
+    <p style="margin-top:18px"><a class="btn" href="/best">Best cars by class: SUVs, trucks, EVs →</a></p>
     <div class="hero-stats"><span><b>{boards.length}</b>leaderboards</span><span><b>{M.models.toLocaleString('en-US')}</b>models tracked</span><span><b>Daily</b>updates</span></div>
   </section>
 

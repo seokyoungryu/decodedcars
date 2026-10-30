@@ -7,7 +7,7 @@ import Bars from '@/components/Bars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
 import VerdictCard from '@/components/VerdictCard.astro';
 import { VIN_LOOKUP } from '@/config/site';
-import { type Model, campaigns, href, model as loadModel, vsFor } from '@/lib/data';
+import { type Model, campaigns, href, model as loadModel, vsFor, best } from '@/lib/data';
 import { changeLog } from '@/lib/changes';
 import { describeYear, describeYearEs } from '@/lib/describe';
 import { prosCons } from '@/lib/proscons';
@@ -58,6 +58,7 @@ const rivals = vsFor(m.makeSlug, m.slug)
     const o = loadModel(oMk, oS);
     return { id: p.id, other: nameOf(oMk, oS), photo: o?.photo?.file, path: `${oMk}/${oS}` };
   });
+const ranks = es ? [] : (best().byModel[`${m.makeSlug}/${m.slug}`] ?? []);
 const self = `${m.makeSlug}/${m.slug}`;
 const vsHref = (p: (typeof rivals)[number]) => (es ? `/es/compare?a=${self}&b=${p.path}` : `/compare/${p.id}`);
 const yearLink = (year: number, hasEs?: boolean) => (es && hasEs ? to('es', href(m, year)) : href(m, year));
@@ -167,6 +168,11 @@ const path = href(m);
       </section>
     )
   }
+  {ranks.length > 0 && (
+    <div class="best-badges section">
+      {ranks.map((x) => <a href={`/best/${x.slug}`}><b>#{x.rank}</b> of {x.of} in {x.title} →</a>)}
+    </div>
+  )}
   {m.verdict && <VerdictCard m={m} lang={lang} hasPage={(yr) => !!years.find((y) => y.year === yr)?.es} />}
 
   {

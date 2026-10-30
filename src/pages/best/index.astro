@@ -1,0 +1,57 @@
+---
+// Hub for the "best by class" lists: one leaderboard card per class.
+import Base from '@/layouts/Base.astro';
+import { best, href, updatedLabel, usd } from '@/lib/data';
+
+const { classes } = best();
+const total = classes.reduce((s, c) => s + c.total, 0);
+const groups = [
+  { title: 'SUVs', test: (s: string) => /suv/.test(s) && !/electric|hybrid/.test(s) },
+  { title: 'Cars, trucks & vans', test: (s: string) => !/suv|electric|hybrid/.test(s) },
+  { title: 'Electric & hybrid', test: (s: string) => /electric|hybrid/.test(s) },
+];
+---
+
+<Base title="Best Cars by Class: SUVs, Trucks, Cars, EVs & Hybrids" description={`The best ${new Date().getUTCFullYear()} cars, SUVs, trucks, EVs and hybrids in ${classes.length} classes, ranked on fuel cost, NHTSA crash ratings, recall history and standard safety tech.`} section="rankings">
+  <section class="band">
+    <span class="eyebrow">Best by class · {updatedLabel()}</span>
+    <h1 style="margin-top:10px">The best cars in every class</h1>
+    <p class="lead">Every model on sale now, ranked against its direct rivals on four things that matter after you buy: what it costs to fuel, how it did in NHTSA crash tests, how often it has been recalled and how much safety tech comes standard. Public data only, no paid placements.</p>
+    <div class="hero-stats"><span><b>{classes.length}</b>classes</span><span><b>{total}</b>rankings of current models</span><span><b>4</b>measures</span></div>
+  </section>
+
+  {groups.map((g) => {
+    const list = classes.filter((c) => g.test(c.slug));
+    return list.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{g.title}</h2></div>
+        <div class="rk-boards">
+          {list.map((c) => {
+            const [lead, ...rest] = c.rows;
+            return (
+              <article class="rk-board" style="--rk:#e8590c">
+                <header><div><h2><a href={`/best/${c.slug}`}>{c.title}</a></h2><p>{c.total} {c.noun}s ranked · #1 scores {lead.score}/100</p></div></header>
+                <a class="rk-leader" href={href(lead, lead.year)}>
+                  <div class="rk-leader-img">{lead.photo ? <img src={`/photos/${lead.photo}`} alt="" loading="lazy" decoding="async" /> : <span>🚗</span>}<span class="rk-medal">1</span></div>
+                  <div class="rk-leader-text"><b>{lead.year} {lead.make} {lead.model}</b><span class="rk-big">{lead.score}</span><small>out of 100{lead.fuel != null ? ` · ${usd(lead.fuel)}/yr fuel` : ''}</small></div>
+                </a>
+                <ol class="rk-mini" start="2">
+                  {rest.slice(0, 4).map((x, i) => (
+                    <li><a href={href(x, x.year)}><span class="rk-n">{i + 2}</span>{x.photo ? <img src={`/photos/${x.photo}`} alt="" loading="lazy" decoding="async" /> : <i />}<span class="rk-name">{x.make} {x.model}</span><span class="rk-v">{x.score}<small> /100</small></span></a></li>
+                  ))}
+                </ol>
+                <a class="rk-all" href={`/best/${c.slug}`}>See all {c.rows.length} →</a>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  })}
+
+  <section class="section overview">
+    <h2 style="margin-bottom:10px">How the scores work</h2>
+    <p>Each list compares a model only with its direct rivals: small SUVs with small SUVs, luxury models with luxury models, and electric cars in lists of their own, because their energy costs would otherwise top every fuel column. Within a class, each of the four measures becomes a percentile from 0 to 100 and the score is a weighted average: fuel cost 30%, NHTSA overall crash rating 25%, recalls per model year 30% and driver-assist features standard on every version 15%.</p>
+    <p>When a measure is missing — a brand-new model with no recall history yet, or a model NHTSA has not crash-tested recently — it counts as average rather than as a win or a loss. Owner complaints are shown on each list but not scored, because they grow with the number of cars sold. Prices are not included; check the dealer and the model page before you buy. <a href="/methodology">Full methodology →</a></p>
+  </section>
+</Base>
