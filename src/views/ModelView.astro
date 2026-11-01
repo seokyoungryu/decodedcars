@@ -118,6 +118,14 @@ const T = {
   },
 }[lang];
 const path = href(m);
+// Wikidata (CC0): related models and official site; open NHTSA investigations; warranty extensions
+const wd = m.wikidata;
+const wdLink = (x: { label: string; wiki?: string }) => x.label;
+const openInv = (m.investigations ?? []).filter((x) => !x.closed);
+const warrantyN = m.bulletins?.notable.filter((b) => b.type === 'Warranty extension').length ?? 0;
+const L2 = es
+  ? { follows: 'Sucesor de', followedBy: 'Reemplazado por', plants: 'Fabricado en', site: 'Sitio oficial', bulletins: 'Boletines técnicos', warranty: (k: number) => `${k} extensiones de garantía`, inv: 'En investigación de la NHTSA', invMore: 'Ver detalles (en inglés) →' }
+  : { follows: 'Successor to', followedBy: 'Replaced by', plants: 'Built at', site: 'Official site', bulletins: 'Service bulletins', warranty: (k: number) => `${k} warranty extension${k === 1 ? '' : 's'}`, inv: 'Under NHTSA investigation', invMore: 'See details →' };
 ---
 
 <Base title={T.title} description={T.desc} section="makes" lang={lang} alt={es ? path : to('es', path)} noindex={!!m.thin}>
@@ -138,8 +146,20 @@ const path = href(m);
       {worst?.complaints.total ? (<><dt>{T.most}</dt><dd class="bad">{worst.year} ({num(lang, worst.complaints.total)})</dd></>) : null}
       {fewest && fewest !== worst ? (<><dt>{T.fewest}</dt><dd class="good">{fewest.year}</dd></>) : null}
       {pop?.views30 ? (<><dt>{T.interest}</dt><dd>{num(lang, pop.views30)} {T.views}</dd></>) : null}
+      {m.bulletins ? (<><dt>{L2.bulletins}</dt><dd>{num(lang, m.bulletins.total)}{warrantyN ? ` · ${L2.warranty(warrantyN)}` : ''}</dd></>) : null}
+      {wd?.follows.length ? (<><dt>{L2.follows}</dt><dd>{wd.follows.map(wdLink).join(', ')}</dd></>) : null}
+      {wd?.followedBy.length ? (<><dt>{L2.followedBy}</dt><dd>{wd.followedBy.map(wdLink).join(', ')}</dd></>) : null}
+      {wd?.plants.length ? (<><dt>{L2.plants}</dt><dd>{wd.plants.slice(0, 3).join(', ')}</dd></>) : null}
+      {wd?.site ? (<><dt>{L2.site}</dt><dd><a href={wd.site} rel="noopener nofollow" target="_blank">{wd.site.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a></dd></>) : null}
     </dl>
   </div>
+
+  {openInv.length > 0 && (
+    <a class="pb-alert section" href={hasProblemsPage(m) ? `${href(m)}/problems#investigations` : undefined}>
+      <b>{L2.inv}</b>
+      <span>{openInv.map((x) => `${x.subject} (${x.years.length > 2 ? `${x.years[0]}–${x.years.at(-1)}` : x.years.join(', ')})`).join(' · ')}{hasProblemsPage(m) ? ` · ${L2.invMore}` : ''}</span>
+    </a>
+  )}
 
   <section class="section overview">
     <h2 style="margin-bottom:10px">{es ? `El ${m.model} ${pcYear.year} en resumen` : `The ${pcYear.year} ${m.model} in brief`}</h2>

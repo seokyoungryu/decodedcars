@@ -76,7 +76,47 @@ function wikiFor(key) {
   return { overview: { title: t, text: w.extract, url: w.url }, ...(e && { overviewEs: { title: e.title, text: e.extract, url: e.url } }), photo: wikiCtx.wiki[`#${key}`]?.photo };
 }
 
-export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, vinspecs = {}, wikiEs = {}, log }) {
+/** Model-level lists from the extra sources: investigations, manufacturer bulletins, FARS totals, Wikidata facts */
+function extrasFor(key, years, { invBy, tsbBy, farsBy, extra, wikidata, reach }) {
+  const others = (id) => (reach.get(id) ?? 1) - 1 || undefined;
+  const yearsOf = (by, id) => years.filter((y) => by.get(key)?.get(y.year)?.has(id)).map((y) => y.year).sort((a, b) => a - b);
+  const out = {};
+  const invIds = new Set([...(invBy.get(key)?.values() ?? [])].flatMap((s) => [...s]));
+  if (invIds.size)
+    out.investigations = [...invIds]
+      .map((id) => extra.investigations.items[id])
+      .filter(Boolean)
+      .sort((a, b) => (b.opened ?? '').localeCompare(a.opened ?? ''))
+      .map((x) => ({ ...x, years: yearsOf(invBy, x.id), others: others(x.id) }));
+  const tsbIds = new Set([...(tsbBy.get(key)?.values() ?? [])].flatMap((s) => [...s]));
+  if (tsbIds.size) {
+    const all = [...tsbIds].map((id) => extra.bulletins.items[id]).filter(Boolean).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    const types = {};
+    const comps = {};
+    for (const b of all) {
+      types[b.type] = (types[b.type] ?? 0) + 1;
+      for (const c of b.comps) comps[c] = (comps[c] ?? 0) + 1;
+    }
+    const pick = (b) => ({ id: b.id, doc: b.doc, date: b.date, type: b.type, comp: b.comps[0], summary: b.summary, years: yearsOf(tsbBy, b.id), others: others(b.id) });
+    const notable = all.filter((b) => b.type !== 'Service bulletin');
+    out.bulletins = {
+      total: all.length,
+      types,
+      comps: Object.entries(comps).sort((a, b) => b[1] - a[1]).slice(0, 8),
+      notable: notable.slice(0, 20).map(pick),
+      recent: all.filter((b) => b.type === 'Service bulletin').slice(0, 30).map(pick),
+    };
+  }
+  const f = [...(farsBy.get(key)?.values() ?? [])];
+  if (f.length) out.fars = { span: extra.fars.span, v: f.reduce((s, x) => s + x.v, 0), d: f.reduce((s, x) => s + x.d, 0), roll: f.reduce((s, x) => s + x.roll, 0) };
+  if (wikidata?.id) {
+    const { at, ...wd } = wikidata;
+    out.wikidata = wd;
+  }
+  return out;
+}
+
+export async function aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor = new Map(), cvs = {}, wiki = {}, titles = {}, vinspecs = {}, wikiEs = {}, extra = {}, log }) {
   rmSync(SITE, { recursive: true, force: true });
   wikiCtx = { wiki, titles, es: wikiEs };
   const resolve = resolver(epa);
@@ -130,6 +170,25 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
     }
     if (complaints.recent.has(k)) recent90.set(ek, (recent90.get(ek) ?? 0) + complaints.recent.get(k));
   }
+
+  // investigations, manufacturer bulletins and FARS counts → EPA keys (same resolver as recalls)
+  const merge = (src, add) => {
+    const out = new Map();
+    for (const [k, byYear] of src?.byModelYear ?? []) {
+      const ek = resolve(k);
+      if (!ek) continue;
+      const t = out.get(ek) ?? out.set(ek, new Map()).get(ek);
+      for (const [y, v] of byYear) t.set(y, add(t.get(y), v));
+    }
+    return out;
+  };
+  const union = (a, b) => (a ? new Set([...a, ...b]) : new Set(b));
+  const invBy = merge(extra.investigations, union);
+  const tsbBy = merge(extra.bulletins, union);
+  // how many models each investigation / bulletin covers (shared texts are shortened on the pages)
+  const reach = new Map();
+  for (const by of [invBy, tsbBy]) for (const t of by.values()) for (const id of new Set([...t.values()].flatMap((x) => [...x]))) reach.set(id, (reach.get(id) ?? 0) + 1);
+  const farsBy = merge(extra.fars, (a, b) => (a ? { v: a.v + b.v, d: a.d + b.d, roll: a.roll + b.roll } : { ...b }));
 
   // Class average combined MPG per (EPA class, year), gasoline/hybrid only (EVs would skew it)
   const classAvg = new Map();
@@ -192,6 +251,9 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
         rating: rating.length ? rating : undefined,
         overall: rating.length ? Math.max(...rating.map((v) => v.overall ?? 0)) || undefined : undefined,
         added: yr.variants.map((v) => v.added).filter(Boolean).sort()[0],
+        tsb: tsbBy.get(m.key)?.get(y)?.size || undefined,
+        inv: invBy.get(m.key)?.get(y)?.size ? [...invBy.get(m.key).get(y)] : undefined,
+        fars: farsBy.get(m.key)?.get(y),
         rich,
       });
     }
@@ -208,6 +270,7 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       recent90: recent90.get(m.key) ?? 0,
       siteViews: siteViews[`/${m.makeSlug}/${slug(shown)}`] ?? 0,
       ...wikiFor(m.key),
+      ...extrasFor(m.key, years, { invBy, tsbBy, farsBy, extra, wikidata: extra.wikidata?.[titles[m.key]], reach }),
     };
     modelsOut.push(model);
     for (const y of years) yearPages.push({ m: model, y, score: (y.rich ? 1e6 : 0) + y.recalls.length * 50 + y.complaints.total + (pv?.views30 ?? 0) / 100 });

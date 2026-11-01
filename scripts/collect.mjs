@@ -16,6 +16,7 @@ import { collectWiki } from './lib/wiki.mjs';
 import { collectVinSpecs } from './lib/vinspecs.mjs';
 import { collectWikiEs } from './lib/wiki-es.mjs';
 import { aggregate, displayName, resolver } from './lib/aggregate.mjs';
+import { collectBulletins, collectFars, collectInvestigations, collectWikidata } from './lib/extra.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')));
 const skip = new Set((args.skip ?? '').split(',').filter(Boolean));
@@ -97,8 +98,13 @@ const vinspecs = await step('vinspecs', () => collectVinSpecs(vinJobs, { budget:
 const cvsJobs = [...new Set([...epa.values()].flatMap((m) => Object.keys(m.years).map((y) => `${m.make}|${y}`)))].map((s) => ({ make: s.split('|')[0], year: Number(s.split('|')[1]) }));
 const cvs = await step('cvs', () => collectCvs(cvsJobs, { budget: Number(args.cvs ?? 600), log }), await readJson(CACHE + 'cvs.json', {}));
 
+// Defect investigations, manufacturer bulletins (TSBs, warranty extensions), FARS fatal-crash counts, Wikidata facts
+const investigations = await step('investigations', () => collectInvestigations(log), undefined);
+const bulletins = await step('bulletins', () => collectBulletins(log), undefined);
+const fars = await step('fars', () => collectFars(log), undefined);
+const wikidata = await step('wikidata', () => collectWikidata(Object.values(titles), { log, budget: Number(args.wikidata ?? 700) }), await readJson(CACHE + 'wikidata.json', {}));
 
-await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, vinspecs, wikiEs, log }));
+await step('aggregate', () => aggregate({ epa, recalls, complaints, ratings, views, siteViews, nhtsaFor, cvs, wiki, titles, vinspecs, wikiEs, extra: { investigations, bulletins, fars, wikidata }, log }));
 if (failed.length) {
   log('Failed:', failed.join(', '));
   process.exit(1);

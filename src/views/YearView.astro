@@ -8,7 +8,7 @@ import Bars from '@/components/Bars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
 import UsedChecklist from '@/components/UsedChecklist.astro';
 import { VIN_LOOKUP, campaignUrl } from '@/config/site';
-import { type Model, type Year, campaigns, href, noindex } from '@/lib/data';
+import { type Model, type Year, campaigns, href, noindex, shortText } from '@/lib/data';
 import { bodyName, describeYear, describeYearEs } from '@/lib/describe';
 import { changesBetween, previousYear } from '@/lib/changes';
 import { prosCons } from '@/lib/proscons';
@@ -141,6 +141,14 @@ const jsonLd = [
     ...(d0?.weight && { weight: { '@type': 'QuantitativeValue', value: d0.weight, unitCode: 'LBR' } }),
   },
 ];
+// manufacturer bulletins, NHTSA investigations and FARS records that cover this model year
+const yInv = (m.investigations ?? []).filter((x) => x.years.includes(y.year));
+const yNotable = (m.bulletins?.notable ?? []).filter((b) => b.years.includes(y.year)).slice(0, 4);
+const yRecentB = (m.bulletins?.recent ?? []).filter((b) => b.years.includes(y.year)).slice(0, 5);
+const X = es
+  ? { h: 'Boletines, investigaciones y choques fatales', tsb: 'Boletines técnicos del fabricante', inv: 'Investigaciones de la NHTSA', open: 'abierta', fars: 'En choques fatales', deaths: 'Ocupantes fallecidos', note: (s: string) => `Boletines del ${y.year} ${m.model}: comunicaciones del fabricante a la NHTSA desde 2015 (no son retiros). Choques fatales: registros FARS ${s}, que crecen con la cantidad de autos en circulación.` }
+  : { h: 'Service bulletins, investigations & fatal crashes', tsb: 'Manufacturer service bulletins', inv: 'NHTSA investigations', open: 'open', fars: 'In fatal crashes', deaths: 'Occupant deaths', note: (s: string) => `${y.year} ${m.model} bulletins: manufacturer communications filed with NHTSA since 2015 (not recalls). Fatal crashes: FARS records ${s}, which grow with the number of cars on the road.` };
+const farsY = y.fars && m.fars ? y.fars : undefined;
 ---
 
 <Base title={T.title} description={T.desc} section="makes" lang={lang} alt={y.es ? (es ? path : to('es', path)) : undefined} noindex={!es && noindex().has(path)} jsonLd={jsonLd}>
@@ -416,6 +424,35 @@ const jsonLd = [
       )
     }
   </section>
+
+  {
+    (y.tsb || yInv.length > 0 || farsY) && (
+      <section class="section">
+        <div class="section-head"><h2>{X.h}</h2>{!es && hasProblemsPage(m) && <a href={`${href(m)}/problems#bulletins`}>{es ? 'Todos los años →' : 'All years →'}</a>}</div>
+        <div class="stats" style="margin-top:0">
+          {y.tsb ? <div class="stat"><b>{num(lang, y.tsb)}</b><span>{X.tsb}</span></div> : null}
+          <div class="stat"><b>{yInv.length}</b><span>{X.inv}{yInv.some((x) => !x.closed) ? ` (${yInv.filter((x) => !x.closed).length} ${X.open})` : ''}</span></div>
+          {farsY ? <div class="stat"><b>{num(lang, farsY.v)}</b><span>{X.fars} ({m.fars!.span})</span></div> : null}
+          {farsY ? <div class="stat"><b>{num(lang, farsY.d)}</b><span>{X.deaths}</span></div> : null}
+        </div>
+        {yInv.length > 0 && (
+          <div class="pb-recalls" style="margin-top:14px">
+            {yInv.slice(0, 4).map((x) => (
+              <article class:list={['pb-recall', 'inv', { open: !x.closed }]}>
+                <header><span class="pb-date">{x.opened}</span>{!x.closed && <span class="pb-flag">{X.open}</span>}<span class="pb-years">{x.id}</span></header>
+                <b>{x.subject}</b>
+                {x.summary && <p>{shortText(x.summary, 9)}</p>}
+              </article>
+            ))}
+          </div>
+        )}
+        {(yNotable.length > 0 || yRecentB.length > 0) && (
+          <ul class="pb-list">{[...yNotable, ...yRecentB].slice(0, 6).map((b) => <li><b>{b.date}</b>{b.type !== 'Service bulletin' && <span class="pb-flag good">{b.type}</span>} {shortText(b.summary, 9)}</li>)}</ul>
+        )}
+        <p class="small muted">{X.note(m.fars?.span ?? '')}</p>
+      </section>
+    )
+  }
 
   {usedYear && <UsedChecklist m={m} y={y} recalls={recalls} lang={lang} />}
 

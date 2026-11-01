@@ -79,6 +79,9 @@ export interface Year {
   year: number;
   cls?: string;
   variants: Variant[];
+  tsb?: number;
+  inv?: string[];
+  fars?: { v: number; d: number; roll: number };
   mpg?: { min: number; max: number; city: number; hwy: number };
   range?: number;
   cost?: number;
@@ -122,6 +125,10 @@ export interface Model {
   thin?: boolean;
   photo?: Photo;
   verdict?: Verdict;
+  investigations?: Investigation[];
+  bulletins?: { total: number; types: Record<string, number>; comps: [string, number][]; notable: Bulletin[]; recent: Bulletin[] };
+  fars?: { span: string; v: number; d: number; roll: number };
+  wikidata?: { id: string; cls: string[]; site?: string; follows: { label: string; wiki?: string }[]; followedBy: { label: string; wiki?: string }[]; plants: string[]; power: string[]; maker: string[] };
 }
 export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
 export interface MakeEntry { slug: string; name: string; thin?: boolean; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string; thin?: boolean }[] }
@@ -181,3 +188,14 @@ export type BestPart = 'fuel' | 'safety' | 'recalls' | 'tech';
 export interface BestRow { make: string; model: string; makeSlug: string; slug: string; year: number; photo?: string; cls: string; pw: string; mpg?: number; range?: number; fuel?: number; safety?: number; safetyYear?: number; recalls?: number; complaints?: number; tech?: number; p: Partial<Record<BestPart, number>>; score: number; views: number }
 export interface BestClass { slug: string; title: string; noun: string; total: number; rows: BestRow[] }
 export const best = () => load('best.json', { classes: [] as BestClass[], byModel: {} as Record<string, { slug: string; title: string; rank: number; of: number }[]> });
+
+export interface Investigation { id: string; kind: string; opened?: string; closed?: string; recall?: string; comp?: string; subject?: string; summary?: string; years: number[]; others?: number }
+export interface Bulletin { id: string; doc?: string; date?: string; type: string; comp?: string; summary?: string; years: number[]; others?: number }
+export const INV_KIND: Record<string, string> = { PE: 'Preliminary evaluation', EA: 'Engineering analysis', RQ: 'Recall query', DP: 'Defect petition', AQ: 'Audit query', EQ: 'Equipment query', RP: 'Recall petition' };
+export const yearSpan = (ys: number[]) => (!ys.length ? '' : ys.length > 2 && ys.at(-1)! - ys[0] === ys.length - 1 ? `${ys[0]}–${ys.at(-1)}` : ys.join(', '));
+/** a shared NHTSA text (it covers several models) is cut short so the same paragraph does not repeat across pages */
+export const shortText = (t: string | undefined, others = 0, max = 300) => {
+  if (!t) return '';
+  const lim = others >= 2 ? 130 : max;
+  return t.length > lim ? `${t.slice(0, lim - 3).replace(/\s\S*$/, '')}…` : t;
+};

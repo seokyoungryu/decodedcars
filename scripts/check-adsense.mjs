@@ -98,10 +98,10 @@ const seen = new Map();
 for (const p of pages) for (const t of new Set(p.paras)) (seen.get(t) ?? seen.set(t, []).get(t)).push(p.url);
 const repeated = [...seen].filter(([, urls]) => urls.length >= REPEAT_PAGES).sort((a, b) => b[1].length - a[1].length);
 console.log(`\n[${REPEAT_PAGES}곳 이상에 똑같이 나오는 문단] ${repeated.length}개`);
-for (const [t, urls] of repeated.slice(0, 25)) {
-  const msg = `${urls.length}곳 (예: ${urls[0]}): "${t.slice(0, 70)}…"`;
-  t.length >= 160 ? bad(msg) : note(msg);
-}
+// long repeated paragraphs all count as ✗ (listed first); short ones are notes, top 25 shown
+const longRep = repeated.filter(([t]) => t.length >= 160);
+for (const [t, urls] of longRep) bad(`${urls.length}곳 (예: ${urls[0]}): "${t.slice(0, 70)}…"`);
+for (const [t, urls] of repeated.filter(([t]) => t.length < 160).slice(0, 25)) note(`${urls.length}곳 (예: ${urls[0]}): "${t.slice(0, 70)}…"`);
 
 // 3. 제목·설명 중복
 for (const key of ['title', 'desc']) {

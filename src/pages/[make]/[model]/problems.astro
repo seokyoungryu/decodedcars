@@ -2,7 +2,7 @@
 // All model years of one model: which years and which parts owners complain about most, plus every recall.
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
-import { type Model, date, href, makes, model as loadModel, n, updatedLabel } from '@/lib/data';
+import { INV_KIND, type Model, comp, date, href, makes, model as loadModel, n, shortText, updatedLabel, yearSpan } from '@/lib/data';
 import { hasProblemsPage, problemsOf } from '@/lib/problems';
 
 export function getStaticPaths() {
@@ -45,6 +45,22 @@ const faq = [
 ].filter(Boolean) as { q: string; a: string }[];
 const jsonLd = [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }];
 const yearOf = (y: number) => P.years.find((x) => x.year === y);
+// investigations (open first), manufacturer bulletins and FARS records
+const inv = [...(m.investigations ?? [])].sort((a, b) => Number(!!a.closed) - Number(!!b.closed));
+const openInv = inv.filter((x) => !x.closed);
+const B = m.bulletins;
+const warranty = B?.notable.filter((b) => b.type === 'Warranty extension') ?? [];
+const maxBComp = B?.comps[0]?.[1] ?? 1;
+const F = m.fars;
+const invText =
+  inv.length > 0 &&
+  `NHTSA has opened ${inv.length} defect investigation${inv.length === 1 ? '' : 's'} covering the ${name} since 2010${openInv.length ? `, and ${openInv.length === 1 ? 'one is' : `${openInv.length} are`} still open: ${openInv.map((x) => `${x.subject?.toLowerCase() ?? 'a defect'} (${yearSpan(x.years)})`).join('; ')}` : ', all of them now closed'}. ${inv.filter((x) => x.recall).length ? `${inv.filter((x) => x.recall).length} ended in a recall.` : ''}`;
+const bText =
+  B &&
+  `${m.make} has filed ${n(B.total)} technical service bulletins and other communications about the ${m.model} with NHTSA since 2015. Bulletins tell dealers how to fix known issues; they are not recalls, and repairs outside warranty are usually paid by the owner.${B.comps[0] ? ` The most covered area is the ${comp(B.comps[0][0]).toLowerCase()} (${n(B.comps[0][1])} bulletins).` : ''}${warranty.length ? ` ${warranty.length} ${warranty.length === 1 ? 'is a warranty extension' : 'are warranty extensions'}, which can mean a free repair even on an older car.` : ''}`;
+if (openInv.length) faq.push({ q: `Is NHTSA investigating the ${name}?`, a: `Yes. ${openInv.map((x) => `NHTSA opened ${INV_KIND[x.kind]?.toLowerCase() ?? 'an investigation'} ${x.id} on ${date(x.opened)} into ${x.subject?.toLowerCase() ?? 'a possible defect'} on the ${yearSpan(x.years)} ${m.model}`).join('. ')}.` });
+if (warranty.length) faq.push({ q: `Does the ${name} have any warranty extensions?`, a: `${m.make} has filed ${warranty.length} warranty extension notice${warranty.length === 1 ? '' : 's'} for the ${m.model} with NHTSA, most recently for the ${yearSpan(warranty[0].years)} model years (${date(warranty[0].date)}). Ask a ${m.make} dealer whether your VIN is covered.` });
+jsonLd[0].mainEntity = faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } }));
 ---
 
 <Base title={`${name} Problems & Complaints by Year (${first}–${last})`} description={`${name} problems by model year: ${n(P.total)} NHTSA owner complaints and ${P.recalls.length} recalls. ${topComp ? `Most reported: ${topComp.name.toLowerCase()}. ` : ''}${worstY ? `Worst year: ${worstY.year}.` : ''}`.slice(0, 158)} section="makes" jsonLd={jsonLd}>
@@ -61,6 +77,14 @@ const yearOf = (y: number) => P.years.find((x) => x.year === y);
     </div>
   </section>
 
+  {
+    openInv.length > 0 && (
+      <a class="pb-alert section" href="#investigations">
+        <b>Under NHTSA investigation</b>
+        <span>{openInv.map((x) => `${x.subject} (${yearSpan(x.years)}), opened ${date(x.opened)}`).join(' · ')}</span>
+      </a>
+    )
+  }
   {
     v && (
       <div class="pb-verdict section">
@@ -135,6 +159,76 @@ const yearOf = (y: number) => P.years.find((x) => x.year === y);
           ))}
         </div>
         {P.recalls.length > 25 && <p class="small muted">Showing the 25 most recent. Every recall is listed on its model-year page.</p>}
+      </section>
+    )
+  }
+
+  {
+    inv.length > 0 && (
+      <section class="section" id="investigations">
+        <div class="section-head"><h2>NHTSA defect investigations ({inv.length})</h2></div>
+        <p class="overview-p">{invText}</p>
+        <div class="pb-recalls">
+          {inv.slice(0, 12).map((x) => (
+            <article class:list={['pb-recall', 'inv', { open: !x.closed }]}>
+              <header>
+                <span class="pb-date">{x.closed ? `${date(x.opened)} – ${date(x.closed)}` : `Opened ${date(x.opened)}`}</span>
+                {!x.closed && <span class="pb-flag">Open</span>}
+                <span class="pb-years">{yearSpan(x.years)}</span>
+              </header>
+              <b>{x.subject}</b>
+              {x.summary && <p>{shortText(x.summary, x.others, 280)}</p>}
+              <small>{INV_KIND[x.kind] ?? 'Investigation'} {x.id}{x.comp ? ` · ${comp(x.comp).toLowerCase()}` : ''}{x.recall ? ` · led to recall ${x.recall}` : ''}</small>
+            </article>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    B && (
+      <section class="section" id="bulletins">
+        <div class="section-head"><h2>Service bulletins &amp; warranty extensions</h2></div>
+        <p class="overview-p">{bText}</p>
+        {B.notable.length > 0 && (
+          <div class="pb-recalls" style="margin-bottom:18px">
+            {B.notable.slice(0, 8).map((b) => (
+              <article class="pb-recall tsb">
+                <header><span class="pb-date">{date(b.date)}</span><span class="pb-flag good">{b.type}</span><span class="pb-years">{yearSpan(b.years)}</span></header>
+                <p>{shortText(b.summary, b.others, 150)}</p>
+                <small>{b.doc ? `Document ${b.doc} · ` : ''}NHTSA ID {b.id}</small>
+              </article>
+            ))}
+          </div>
+        )}
+        <div class="pb-comps">
+          {B.comps.map(([c, k], i) => (
+            <div class="pb-comp-row" style="--rk:#1c7ed6">
+              <span class="rk-n">{i + 1}</span>
+              <div class="pb-comp-main"><b>{comp(c)}</b><span class="rk-bar"><i style={`width:${(k / maxBComp) * 100}%`} /></span></div>
+              <span class="pb-count">{n(k)}</span>
+            </div>
+          ))}
+        </div>
+        <details class="pb-more">
+          <summary>Latest {Math.min(15, B.recent.length)} service bulletins</summary>
+          <ul>{B.recent.slice(0, 15).map((b) => <li><b>{date(b.date)} · {yearSpan(b.years)}</b> {shortText(b.summary, b.others, 150)}</li>)}</ul>
+        </details>
+      </section>
+    )
+  }
+
+  {
+    F && F.v >= 5 && (
+      <section class="section">
+        <div class="section-head"><h2>Fatal crash records ({F.span})</h2></div>
+        <div class="pb-verdict">
+          <div class="pb-card"><small>Vehicles in fatal crashes</small><b>{n(F.v)}</b><span>{m.model}s of the {first}–{last} model years</span></div>
+          <div class="pb-card"><small>Occupant deaths</small><b>{n(F.d)}</b><span>people inside these vehicles</span></div>
+          <div class="pb-card"><small>Rollovers</small><b>{n(F.roll)}</b><span>{Math.round((F.roll / F.v) * 100)}% of those crashes</span></div>
+        </div>
+        <p class="overview-p" style="margin-top:14px">NHTSA's Fatality Analysis Reporting System records every crash on U.S. public roads in which someone died. From {F.span}, {n(F.v)} {name}s were involved in such crashes and {n(F.d)} people inside them died. These counts grow with the number of {m.model}s on the road and say nothing about who caused the crash, so they are not a safety rating; use the NHTSA crash-test stars for that.</p>
       </section>
     )
   }
