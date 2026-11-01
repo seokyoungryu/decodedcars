@@ -350,7 +350,16 @@ export async function aggregate({ epa, recalls, complaints, ratings, views, site
       copyFileSync(PHOTO_DIR + m.photo.file, PUBLIC_PHOTOS + m.photo.file);
       photoCount++;
     }
-  const campaigns = Object.fromEntries([...usedCamps].map((id) => [id, recalls.campaigns[id]]));
+  // pages: how many year pages show the campaign (long official texts are shortened where shared)
+  const campPages = new Map();
+  for (const m of live) for (const y of m.years) if (y.page) for (const id of y.recalls) campPages.set(id, (campPages.get(id) ?? 0) + 1);
+  // the same official text is often filed under several campaigns, so count pages per text too
+  const FIELDS = ['summary', 'consequence', 'remedy'];
+  const tkey = (t) => t.toLowerCase().replace(/\s+/g, ' ').trim();
+  const textPages = new Map();
+  for (const id of usedCamps) for (const f of FIELDS) { const t = recalls.campaigns[id]?.[f]; if (t) textPages.set(tkey(t), (textPages.get(tkey(t)) ?? 0) + (campPages.get(id) ?? 0)); }
+  const reachOf = (c) => Math.max(campPages.get(c.id) ?? 0, ...FIELDS.map((f) => (c[f] ? textPages.get(tkey(c[f])) ?? 0 : 0)));
+  const campaigns = Object.fromEntries([...usedCamps].map((id) => [id, { ...recalls.campaigns[id], pages: reachOf(recalls.campaigns[id]) }]));
   await writeJson(SITE + 'campaigns.json', campaigns);
 
   // Make index

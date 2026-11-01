@@ -45,9 +45,9 @@ const cap = (s: string) => s.replace(/^./, (x) => x.toUpperCase());
       <ol class="card checklist">
         <li><b>Consulta el VIN en <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a>.</b> {recalls.length ? `${recalls.length} ${recalls.length > 1 ? 'retiros' : 'retiro'} en este año: pide comprobantes de reparación.` : 'Sin retiros registrados, pero verifícalo igual.'}</li>
         {recalls.some((r) => r.doNotDrive || r.parkOutside) && <li><b>Retiro crítico de seguridad.</b> Al menos un retiro tiene aviso de "no conducir" o "estacionar afuera". No lo compres hasta que el VIN muestre que se reparó.</li>}
-        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} reportes de propietarios. {cap(tipFor(c))}.</li>)}
+        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} {count === 1 ? 'reporte' : 'reportes'} de propietarios del {m.model} {y.year}. {cap(tipFor(c))}.</li>)}
         {y.complaints.miles && <li><b>Millaje a vigilar.</b> Los propietarios suelen reportar problemas alrededor de las {num(lang, y.complaints.miles)} millas; pregunta qué se reparó cerca de ese punto.</li>}
-        {ev && <li><b>Salud de la batería.</b> Pide un reporte del estado de la batería, revisa la garantía restante y compara la autonomía al 100 % con las {y.range ?? '–'} millas de la EPA.</li>}
+        {ev && <li><b>Salud de la batería.</b> Pide un reporte del estado de la batería, revisa la garantía restante y compara la autonomía al 100 % con las {y.range ?? '–'} millas que la EPA da al {m.model} {y.year}.</li>}
         {hybrid && !ev && <li><b>Sistema híbrido.</b> Busca luces de advertencia del sistema híbrido y pregunta si la batería de alto voltaje se reemplazó o sigue en garantía.</li>}
         <li><b>Antes de pagar:</b> historial de servicio, reporte de antecedentes e inspección de un mecánico independiente.</li>
       </ol>
@@ -55,9 +55,9 @@ const cap = (s: string) => s.replace(/^./, (x) => x.toUpperCase());
       <ol class="card checklist">
         <li><b>Run the VIN at <a href={VIN_LOOKUP} target="_blank" rel="noopener">nhtsa.gov/recalls</a>.</b> {recalls.length ? `${recalls.length} recall${recalls.length > 1 ? 's' : ''} this year — ask for proof of repairs.` : 'No recalls on file, but check anyway.'}</li>
         {recalls.some((r) => r.doNotDrive || r.parkOutside) && <li><b>Safety-critical recall.</b> At least one recall carries a "Do Not Drive" or "Park Outside" warning. Do not buy until the VIN shows it was repaired.</li>}
-        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} owner reports. {cap(tipFor(c))}.</li>)}
+        {tops.map(([c, count]) => <li><b>{compL(lang, c)}</b> — {num(lang, count)} owner report{count === 1 ? '' : 's'} for the {y.year} {m.model}. {cap(tipFor(c))}.</li>)}
         {y.complaints.miles && <li><b>Mileage to watch.</b> Owners typically reported problems around {num(lang, y.complaints.miles)} miles; ask what was repaired near that point.</li>}
-        {ev && <li><b>Battery health.</b> Ask for a battery state-of-health report, check the remaining battery warranty, and compare the displayed range at 100% charge with the EPA's {y.range ?? '–'} miles.</li>}
+        {ev && <li><b>Battery health.</b> Ask for a battery state-of-health report, check the remaining battery warranty, and compare the displayed range at 100% charge with the EPA's {y.range ?? '–'} miles for the {y.year} {m.model}.</li>}
         {hybrid && !ev && <li><b>Hybrid system.</b> Check for hybrid-system warning lights and ask whether the high-voltage battery has been replaced or is still under warranty.</li>}
         <li><b>Before you pay:</b> service records, a history report and an independent inspection.</li>
       </ol>

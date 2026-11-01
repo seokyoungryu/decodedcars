@@ -53,14 +53,14 @@ export function describeYear(m: Model, y: Year): string[] {
   const d = y.dims.find((x) => x.length && x.weight);
   if (d)
     out.push(
-      `It measures about ${Math.round(d.length!)} inches long${d.width ? ` and ${Math.round(d.width)} inches wide` : ''}${d.wheelbase ? ` on a ${Math.round(d.wheelbase)}-inch wheelbase` : ''}, with a curb weight of roughly ${Math.round(d.weight!).toLocaleString('en-US')} lb${y.dims.length > 1 ? ` (${bodyName(d.name, m.model)})` : ''}.`,
+      `The ${y.year} ${m.model} measures about ${Math.round(d.length!)} inches long${d.width ? ` and ${Math.round(d.width)} inches wide` : ''}${d.wheelbase ? ` on a ${Math.round(d.wheelbase)}-inch wheelbase` : ''}, with a curb weight of roughly ${Math.round(d.weight!).toLocaleString('en-US')} lb${y.dims.length > 1 ? ` (${bodyName(d.name, m.model)})` : ''}.`,
     );
 
   // efficiency
   if (y.mpg) {
     const vs = y.classAvg ? Math.round((y.mpg.max / y.classAvg - 1) * 100) : undefined;
     out.push(
-      `EPA rates its most efficient version at ${y.mpg.max} MPG combined (${y.mpg.city} city / ${y.mpg.hwy} highway)${vs !== undefined ? `, ${Math.abs(vs)}% ${vs >= 0 ? 'better' : 'worse'} than the ${y.year} ${cls} average of ${y.classAvg} MPG` : ''}${y.cost ? `, for an estimated $${y.cost.toLocaleString('en-US')} a year in fuel` : ''}.`,
+      `EPA rates the most efficient ${y.year} ${m.model} at ${y.mpg.max} MPG combined (${y.mpg.city} city / ${y.mpg.hwy} highway)${vs !== undefined ? `, ${Math.abs(vs)}% ${vs >= 0 ? 'better' : 'worse'} than the ${y.year} ${cls} average of ${y.classAvg} MPG` : ''}${y.cost ? `, for an estimated $${y.cost.toLocaleString('en-US')} a year in fuel` : ''}.`,
     );
   }
   if (y.range) out.push(`The electric version has an EPA-rated range of up to ${y.range} miles${y.charge ? ` and takes about ${y.charge} hours to charge on a 240-volt Level 2 charger` : ''}.`);
@@ -99,13 +99,13 @@ export function describeYearEs(m: Model, y: Year): string[] {
   const d = y.dims.find((x) => x.length && x.weight);
   if (d)
     out.push(
-      `Mide unas ${Math.round(d.length!)} pulgadas de largo${d.width ? ` y ${Math.round(d.width)} de ancho` : ''}${d.wheelbase ? `, con una distancia entre ejes de ${Math.round(d.wheelbase)} pulgadas` : ''}, y pesa alrededor de ${Math.round(d.weight!).toLocaleString('es-US')} lb${y.dims.length > 1 ? ` (${bodyName(d.name, m.model)})` : ''}.`,
+      `El ${m.model} ${y.year} mide unas ${Math.round(d.length!)} pulgadas de largo${d.width ? ` y ${Math.round(d.width)} de ancho` : ''}${d.wheelbase ? `, con una distancia entre ejes de ${Math.round(d.wheelbase)} pulgadas` : ''}, y pesa alrededor de ${Math.round(d.weight!).toLocaleString('es-US')} lb${y.dims.length > 1 ? ` (${bodyName(d.name, m.model)})` : ''}.`,
     );
 
   if (y.mpg) {
     const vs = y.classAvg ? Math.round((y.mpg.max / y.classAvg - 1) * 100) : undefined;
     out.push(
-      `La EPA califica su versión más eficiente con ${y.mpg.max} MPG combinadas (${y.mpg.city} en ciudad / ${y.mpg.hwy} en carretera)${vs !== undefined ? `, un ${Math.abs(vs)} % ${vs >= 0 ? 'mejor' : 'peor'} que el promedio de su clase (${classNounL('es', y.cls)}, ${y.year}: ${y.classAvg} MPG)` : ''}${y.cost ? `, con un gasto estimado de $${y.cost.toLocaleString('es-US')} al año en combustible` : ''}.`,
+      `La EPA califica la versión más eficiente del ${m.model} ${y.year} con ${y.mpg.max} MPG combinadas (${y.mpg.city} en ciudad / ${y.mpg.hwy} en carretera)${vs !== undefined ? `, un ${Math.abs(vs)} % ${vs >= 0 ? 'mejor' : 'peor'} que el promedio de su clase (${classNounL('es', y.cls)}, ${y.year}: ${y.classAvg} MPG)` : ''}${y.cost ? `, con un gasto estimado de $${y.cost.toLocaleString('es-US')} al año en combustible` : ''}.`,
     );
   }
   if (y.range) out.push(`La versión eléctrica tiene una autonomía EPA de hasta ${y.range} millas${y.charge ? ` y tarda unas ${y.charge} horas en cargarse con un cargador de nivel 2 (240 V)` : ''}.`);
@@ -117,7 +117,7 @@ export function describeYearEs(m: Model, y: Year): string[] {
   const c = y.complaints.total;
   if (r || c) {
     const top = y.complaints.comps[0]?.[0];
-    out.push(`Tiene ${r} ${r === 1 ? 'campaña de retiro' : 'campañas de retiro'} registradas${c ? ` y los propietarios han presentado ${c.toLocaleString('es-US')} ${c === 1 ? 'queja' : 'quejas'} ante la NHTSA desde 2015${top ? `, sobre todo por problemas de ${compL('es', top.split(/[:,]/)[0]).toLowerCase()}` : ''}` : ''}.`);
+    out.push(`El ${m.model} ${y.year} tiene ${r} ${r === 1 ? 'campaña de retiro' : 'campañas de retiro'} registradas${c ? ` y los propietarios han presentado ${c.toLocaleString('es-US')} ${c === 1 ? 'queja' : 'quejas'} ante la NHTSA desde 2015${top ? `, sobre todo por problemas de ${compL('es', top.split(/[:,]/)[0]).toLowerCase()}` : ''}` : ''}.`);
   } else out.push('No hay retiros ni quejas de propietarios registrados en la NHTSA para este año modelo.');
   return out;
 }

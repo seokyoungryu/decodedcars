@@ -153,7 +153,7 @@ jsonLd[0].mainEntity = faq.map((f) => ({ '@type': 'Question', name: f.q, accepte
                 <span class="pb-years">{r.years.length > 3 ? `${r.years[0]}–${r.years.at(-1)}` : r.years.join(', ')}</span>
               </header>
               <b>{r.comps[0] ? r.comps[0].split(':').slice(0, 2).map((s) => s.toLowerCase()).join(' › ') : 'Recall'}</b>
-              {r.consequence && <p>{r.consequence.length > 260 ? `${r.consequence.slice(0, 257).replace(/\s\S*$/, '')}…` : r.consequence}</p>}
+              {r.consequence && <p>{shortText(r.consequence, 0, 150)}</p>}
               <small>NHTSA campaign {r.id}{r.units ? ` · ${n(r.units)} vehicles` : ''}</small>
             </article>
           ))}

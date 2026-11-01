@@ -384,11 +384,13 @@ const farsY = y.fars && m.fars ? y.fars : undefined;
               {compL(lang, r.comps[0])} <span class="small muted">· {day(lang, r.date)}</span> {r.doNotDrive && <span class="badge bad">{T.dnd}</span>} {r.parkOutside && <span class="badge warn">{T.park}</span>}
             </summary>
             <p class="small muted" style="margin:6px 0 0">{T.campaign} <a href={campaignUrl(r.id)} target="_blank" rel="noopener">{r.id}</a>{r.units ? ` · ${num(lang, r.units)} ${T.vehicles}` : ''}</p>
+            {/* campaigns shown on several year pages get a short excerpt; the full notice is one click away at NHTSA */}
             <dl lang="en">
-              {r.summary && (<><dt>{T.problem}</dt><dd>{r.summary}</dd></>)}
-              {r.consequence && (<><dt>{T.riskL}</dt><dd>{r.consequence}</dd></>)}
-              {r.remedy && (<><dt>{T.fix}</dt><dd>{r.remedy}</dd></>)}
+              {r.summary && (<><dt>{T.problem}</dt><dd>{shortText(r.summary, (r.pages ?? 0) >= 3 ? 9 : 0, 99999)}</dd></>)}
+              {r.consequence && (<><dt>{T.riskL}</dt><dd>{shortText(r.consequence, (r.pages ?? 0) >= 3 ? 9 : 0, 99999)}</dd></>)}
+              {r.remedy && (<><dt>{T.fix}</dt><dd>{shortText(r.remedy, (r.pages ?? 0) >= 3 ? 9 : 0, 99999)}</dd></>)}
             </dl>
+            {(r.pages ?? 0) >= 3 && <p class="small muted" style="margin:4px 0 0"><a href={campaignUrl(r.id)} target="_blank" rel="noopener">{es ? `Aviso completo de NHTSA ${r.id} ↗` : `Full NHTSA notice ${r.id} ↗`}</a></p>}
           </details>
         ))
       ) : (

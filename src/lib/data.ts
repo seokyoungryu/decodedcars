@@ -130,7 +130,7 @@ export interface Model {
   fars?: { span: string; v: number; d: number; roll: number };
   wikidata?: { id: string; cls: string[]; site?: string; follows: { label: string; wiki?: string }[]; followedBy: { label: string; wiki?: string }[]; plants: string[]; power: string[]; maker: string[] };
 }
-export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean }
+export interface Campaign { id: string; date?: string; mfg?: string; units?: number; comps: string[]; summary?: string; consequence?: string; remedy?: string; doNotDrive?: boolean; parkOutside?: boolean; pages?: number }
 export interface MakeEntry { slug: string; name: string; thin?: boolean; models: { slug: string; name: string; from: number; to: number; recalls: number; complaints: number; mpg?: number; range?: number; views30: number; photo?: string; cls?: string; thin?: boolean }[] }
 type Card = { make: string; model: string; makeSlug: string; slug: string; latest?: number; year?: number; photo?: string; [k: string]: unknown };
 export interface Rankings {

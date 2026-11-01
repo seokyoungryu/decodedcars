@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
-import { type Model, type VsPair, campaigns, href, model as loadModel, n, usd, vsPairs } from '@/lib/data';
+import { type Model, type VsPair, campaigns, href, model as loadModel, n, shortText, usd, vsPairs } from '@/lib/data';
 import { classNoun, describeYear } from '@/lib/describe';
 import { prosCons } from '@/lib/proscons';
 
@@ -118,7 +118,7 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
   <p class="small" style="text-align:center"><a href={`/compare?a=${p.a.join('/')}&b=${p.b.join('/')}`}>Swap in a different car →</a></p>
 
   {say.length > 0 && (<section class="section overview"><h2 style="margin-bottom:10px">The short version</h2>{say.map((s) => <p>{s}</p>)}</section>)}
-  <section class="section overview"><h2 style="margin-bottom:10px">The two cars</h2><p>{describeYear(A, ya).slice(0, 2).join(' ')}</p><p>{describeYear(B, yb).slice(0, 2).join(' ')}</p>{A.verdict && B.verdict && <p>Buying used? The {A.verdict.best.year} {A.model} and the {B.verdict.best.year} {B.model} have the fewest problems in our data{A.verdict.worst || B.verdict.worst ? `; avoid ${[A.verdict.worst && `the ${A.verdict.worst.year} ${A.model}`, B.verdict.worst && `the ${B.verdict.worst.year} ${B.model}`].filter(Boolean).join(' and ')}` : ''}.</p>}</section>
+  <section class="section overview"><h2 style="margin-bottom:10px">The two cars</h2><p>{describeYear(A, ya).slice(0, 2).join(' ')} {describeYear(B, yb).slice(0, 2).join(' ')}</p>{A.verdict && B.verdict && <p>Buying used? The {A.verdict.best.year} {A.model} and the {B.verdict.best.year} {B.model} have the fewest problems in our data{A.verdict.worst || B.verdict.worst ? `; avoid ${[A.verdict.worst && `the ${A.verdict.worst.year} ${A.model}`, B.verdict.worst && `the ${B.verdict.worst.year} ${B.model}`].filter(Boolean).join(' and ')}` : ''}.</p>}</section>
 
   <section class="section">
     <div class="cmp-group">
@@ -170,8 +170,8 @@ const desc = `${na} vs ${nb}: fuel economy, size, safety ratings, recalls and ow
           {[[na, ya, pcA], [nb, yb, pcB]].map(([nm, y, pc]) => (
             <div class="pc"><h3>{(y as typeof ya).year} {nm as string}</h3>
               <ul>
-                {(pc as typeof pcA).pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}
-                {(pc as typeof pcA).cons.map((p) => <li class="minus"><b>{p.title}</b>{p.detail && <span>{p.detail}</span>}</li>)}
+                {(pc as typeof pcA).pros.map((p) => <li><b>{p.title}</b>{p.detail && <span>{shortText(p.detail, 9)}</span>}</li>)}
+                {(pc as typeof pcA).cons.map((p) => <li class="minus"><b>{p.title}</b>{p.detail && <span>{shortText(p.detail, 9)}</span>}</li>)}
               </ul>
             </div>
           ))}

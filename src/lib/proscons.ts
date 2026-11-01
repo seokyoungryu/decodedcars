@@ -83,7 +83,7 @@ export function prosCons(m: Model, y: Year, recalls: Campaign[], lang: Lang = 'e
     if (y.complaints.total >= 100 && y.complaints.total >= 3 * Math.max(peer.complaints, 10))
       cons.push(es
         ? { title: 'Muchas quejas de propietarios', detail: `${nf(y.complaints.total)} quejas ante la NHTSA frente a unas ${peer.complaints} de modelos similares${top ? `; sobre todo por problemas de ${compL(lang, top[0]).toLowerCase()}` : ''}.` }
-        : { title: 'Many owner complaints', detail: `${nf(y.complaints.total)} complaints filed with NHTSA versus about ${peer.complaints} for similar models${top ? ` — most often about the ${top[0].toLowerCase()}` : ''}.` });
+        : { title: 'Many owner complaints', detail: `${nf(y.complaints.total)} complaints filed with NHTSA about the ${y.year} ${m.model} versus about ${peer.complaints} for similar models${top ? ` — most often about the ${top[0].toLowerCase()}` : ''}.` });
     else if (y.year <= now - 2 && y.complaints.total <= peer.complaints * 0.35 && peer.complaints >= 20)
       pros.push(es ? { title: 'Pocas quejas de propietarios', detail: `${y.complaints.total} quejas ante la NHTSA frente a unas ${peer.complaints} de modelos similares.` } : { title: 'Few owner complaints', detail: `${y.complaints.total} complaints filed with NHTSA versus about ${peer.complaints} for similar models.` });
   }
