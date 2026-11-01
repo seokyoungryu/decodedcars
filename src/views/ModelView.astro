@@ -2,6 +2,7 @@
 // One model across all years (English at /make/model, Spanish at /es/make/model)
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
+import { hasProblemsPage } from '@/lib/problems';
 import Stars from '@/components/Stars.astro';
 import Bars from '@/components/Bars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
@@ -174,6 +175,9 @@ const path = href(m);
     </div>
   )}
   {m.verdict && <VerdictCard m={m} lang={lang} hasPage={(yr) => !!years.find((y) => y.year === yr)?.es} />}
+  {!es && hasProblemsPage(m) && (
+    <a class="pb-link section" href={`${href(m)}/problems`}><span><b>{m.model} problems by year</b><br /><span>Most reported issues, worst years and every recall</span></span><span>→</span></a>
+  )}
 
   {
     rivals.length > 0 && (

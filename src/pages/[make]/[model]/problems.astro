@@ -1,0 +1,154 @@
+---
+// All model years of one model: which years and which parts owners complain about most, plus every recall.
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { type Model, date, href, makes, model as loadModel, n, updatedLabel } from '@/lib/data';
+import { hasProblemsPage, problemsOf } from '@/lib/problems';
+
+export function getStaticPaths() {
+  return makes().flatMap((mk) =>
+    mk.models
+      .map((mm) => loadModel(mk.slug, mm.slug)!)
+      .filter((m) => m && hasProblemsPage(m))
+      .map((m) => ({ params: { make: m.makeSlug, model: m.slug }, props: { m } })),
+  );
+}
+const { m } = Astro.props as { m: Model };
+const P = problemsOf(m);
+const name = `${m.make} ${m.model}`;
+const first = P.years[0].year;
+const last = P.years.at(-1)!.year;
+const max = Math.max(...P.years.map((y) => y.complaints.total), 1);
+const v = m.verdict;
+const topComp = P.top[0];
+const maxComp = topComp?.n ?? 1;
+const worstY = P.worst;
+// recent model years only: the ones shoppers are choosing between
+const recent = P.years.filter((y) => y.year >= 2015 && y.complaints.total > 0);
+const fewest = [...recent].filter((y) => y.year <= new Date().getUTCFullYear() - 2).sort((a, b) => a.complaints.total - b.complaints.total)[0];
+const pct = (k: number) => Math.round((k / P.total) * 100);
+
+const text = [
+  `Owners have filed ${n(P.total)} complaints with NHTSA about the ${name} since 2015, covering the ${first}–${last} model years, and the model has been part of ${P.recalls.length} recall campaign${P.recalls.length === 1 ? '' : 's'}. ${worstY ? `The ${worstY.year} ${m.model} draws the most complaints (${n(worstY.complaints.total)}, or ${pct(worstY.complaints.total)}% of the total)${worstY.complaints.comps[0] ? `, most of them about the ${worstY.complaints.comps[0][0].toLowerCase()}` : ''}.` : ''}`,
+  topComp && `Across all years, the most reported problem area is the ${topComp.name.toLowerCase()} with ${n(topComp.n)} complaints, worst in the ${[...topComp.worst].map(([y]) => y).sort((a, b) => a - b).join(', ')} model year${topComp.worst.length === 1 ? '' : 's'}.${P.top[1] ? ` Next come the ${P.top[1].name.toLowerCase()} (${n(P.top[1].n)})${P.top[2] ? ` and the ${P.top[2].name.toLowerCase()} (${n(P.top[2].n)})` : ''}.` : ''}`,
+  (P.crash || P.fire || P.injured) && `${n(P.crash)} of the complaints say a crash was involved, ${n(P.fire)} mention a fire and ${n(P.injured)} report injuries${P.deaths ? `, with ${n(P.deaths)} death${P.deaths === 1 ? '' : 's'} reported` : ''}. These are unverified owner reports, not findings, but they show which failures owners consider dangerous.`,
+  v && `Buying used? By complaints and recalls per model year, the ${v.best.year} ${m.model} has the fewest problems of the ${v.compared} years we compared${v.worst ? `, and the ${v.worst.year} stands out as the year to avoid (${n(v.worst.complaints)} complaints, ${v.worst.recalls} recalls)` : ''}.`,
+  !v && fewest && `Among model years at least two years old, the ${fewest.year} ${m.model} has the fewest complaints (${n(fewest.complaints.total)}).`,
+  `Popular models collect more complaints simply because more of them are on the road, so use these numbers to compare ${m.model} model years with each other rather than the ${name} with other models. The ${last} and ${last - 1} years have also had less time to collect reports.`,
+].filter(Boolean) as string[];
+
+const faq = [
+  topComp && { q: `What is the most common problem with the ${name}?`, a: `By NHTSA owner complaints, the ${topComp.name.toLowerCase()} is the most reported problem area for the ${name} (${n(topComp.n)} complaints), most often in the ${[...topComp.worst].map(([y]) => y).sort((a, b) => a - b).join(', ')} model years.` },
+  worstY && { q: `Which ${name} year has the most problems?`, a: `The ${worstY.year} ${name} has the most owner complaints filed with NHTSA: ${n(worstY.complaints.total)}, with ${worstY.recalls.length} recall${worstY.recalls.length === 1 ? '' : 's'}.` },
+  v && { q: `What is the most reliable ${name} year?`, a: `The ${v.best.year} ${name} has the fewest complaints and recalls of the ${v.compared} model years we compared (${n(v.best.complaints)} complaints, ${v.best.recalls} recalls).` },
+  { q: `How many recalls does the ${name} have?`, a: `The ${name} has been included in ${P.recalls.length} NHTSA recall campaign${P.recalls.length === 1 ? '' : 's'} across the ${first}–${last} model years.${P.recalls[0] ? ` The latest was issued on ${date(P.recalls[0].date)}.` : ''}` },
+].filter(Boolean) as { q: string; a: string }[];
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }];
+const yearOf = (y: number) => P.years.find((x) => x.year === y);
+---
+
+<Base title={`${name} Problems & Complaints by Year (${first}–${last})`} description={`${name} problems by model year: ${n(P.total)} NHTSA owner complaints and ${P.recalls.length} recalls. ${topComp ? `Most reported: ${topComp.name.toLowerCase()}. ` : ''}${worstY ? `Worst year: ${worstY.year}.` : ''}`.slice(0, 158)} section="makes" jsonLd={jsonLd}>
+  <section class="band">
+    <div class="crumbs"><a href={`/${m.makeSlug}`}>{m.make}</a><span>›</span><a href={href(m)}>{m.model}</a><span>›</span><span>Problems</span></div>
+    <h1 style="margin-top:6px;max-width:none">{name} problems by year</h1>
+    <p class="lead">What owners report to NHTSA about every {m.model} model year from {first} to {last}, which parts fail most and every recall — so you know which years to avoid.</p>
+    <div class="hero-stats">
+      <span><b>{n(P.total)}</b>complaints</span>
+      <span><b>{P.recalls.length}</b>recalls</span>
+      <span><b>{n(P.crash)}</b>involved a crash</span>
+      <span><b>{n(P.fire)}</b>involved a fire</span>
+      <span><b>{n(P.injured)}</b>injuries</span>
+    </div>
+  </section>
+
+  {
+    v && (
+      <div class="pb-verdict section">
+        <a class="pb-card good" href={href(m, v.best.year)}><small>Best year to buy used</small><b>{v.best.year}</b><span>{n(v.best.complaints)} complaints · {v.best.recalls} recalls</span></a>
+        {v.worst ? (
+          <a class="pb-card bad" href={href(m, v.worst.year)}><small>Year to avoid</small><b>{v.worst.year}</b><span>{n(v.worst.complaints)} complaints · {v.worst.recalls} recalls{v.worst.top ? ` · mostly ${v.worst.top.toLowerCase()}` : ''}</span></a>
+        ) : (
+          <div class="pb-card"><small>Year to avoid</small><b>None</b><span>No year stands out clearly</span></div>
+        )}
+        {topComp && <div class="pb-card warn"><small>Most reported problem</small><b class="pb-comp">{topComp.name}</b><span>{n(topComp.n)} complaints</span></div>}
+      </div>
+    )
+  }
+
+  <section class="section">
+    <div class="section-head"><h2>Complaints by model year</h2></div>
+    <div class="pb-chart" role="img" aria-label={`Owner complaints per model year for the ${name}`}>
+      {P.years.map((y) => (
+        <a href={href(m, y.year)} class:list={['pb-col', { worst: v?.worst?.year === y.year || (!v?.worst && worstY?.year === y.year), best: v?.best.year === y.year }]} title={`${y.year}: ${n(y.complaints.total)} complaints, ${y.recalls.length} recalls`}>
+          <span class="pb-num">{y.complaints.total ? n(y.complaints.total) : ''}</span>
+          <span class="pb-bar" style={`height:${Math.max(2, (y.complaints.total / max) * 100)}%`} />
+          <span class="pb-rc">{y.recalls.length ? `${y.recalls.length}R` : ''}</span>
+          <span class="pb-yr">{String(y.year).slice(2)}</span>
+        </a>
+      ))}
+    </div>
+    <p class="small muted">Bars: owner complaints per model year (filed since 2015). R = recall campaigns. Green = best used year, red = year to avoid. Tap a year for details.</p>
+  </section>
+
+  <section class="section overview">{text.map((p) => <p>{p}</p>)}</section>
+
+  {
+    P.top.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>Most reported problems</h2></div>
+        <div class="pb-comps">
+          {P.top.map((c, i) => (
+            <div class="pb-comp-row">
+              <span class="rk-n">{i + 1}</span>
+              <div class="pb-comp-main">
+                <b>{c.name}</b>
+                <span class="rk-bar"><i style={`width:${(c.n / maxComp) * 100}%`} /></span>
+                <small>Worst years: {c.worst.map(([y, k]) => <a href={href(m, y)}>{y} ({n(k)})</a>)}</small>
+              </div>
+              <span class="pb-count">{n(c.n)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <Ad place="content" />
+
+  {
+    P.recalls.length > 0 && (
+      <section class="section">
+        <div class="section-head"><h2>{name} recalls ({P.recalls.length})</h2></div>
+        <div class="pb-recalls">
+          {P.recalls.slice(0, 25).map((r) => (
+            <article class="pb-recall">
+              <header>
+                <span class="pb-date">{date(r.date)}</span>
+                {r.doNotDrive && <span class="pb-flag">Do not drive</span>}
+                {r.parkOutside && <span class="pb-flag">Park outside</span>}
+                <span class="pb-years">{r.years.length > 3 ? `${r.years[0]}–${r.years.at(-1)}` : r.years.join(', ')}</span>
+              </header>
+              <b>{r.comps[0] ? r.comps[0].split(':').slice(0, 2).map((s) => s.toLowerCase()).join(' › ') : 'Recall'}</b>
+              {r.consequence && <p>{r.consequence.length > 260 ? `${r.consequence.slice(0, 257).replace(/\s\S*$/, '')}…` : r.consequence}</p>}
+              <small>NHTSA campaign {r.id}{r.units ? ` · ${n(r.units)} vehicles` : ''}</small>
+            </article>
+          ))}
+        </div>
+        {P.recalls.length > 25 && <p class="small muted">Showing the 25 most recent. Every recall is listed on its model-year page.</p>}
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="section-head"><h2>Common questions</h2></div>
+    <div class="pb-faq">{faq.map((f) => <details><summary>{f.q}</summary><p>{f.a}</p></details>)}</div>
+  </section>
+
+  <p class="chips section">
+    <a href={href(m)}>{m.model} overview and specs →</a>
+    {v && <a href={href(m, v.best.year)}>{v.best.year} {m.model} details →</a>}
+    {worstY && yearOf(worstY.year) && <a href={href(m, worstY.year)}>{worstY.year} {m.model} complaints →</a>}
+  </p>
+  <p class="small muted">Source: NHTSA owner complaints and recall campaigns, {updatedLabel()}. Complaints are unverified reports from owners. <a href="/methodology">Methodology →</a></p>
+  <Ad place="bottom" />
+</Base>

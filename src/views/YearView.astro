@@ -2,6 +2,7 @@
 // One model year (English at /make/model/year, Spanish at /es/make/model/year)
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
+import { hasProblemsPage } from '@/lib/problems';
 import Stars from '@/components/Stars.astro';
 import Bars from '@/components/Bars.astro';
 import CarPhoto from '@/components/CarPhoto.astro';
@@ -391,7 +392,7 @@ const jsonLd = [
   </section>
 
   <section class="section" id="problems">
-    <div class="section-head"><h2>{T.problemsH}</h2></div>
+    <div class="section-head"><h2>{T.problemsH}</h2>{!es && hasProblemsPage(m) && <a href={`${href(m)}/problems`}>{m.model} problems, all years →</a>}</div>
     {
       c.total ? (
         <>
