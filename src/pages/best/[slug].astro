@@ -3,6 +3,7 @@
 import Base from '@/layouts/Base.astro';
 import Ad from '@/components/Ad.astro';
 import { type BestClass, type BestRow, best, href, n, updatedLabel, usd } from '@/lib/data';
+import { CLASS_TIPS } from '@/lib/class-tips';
 
 export function getStaticPaths() {
   return best().classes.map((c) => ({ params: { slug: c.slug }, props: { c } }));
@@ -10,6 +11,7 @@ export function getStaticPaths() {
 const { c } = Astro.props as { c: BestClass };
 const rows = c.rows;
 const others = best().classes.filter((x) => x.slug !== c.slug);
+const tip = CLASS_TIPS[c.slug];
 const nm = (r: BestRow) => `${r.year} ${r.make} ${r.model}`;
 const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? '' : 's'}`;
 const recallTxt = (v?: number) => (v == null ? 'too new for a recall history' : `${v} recall${v === 1 ? '' : 's'} per model year`);
@@ -98,6 +100,17 @@ const how = `How the ${c.noun} score works: each model is compared only with the
     {text.map((p) => <p>{p}</p>)}
     <p><b>{how}</b></p>
   </section>
+  {
+    tip && (
+      <section class="section overview">
+        <h2 style="margin-bottom:10px">Buying a {c.noun}: what to look for</h2>
+        <p>{tip.intro}</p>
+        <p>Before you buy, check:</p>
+        <ul>{tip.check.map((x) => <li>{x}</li>)}</ul>
+        {tip.guide && <p><a href={tip.guide.href}>{tip.guide.label} →</a></p>}
+      </section>
+    )
+  }
   <Ad place="bottom" />
   <section class="section">
     <div class="section-head"><h2>Other classes</h2><a href="/best">All classes →</a></div>

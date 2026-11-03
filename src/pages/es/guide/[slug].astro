@@ -1,0 +1,10 @@
+---
+import GuideView from '@/views/GuideView.astro';
+import { GUIAS } from '@/lib/guides';
+
+export function getStaticPaths() {
+  return GUIAS.map((g) => ({ params: { slug: g.slug }, props: { g } }));
+}
+---
+
+<GuideView g={Astro.props.g} lang="es" />

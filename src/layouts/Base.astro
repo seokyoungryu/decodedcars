@@ -86,7 +86,7 @@ const NAV = [
           </div>
           <div>
             <h4>{t.site}</h4>
-            <ul><li><a href={to(lang, '/about')}>{t.about}</a></li>{lang === 'en' && <li><a href="/guide">{t.guides}</a></li>}<li><a href={to(lang, '/terms')}>{t.terms}</a></li><li><a href={to(lang, '/privacy')}>{t.privacy}</a></li><li><a href={to(lang, '/methodology')}>{lang === 'es' ? 'Metodología' : 'Methodology'}</a></li><li><a href={to(lang, '/contact')}>{t.contact}</a></li><li><a href={VIN_LOOKUP} rel="noopener" target="_blank">{t.vinCheck}</a></li>{alt && <li><a href={alt} hreflang={lang === 'es' ? 'en' : 'es'}>{t.switchTo}</a></li>}</ul>
+            <ul><li><a href={to(lang, '/about')}>{t.about}</a></li><li><a href={to(lang, '/guide')}>{t.guides}</a></li><li><a href={to(lang, '/glossary')}>{lang === 'es' ? 'Glosario' : 'Glossary'}</a></li><li><a href={to(lang, '/terms')}>{t.terms}</a></li><li><a href={to(lang, '/privacy')}>{t.privacy}</a></li><li><a href={to(lang, '/methodology')}>{lang === 'es' ? 'Metodología' : 'Methodology'}</a></li><li><a href={to(lang, '/contact')}>{t.contact}</a></li><li><a href={VIN_LOOKUP} rel="noopener" target="_blank">{t.vinCheck}</a></li>{alt && <li><a href={alt} hreflang={lang === 'es' ? 'en' : 'es'}>{t.switchTo}</a></li>}</ul>
           </div>
         </div>
         <p>{t.notice}</p>

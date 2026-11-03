@@ -609,3 +609,9 @@ a.pb-card:hover { box-shadow: var(--shadow-lift); }
 .wd-facts > :nth-child(-n+2) { border-top: 0; }
 .pb-list { margin: 14px 0 6px; padding-left: 18px; display: grid; gap: 8px; color: var(--ink-soft); font-size: .9rem; }
 .pb-list .pb-flag { margin: 0 4px; font-size: .75rem; }
+
+/* glossary */
+.glossary { margin: 18px 0 0; }
+.glossary dt { font-weight: 800; font-size: 1.05rem; margin: 22px 0 4px; scroll-margin-top: 80px; }
+.glossary dt span { position: relative; top: -80px; }
+.glossary dd { margin: 0; color: var(--ink-soft, inherit); line-height: 1.6; max-width: 72ch; }

@@ -1,0 +1,49 @@
+---
+// Guide index: buying guides, data analysis and the glossary, English or Spanish.
+import Base from '@/layouts/Base.astro';
+import { guides } from '@/lib/guides';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  lang?: Lang;
+}
+const { lang = 'en' } = Astro.props;
+const es = lang === 'es';
+const all = guides(lang);
+const groups = [
+  { h: es ? 'Guías de compra' : 'Buying guides', items: all.filter((g) => g.kind === 'guide') },
+  { h: es ? 'Análisis de datos' : 'Data analysis', items: all.filter((g) => g.kind === 'analysis') },
+].filter((x) => x.items.length);
+---
+
+<Base title={es ? 'Guías para comprar auto' : 'Car Buying Guides'} description={es ? 'Guías prácticas para comprar auto en EE. UU.: año modelo usado, híbrido o eléctrico, tamaño, retiros, tracción, batería de EV y análisis de datos de la NHTSA.' : 'Practical car buying guides: picking a used model year, hybrid vs EV, size, recalls, AWD vs 4WD, used EV batteries, plus data analysis from NHTSA and EPA records.'} section="guide" lang={lang} alt={es ? '/guide' : '/es/guide'}>
+  <h1>{es ? 'Guías' : 'Guides'}</h1>
+  {
+    es ? (
+      <>
+        <p class="lead">Explicaciones prácticas para comprar auto, escritas por nuestro equipo a partir de los mismos datos públicos que usa todo el sitio: cómo elegir el mejor año modelo usado, cuándo conviene un híbrido o un eléctrico, qué tamaño de auto necesitas, si muchos retiros son mala señal y cómo revisar la batería de un eléctrico usado. Cada guía enlaza con las herramientas y los datos que la ponen en práctica.</p>
+        <p>Los análisis de datos van un paso más allá: revisan miles de retiros, quejas y cifras de la EPA para responder preguntas concretas, como qué piezas fallan más o cuánto ha crecido la autonomía de los eléctricos. Ninguna guía está patrocinada. Si buscas el significado de un término, consulta el <a href="/es/glossary">glosario</a>; para saber cómo calculamos cada cifra, lee nuestra <a href="/es/methodology">metodología</a>.</p>
+      </>
+    ) : (
+      <>
+        <p class="lead">Practical explanations for car buyers, written by our team from the same public data used across the site: how to pick the best used model year, when a hybrid or EV makes sense, what size car you need, whether many recalls are a red flag, how AWD differs from 4WD and how to check a used EV battery. Each guide links to the tools and data that put it into practice.</p>
+        <p>The data analysis pieces go a step further: they work through thousands of recalls, complaints and EPA figures to answer specific questions, such as which parts fail most or how much EV range has grown. None is sponsored. Looking for what a term means? See the <a href="/glossary">glossary</a>. For how every figure on the site is calculated, see our <a href="/methodology">Methodology</a>.</p>
+      </>
+    )
+  }
+  {
+    groups.map((x) => (
+      <section class="section">
+        <h2>{x.h}</h2>
+        <div class="grid">
+          {x.items.map((g) => (
+            <a class="card" href={to(lang, `/guide/${g.slug}`)}>
+              <h3 style="font-size:1.05rem">{g.title}</h3>
+              <p class="small muted" style="margin:8px 0 0">{g.description}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+  <p class="section"><a class="btn ghost" href={to(lang, '/glossary')}>{es ? 'Glosario de términos →' : 'Car-buying glossary →'}</a></p>
+</Base>

@@ -1,0 +1,31 @@
+---
+// One hand-written article (guide or data analysis), English or Spanish.
+import Base from '@/layouts/Base.astro';
+import Ad from '@/components/Ad.astro';
+import { type Guide, guides, twin } from '@/lib/guides';
+import { type Lang, to } from '@/i18n';
+interface Props {
+  g: Guide;
+  lang?: Lang;
+}
+const { g, lang = 'en' } = Astro.props;
+const es = lang === 'es';
+const other = twin(lang, g.slug);
+const alt = other ? (es ? `/guide/${g.slug}` : `/es/guide/${g.slug}`) : undefined;
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Article', headline: g.title, description: g.description, dateModified: g.updated, inLanguage: lang, publisher: { '@type': 'Organization', name: 'DecodedCars' } }];
+const more = guides(lang).filter((x) => x.slug !== g.slug);
+---
+
+<Base title={g.title} description={g.description} section="guide" lang={lang} alt={alt} jsonLd={jsonLd}>
+  <div class="crumbs"><a href={to(lang, '/guide')}>{es ? 'Guías' : 'Guides'}</a></div>
+  <article class="prose">
+    <h1>{g.title}</h1>
+    <p class="small muted">{g.kind === 'analysis' ? (es ? 'Análisis de datos · ' : 'Data analysis · ') : ''}{es ? 'Actualizado' : 'Updated'} {g.updated}</p>
+    <g.Content />
+  </article>
+  <Ad place="bottom" lang={lang} />
+  <section class="section prose">
+    <h2>{es ? 'Más guías' : 'More guides'}</h2>
+    <ul class="list">{more.map((o) => <li><a href={to(lang, `/guide/${o.slug}`)}>{o.title}</a></li>)}<li><a href={to(lang, '/glossary')}>{es ? 'Glosario de términos' : 'Car-buying glossary'}</a></li></ul>
+  </section>
+</Base>

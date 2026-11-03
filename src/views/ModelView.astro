@@ -92,7 +92,7 @@ const T = {
     makes: 'Makes', lead: `${years.length} model years from ${first.year} to ${latest.year}, compared on size, efficiency, safety and reliability.`,
     years: 'Model years', cls: 'Class', engines: 'Latest engines', electric: 'Electric', bestMpg: 'Best MPG', byYear: 'combined, by year', evRange: 'EV range', upTo: 'up to',
     rating: 'Latest rating', recalls: 'Recalls', campaignsAll: (k: number) => `${k} campaigns, all years`, most: 'Most complaints', fewest: 'Fewest problems', interest: 'Interest', views: 'Wikipedia views / 30 days',
-    about: `About the ${title}`, fromWiki: 'From the Wikipedia article', licensed: 'licensed under',
+    about: `About the ${title}`, fromWiki: 'History and background in the Wikipedia article:', licensed: 'licensed under',
     pcH: `${pcYear.year} ${m.model} pros & cons`, full: `Full ${pcYear.year} details →`, good: "What's good", watch: 'Watch out for', noPros: 'Nothing stands out against similar models in the data.', noCons: 'No weak spots against similar models in the data.',
     h2h: 'Compare head to head', changesH: `${m.model} changes by model year`,
     changesNote: 'Years without a measurable change are left out.',
@@ -107,7 +107,7 @@ const T = {
     makes: 'Marcas', lead: `${years.length} años modelo de ${first.year} a ${latest.year}, comparados en tamaño, eficiencia, seguridad y confiabilidad.`,
     years: 'Años modelo', cls: 'Clase', engines: 'Motores recientes', electric: 'Eléctrico', bestMpg: 'Mejor MPG', byYear: 'combinadas, según el año', evRange: 'Autonomía eléctrica', upTo: 'hasta',
     rating: 'Última calificación', recalls: 'Retiros', campaignsAll: (k: number) => `${k} campañas, todos los años`, most: 'Más quejas', fewest: 'Menos problemas', interest: 'Interés', views: 'visitas en Wikipedia / 30 días',
-    about: `Acerca del ${title}`, fromWiki: 'Del artículo de Wikipedia', licensed: 'con licencia',
+    about: `Acerca del ${title}`, fromWiki: 'Historia y contexto en el artículo de Wikipedia:', licensed: 'con licencia',
     pcH: `${m.model} ${pcYear.year}: ventajas y desventajas`, full: `Todos los detalles del ${pcYear.year} →`, good: 'Lo bueno', watch: 'A tener en cuenta', noPros: 'Nada destaca frente a modelos similares en los datos.', noCons: 'Sin puntos débiles frente a modelos similares en los datos.',
     h2h: 'Comparar frente a frente', changesH: `Cambios del ${m.model} por año modelo`,
     changesNote: 'Se omiten los años sin cambios medibles.',
@@ -170,11 +170,7 @@ const L2 = es
 
   {
     overview && (
-      <section class="section overview">
-        <h2 style="margin-bottom:10px">{T.about}</h2>
-        <p>{overview.text}</p>
-        <p class="small muted">{T.fromWiki} "<a href={overview.url} rel="noopener" target="_blank">{overview.title}</a>", {T.licensed} <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener license" target="_blank">CC BY-SA 4.0</a>.</p>
-      </section>
+      <p class="small muted">{T.fromWiki} <a href={overview.url} rel="noopener" target="_blank">{overview.title} ↗</a></p>
     )
   }
 

@@ -24,7 +24,7 @@ export const UI = {
     tagline: 'Specs, MPG, safety ratings and recalls for every car',
     footerAbout: 'Independent data from the EPA, NHTSA and Transport Canada, updated every day.',
     notice: 'DecodedCars is an independent site and is not affiliated with or endorsed by NHTSA, the EPA, the U.S. Department of Transportation, or any vehicle manufacturer. Recalls apply to specific vehicles — always confirm with your 17-character VIN at nhtsa.gov/recalls or with a dealer.',
-    dataNote: 'Data: EPA fuel economy data; NHTSA recalls, consumer complaints and NCAP ratings; Transport Canada Canadian Vehicle Specifications — contains information licensed under the Open Government Licence – Canada; Wikipedia text (CC BY-SA 4.0), Wikimedia Commons photos (license shown under each photo) and pageview statistics (CC0). MPG figures are EPA estimates; your results will vary.',
+    dataNote: 'Data: EPA fuel economy data; NHTSA recalls, consumer complaints and NCAP ratings; Transport Canada Canadian Vehicle Specifications — contains information licensed under the Open Government Licence – Canada; Wikipedia article links, Wikimedia Commons photos (license shown under each photo) and pageview statistics (CC0). MPG figures are EPA estimates; your results will vary.',
     vinTool: 'VIN decoder', fuelTool: 'Fuel cost calculator', loanTool: 'Car loan calculator', garageTool: 'Garage fit',
   },
   es: {
@@ -36,7 +36,7 @@ export const UI = {
     tagline: 'Ficha técnica, consumo, seguridad y retiros de cada auto',
     footerAbout: 'Datos independientes de la EPA, la NHTSA y Transport Canada, actualizados a diario.',
     notice: 'DecodedCars es un sitio independiente y no está afiliado ni respaldado por la NHTSA, la EPA, el Departamento de Transporte de EE. UU. ni ningún fabricante. Los retiros (recalls) aplican a vehículos específicos: confirma siempre con tu VIN de 17 caracteres en nhtsa.gov/recalls o con un concesionario.',
-    dataNote: 'Datos: rendimiento de combustible de la EPA; retiros, quejas de consumidores y calificaciones NCAP de la NHTSA; Canadian Vehicle Specifications de Transport Canada — contiene información con licencia Open Government Licence – Canada; textos de Wikipedia (CC BY-SA 4.0), fotos de Wikimedia Commons (licencia indicada en cada foto) y estadísticas de visitas (CC0). Las cifras de MPG son estimaciones de la EPA; tus resultados pueden variar.',
+    dataNote: 'Datos: rendimiento de combustible de la EPA; retiros, quejas de consumidores y calificaciones NCAP de la NHTSA; Canadian Vehicle Specifications de Transport Canada — contiene información con licencia Open Government Licence – Canada; enlaces a artículos de Wikipedia, fotos de Wikimedia Commons (licencia indicada en cada foto) y estadísticas de visitas (CC0). Las cifras de MPG son estimaciones de la EPA; tus resultados pueden variar.',
     vinTool: 'Decodificador de VIN', fuelTool: 'Costo de combustible', loanTool: 'Calculadora de préstamo', garageTool: '¿Cabe en tu garaje?',
   },
 } as const;

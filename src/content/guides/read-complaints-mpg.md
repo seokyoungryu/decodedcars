@@ -1,6 +1,6 @@
 ---
 title: How to read complaint counts, MPG and crash ratings
-description: What NHTSA complaint numbers can and cannot tell you, why EPA MPG differs from your own mileage, and how the 5-Star safety ratings work.
+description: "What NHTSA complaint numbers can and cannot tell you, why EPA MPG differs from your own mileage, and how the 5-Star safety ratings work."
 order: 2
 updated: 2026-10-27
 ---

@@ -1,6 +1,6 @@
 ---
 title: How to check if your car has an open recall
-description: Why a model-year recall list is not enough, where to find your VIN, what "open" and "remedy not yet available" mean, and what to do next.
+description: "Why a model-year recall list is not enough, where to find your VIN, what \"open\" and \"remedy not yet available\" mean, and what to do next."
 order: 1
 updated: 2026-10-27
 ---
