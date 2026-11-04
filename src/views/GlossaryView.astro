@@ -10,22 +10,32 @@ const { lang = 'en' } = Astro.props;
 const es = lang === 'es';
 const terms = GLOSSARY.map((t) => ({ ...t, ...t[lang] })).sort((a, b) => a.term.localeCompare(b.term, lang));
 const letters = [...new Set(terms.map((t) => t.term[0].toUpperCase()))];
+const groups = letters.map((l) => [l, terms.filter((t) => t.term[0].toUpperCase() === l)] as const);
 const jsonLd = [{ '@context': 'https://schema.org', '@type': 'DefinedTermSet', name: es ? 'Glosario de DecodedCars' : 'DecodedCars car-buying glossary', inLanguage: lang, hasDefinedTerm: terms.map((t) => ({ '@type': 'DefinedTerm', name: t.term, description: t.def })) }];
 ---
 
 <Base title={es ? `Glosario para comprar auto: ${terms.length} términos` : `Car Buying Glossary: ${terms.length} Terms Explained`} description={es ? 'Qué significan retiro, boletín técnico (TSB), MPGe, AWD, VIN, calificación de 5 estrellas y otros términos que verás al investigar un auto.' : 'What recall, TSB, MPGe, AWD vs 4WD, VIN, 5-Star rating, curb weight and other terms on car research pages mean, in plain English.'} section="guide" lang={lang} alt={es ? '/glossary' : '/es/glossary'} jsonLd={jsonLd}>
-  <div class="crumbs"><a href={to(lang, '/guide')}>{es ? 'Guías' : 'Guides'}</a></div>
-  <h1>{es ? 'Glosario para comprar auto' : 'Car-buying glossary'}</h1>
-  <p class="lead">{es ? `${terms.length} términos que aparecen en las páginas de DecodedCars y en cualquier concesionario, explicados en lenguaje sencillo: desde retiros y boletines técnicos hasta MPGe, tracción y financiamiento.` : `${terms.length} terms you'll see on DecodedCars pages and at any dealership, explained in plain English — from recalls and service bulletins to MPGe, drivetrains and financing.`}</p>
-  <p class="chips">{letters.map((l) => <a href={`#${l}`}>{l}</a>)}</p>
-  <dl class="glossary">
-    {
-      terms.map((t, i) => (
-        <>
-          <dt id={t.id} data-l={i === 0 || terms[i - 1].term[0].toUpperCase() !== t.term[0].toUpperCase() ? t.term[0].toUpperCase() : undefined}>{(i === 0 || terms[i - 1].term[0].toUpperCase() !== t.term[0].toUpperCase()) && <span id={t.term[0].toUpperCase()} />}{t.term}</dt>
-          <dd>{t.def}{t.link && <> <a href={es ? to('es', t.link).replace(/^\/es\/(best|rankings|recalls)/, '/$1') : t.link}>{es ? 'Más →' : 'More →'}</a></>}</dd>
-        </>
-      ))
-    }
-  </dl>
+  <section class="band guide-hero">
+    <div class="crumbs"><a href={to(lang, '/guide')}>{es ? 'Guías' : 'Guides'}</a></div>
+    <p class="eyebrow">{es ? `${terms.length} términos` : `${terms.length} terms`}</p>
+    <h1>{es ? 'Glosario para comprar auto' : 'Car-buying glossary'}</h1>
+    <p class="lead">{es ? 'Los términos que aparecen en las páginas de DecodedCars y en cualquier concesionario, explicados en lenguaje sencillo: desde retiros y boletines técnicos hasta MPGe, tracción y financiamiento.' : "The terms you'll see on DecodedCars pages and at any dealership, explained in plain English — from recalls and service bulletins to MPGe, drivetrains and financing."}</p>
+    <p class="chips gl-letters">{letters.map((l) => <a href={`#${l}`}>{l}</a>)}</p>
+  </section>
+  {
+    groups.map(([l, items]) => (
+      <section class="gl-group" id={l}>
+        <h2>{l}</h2>
+        <div class="gl-list">
+          {items.map((t) => (
+            <article class="gl-item" id={t.id}>
+              <h3>{t.term}</h3>
+              <p>{t.def}</p>
+              {t.link && <a href={es ? to('es', t.link).replace(/^\/es\/(best|rankings|recalls)/, '/$1') : t.link}>{es ? 'Más sobre esto →' : 'Learn more →'}</a>}
+            </article>
+          ))}
+        </div>
+      </section>
+    ))
+  }
 </Base>

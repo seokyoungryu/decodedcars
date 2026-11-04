@@ -6,10 +6,10 @@ const titleCase = (s: string) => s.toLowerCase().replace(/\b([a-z])/g, (c) => c.
 
 /** EPA class → short noun: "Small Sport Utility Vehicle 4WD" → "small SUV" / "SUV pequeño" */
 export function classNounL(lang: Lang, cls?: string): string {
-  const s = (cls ?? '').toLowerCase().replace(/ [24]wd/g, '');
+  const s = (cls ?? '').toLowerCase().replace(/\s*-?\s*\b[24]wd\b/g, '');
   if (lang === 'en') {
     if (!s) return 'vehicle';
-    return s.replace(/sport utility vehicles?/, 'SUV').replace(/pickup trucks?/, 'pickup truck').replace(/\bcars$/, 'car').replace(/\bwagons$/, 'wagon').replace(/\bminivan.*$/, 'minivan').replace(/\bvans?(,.*)?$/, 'van').replace(/vehicles$/, 'vehicle').trim();
+    return s.replace(/sport utility vehicles?/, 'SUV').replace(/two seaters?/, 'two-seater').replace(/pickup trucks?/, 'pickup truck').replace(/\bcars$/, 'car').replace(/\bwagons$/, 'wagon').replace(/\bminivan.*$/, 'minivan').replace(/\bvans?(,.*)?$/, 'van').replace(/vehicles$/, 'vehicle').trim();
   }
   if (!s) return 'vehículo';
   const size = /minicompact/.test(s) ? 'minicompacto' : /subcompact/.test(s) ? 'subcompacto' : /compact/.test(s) ? 'compacto' : /midsize/.test(s) ? 'mediano' : /large|standard/.test(s) ? 'grande' : /small/.test(s) ? 'pequeño' : '';
@@ -29,9 +29,9 @@ export const aNoun = (lang: Lang, cls?: string) => {
   if (lang === 'es') return `${/^(pickup|van|minivan)/.test(w) ? 'una' : 'un'} ${w}`;
   return `${/^[aeiou]/i.test(w) ? 'an' : 'a'} ${w}`;
 };
-/** Full EPA class for tables: "Small Sport Utility Vehicle 2WD" → "SUV pequeño (2WD)" */
+/** EPA class for tables: "Small Sport Utility Vehicle 2WD" → "Small SUV (2WD)" / "SUV pequeño (2WD)" */
 export function classL(lang: Lang, cls?: string) {
-  if (!cls || lang === 'en') return cls ?? '–';
+  if (!cls) return '–';
   const wd = cls.match(/\b([24]WD)\b/)?.[1];
   const w = classNounL(lang, cls);
   return `${w.charAt(0).toUpperCase()}${w.slice(1)}${wd ? ` (${wd})` : ''}`;

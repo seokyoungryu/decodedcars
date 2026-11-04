@@ -15,6 +15,8 @@ const list = (files: Record<string, MarkdownInstance<Front>>) =>
       kind: mod.frontmatter.kind ?? 'guide',
       // YAML parses dates into Date objects; keep 'YYYY-MM-DD'
       updated: new Date(mod.frontmatter.updated).toISOString().slice(0, 10),
+      // ~220 words a minute, rounded up
+      minutes: Math.max(1, Math.ceil(mod.rawContent().split(/\s+/).length / 220)),
       Content: mod.Content,
     }))
     .sort((a, b) => a.order - b.order);

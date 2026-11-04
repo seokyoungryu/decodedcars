@@ -13,19 +13,38 @@ const es = lang === 'es';
 const other = twin(lang, g.slug);
 const alt = other ? (es ? `/guide/${g.slug}` : `/es/guide/${g.slug}`) : undefined;
 const jsonLd = [{ '@context': 'https://schema.org', '@type': 'Article', headline: g.title, description: g.description, dateModified: g.updated, inLanguage: lang, publisher: { '@type': 'Organization', name: 'DecodedCars' } }];
-const more = guides(lang).filter((x) => x.slug !== g.slug);
+// same kind first, then the rest, so an analysis piece suggests other analysis pieces
+const more = guides(lang)
+  .filter((x) => x.slug !== g.slug)
+  .sort((a, b) => Number(b.kind === g.kind) - Number(a.kind === g.kind) || a.order - b.order)
+  .slice(0, 6);
+const analysis = g.kind === 'analysis';
 ---
 
 <Base title={g.title} description={g.description} section="guide" lang={lang} alt={alt} jsonLd={jsonLd}>
-  <div class="crumbs"><a href={to(lang, '/guide')}>{es ? 'Guías' : 'Guides'}</a></div>
-  <article class="prose">
+  <section class="band guide-hero">
+    <div class="crumbs"><a href={to(lang, '/guide')}>{es ? 'Guías' : 'Guides'}</a></div>
+    <p class="eyebrow">{analysis ? (es ? 'Análisis de datos' : 'Data analysis') : es ? 'Guía de compra' : 'Buying guide'}</p>
     <h1>{g.title}</h1>
-    <p class="small muted">{g.kind === 'analysis' ? (es ? 'Análisis de datos · ' : 'Data analysis · ') : ''}{es ? 'Actualizado' : 'Updated'} {g.updated}</p>
+    <p class="lead">{g.description}</p>
+    <p class="guide-meta">{es ? 'Actualizado' : 'Updated'} {g.updated} · {g.minutes} min {es ? 'de lectura' : 'read'} · {es ? 'Sin patrocinio' : 'Not sponsored'}</p>
+  </section>
+  <article class="prose guide-body">
     <g.Content />
   </article>
   <Ad place="bottom" lang={lang} />
-  <section class="section prose">
-    <h2>{es ? 'Más guías' : 'More guides'}</h2>
-    <ul class="list">{more.map((o) => <li><a href={to(lang, `/guide/${o.slug}`)}>{o.title}</a></li>)}<li><a href={to(lang, '/glossary')}>{es ? 'Glosario de términos' : 'Car-buying glossary'}</a></li></ul>
+  <section class="section">
+    <div class="section-head"><h2>{es ? 'Sigue leyendo' : 'Keep reading'}</h2><a href={to(lang, '/guide')}>{es ? 'Todas las guías →' : 'All guides →'}</a></div>
+    <div class="grid">
+      {
+        more.map((o) => (
+          <a class="card guide-card" href={to(lang, `/guide/${o.slug}`)}>
+            <small>{o.kind === 'analysis' ? (es ? 'Análisis' : 'Analysis') : es ? 'Guía' : 'Guide'} · {o.minutes} min</small>
+            <h3>{o.title}</h3>
+          </a>
+        ))
+      }
+      <a class="card guide-card" href={to(lang, '/glossary')}><small>{es ? 'Referencia' : 'Reference'}</small><h3>{es ? 'Glosario para comprar auto' : 'Car-buying glossary'}</h3></a>
+    </div>
   </section>
 </Base>

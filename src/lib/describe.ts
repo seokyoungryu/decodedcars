@@ -20,8 +20,9 @@ export const classNoun = (s?: string) =>
   s
     ? s
         .toLowerCase()
-        .replace(/ [24]wd/g, '')
+        .replace(/\s*-?\s*\b[24]wd\b/g, '')
         .replace(/sport utility vehicles?/, 'SUV')
+        .replace(/two seaters?/, 'two-seater')
         .replace(/pickup trucks?/, 'pickup truck')
         .replace(/\bcars$/, 'car')
         .replace(/\bwagons$/, 'wagon')

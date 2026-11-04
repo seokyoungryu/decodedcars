@@ -41,7 +41,8 @@ const fewest = [...years].filter((y) => y.year >= 2015 && y.year <= thisYear - 3
 const comps: Record<string, number> = {};
 for (const y of years) for (const [c, k] of y.complaints.comps) comps[c] = (comps[c] ?? 0) + k;
 const topComps = Object.entries(comps).sort((a, b) => b[1] - a[1]).slice(0, 8);
-const classes = [...new Set(years.map((y) => classL(lang, y.cls)).filter((c) => c && c !== '–'))];
+// one entry per body type: the EPA 2WD/4WD split is dropped ("Small SUV (2WD), Small SUV (4WD)" → "Small SUV")
+const classes = [...new Set(years.filter((y) => y.cls).map((y) => classL(lang, y.cls).replace(/ \([24]WD\)$/, '')))];
 const mpgs = years.map((y) => y.mpg?.max).filter(Boolean) as number[];
 const ranges = years.map((y) => y.range).filter(Boolean) as number[];
 const len = (y: (typeof years)[number]) => y.dims.find((d) => d.length)?.length;
